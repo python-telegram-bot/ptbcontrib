@@ -14,7 +14,7 @@ Community-based extensions for the `python-telegram-bot <https://python-telegram
    :alt: LGPLv3 License
 
 .. image:: https://github.com/python-telegram-bot/contrib/workflows/GitHub%20Actions/badge.svg?event=push
-   :target: https://github.com/python-telegram-bot/python-telegram-bot/
+   :target: https://github.com/python-telegram-bot/contrib/
    :alt: Github Actions workflow
 
 .. image:: http://isitmaintained.com/badge/resolution/python-telegram-bot/contrib.svg
@@ -22,7 +22,7 @@ Community-based extensions for the `python-telegram-bot <https://python-telegram
    :alt: Median time to resolve an issue
 
 .. image:: https://api.codacy.com/project/badge/Grade/99d901eaa09b44b4819aec05c330c968
-   :target: https://www.codacy.com/app/python-telegram-bot/python-telegram-bot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=python-telegram-bot/python-telegram-bot&amp;utm_campaign=Badge_Grade
+   :target: https://www.codacy.com/app/python-telegram-bot/contrib?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=python-telegram-bot/contrib&amp;utm_campaign=Badge_Grade
    :alt: Code quality
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
@@ -90,13 +90,13 @@ You can get help in several ways:
 
 2. In case you are unable to join our group due to Telegram restrictions, you can use our `IRC channel <https://webchat.freenode.net/?channels=##python-telegram-bot>`_.
 
-3. Report bugs, request new features or ask questions by `creating an issue <https://github.com/python-telegram-bot/python-telegram-bot/issues/new/choose>`_.
+3. Report bugs, request new features or ask questions by `creating an issue <https://github.com/python-telegram-bot/contrib/issues/new/choose>`_.
 
 ============
 Contributing
 ============
 
-Contributions of all sizes are welcome. Please review our `contribution guidelines <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/.github/CONTRIBUTING.rst>`_ to get started. You can also help by `reporting bugs <https://github.com/python-telegram-bot/python-telegram-bot/issues/new>`_.
+Contributions of all sizes are welcome. Please review our `contribution guidelines <https://github.com/python-telegram-bot/contrib/blob/master/.github/CONTRIBUTING.rst>`_ to get started. You can also help by `reporting bugs <https://github.com/python-telegram-bot/contrib/issues/new>`_.
 
 =======
 License
