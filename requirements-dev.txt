@@ -1,0 +1,11 @@
+flake8
+pep257
+pylint
+flaky
+yapf
+mypy==0.770
+pre-commit
+pytest==4.2.0
+pytest-timeout
+wheel
+attrs==19.1.0
