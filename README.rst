@@ -2,7 +2,7 @@
 PTB-Contrib
 ===========
 
-Community-based extensions `python-telegram-bot <https://python-telegram-bot.org>`_ library.
+Community-based extensions for the `python-telegram-bot <https://python-telegram-bot.org>`_ library.
 
 
 .. image:: https://img.shields.io/badge/python-3.6%7C3.7%7C3.8%7C3.9-blue
@@ -54,7 +54,7 @@ Table of contents
 Introduction
 ============
 
-This library provides extensions to the `python-telegram-bot <https://python-telegram-bot.org>`_ library written and maintained by the community of PTB users.
+This library provides extensions for the `python-telegram-bot <https://python-telegram-bot.org>`_ library written and maintained by the community of PTB users.
 
 ==========
 Installing
