@@ -70,7 +70,7 @@ If you want to use an extension that has some special requirements, you can inst
 
 .. code:: shell
 
-    $ pip install git+https://github.com/python-telegram-bot/contrib.git[extension1,extension2]
+    $ pip install "ptb_contrib[extension1,extension2] @ git+https://github.com/python-telegram-bot/contrib.git"
 
 Or you can install from source with:
 
