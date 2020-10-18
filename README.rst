@@ -21,8 +21,8 @@ Community-based extensions for the `python-telegram-bot <https://python-telegram
    :target: http://isitmaintained.com/project/python-telegram-bot/ptbcontrib
    :alt: Median time to resolve an issue
 
-.. image:: https://api.codacy.com/project/badge/Grade/99d901eaa09b44b4819aec05c330c968
-   :target: https://www.codacy.com/app/python-telegram-bot/ptbcontrib?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=python-telegram-bot/ptbcontrib&amp;utm_campaign=Badge_Grade
+.. image:: https://app.codacy.com/project/badge/Grade/4ea8c625b01048cd94ff65bc11bd1ec0
+   :target: https://www.codacy.com/gh/python-telegram-bot/ptbcontrib/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=python-telegram-bot/ptbcontrib&amp;utm_campaign=Badge_Grade
    :alt: Code quality
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
