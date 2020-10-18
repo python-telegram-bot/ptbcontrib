@@ -1,6 +1,7 @@
-===========
-PTB-Contrib
-===========
+.. image:: https://github.com/python-telegram-bot/logos/blob/master/ptbcontrib/png/ptbcontrib-logo-text_768.png?raw=true
+   :align: center
+   :target: https://github.com/python-telegram-bot/ptbcontrib
+   :alt: ptbcontrib Logo
 
 Community-based extensions for the `python-telegram-bot <https://python-telegram-bot.org>`_ library.
 
