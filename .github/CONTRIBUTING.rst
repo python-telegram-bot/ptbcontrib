@@ -1,25 +1,25 @@
 How To Contribute
 =================
 
-Every open source project lives from the generous help by contributors that sacrifice their time and ``ptb-contrib`` is no different. To make participation as pleasant as possible, this project adheres to the `Code of Conduct`_ by the Python Software Foundation.
+Every open source project lives from the generous help by contributors that sacrifice their time and ``ptbcontrib`` is no different. To make participation as pleasant as possible, this project adheres to the `Code of Conduct`_ by the Python Software Foundation.
 
 Setting things up
 -----------------
 
-1. Fork the ``ptb-contrib`` repository to your GitHub account.
+1. Fork the ``ptbcontrib`` repository to your GitHub account.
 
-2. Clone your forked repository of ``ptb-contrib`` to your computer:
+2. Clone your forked repository of ``ptbcontrib`` to your computer:
 
    .. code-block:: bash
 
-      $ git clone https://github.com/<your username>/contrib --recursive
-      $ cd contrib
+      $ git clone https://github.com/<your username>/ptbcontrib --recursive
+      $ cd ptbcontrib
 
 3. Add a track to the original repository:
 
    .. code-block:: bash
 
-      $ git remote add upstream https://github.com/python-telegram-bot/contrib
+      $ git remote add upstream https://github.com/python-telegram-bot/ptbcontrib
 
 4. Install dependencies:
 
@@ -65,7 +65,7 @@ Here's how to make a one-off code change.
 
 3. **Make a commit to your feature branch**. Each commit should be self-contained and have a descriptive commit message that helps other developers understand why the changes were made.
 
-   - In case you want to add a new contribution to the library, it should be places in its own directory beneath ``ptb_contrib``. This directory may also contain a file ``requirements.txt`` listing any requirements of your contribution.
+   - In case you want to add a new contribution to the library, it should be places in its own directory beneath ``ptbcontrib``. This directory may also contain a file ``requirements.txt`` listing any requirements of your contribution.
 
    - You can refer to relevant issues in the commit message by writing, e.g., "#105".
 
@@ -81,7 +81,7 @@ Here's how to make a one-off code change.
 
         - Documenting types of global variables and complex types of class members can be done using the Sphinx docstring convention.
 
-   -  In addition, ``ptb-contrib`` uses the `Black`_ coder formatting. Plugins for Black exist for some `popular editors`_. You can use those instead of manually formatting everything.
+   -  In addition, ``ptbcontrib`` uses the `Black`_ coder formatting. Plugins for Black exist for some `popular editors`_. You can use those instead of manually formatting everything.
 
    - Please ensure that the code you write is well-tested. For new contributions, please create a new file ``tests/test_{yourcontribution}.py`` for the tests.
 
@@ -141,7 +141,7 @@ Here's how to make a one-off code change.
 
        - In addition, please reply to each comment. Each reply should be either "Done" or a response explaining why the corresponding suggestion wasn't implemented. All comments must be resolved before LGTM can be given.
 
-   - Resolve any merge conflicts that arise. To resolve conflicts between 'your-branch-name' (in your fork) and 'main' (in the ``contrib`` repository), run:
+   - Resolve any merge conflicts that arise. To resolve conflicts between 'your-branch-name' (in your fork) and 'main' (in the ``ptbcontrib`` repository), run:
 
      .. code-block:: bash
 
@@ -162,7 +162,7 @@ Here's how to make a one-off code change.
       $ git branch -D your-branch-name
       $ git push origin --delete your-branch-name
 
-7. **Celebrate.** Congratulations, you have contributed to ``ptb-contrib``!
+7. **Celebrate.** Congratulations, you have contributed to ``ptbcontrib``!
 
 Style commandments
 ------------------
@@ -219,7 +219,7 @@ break the API classes. For example:
 
 
 .. _`Code of Conduct`: https://www.python.org/psf/codeofconduct/
-.. _`issue tracker`: https://github.com/python-telegram-bot/contrib/issues
+.. _`issue tracker`: https://github.com/python-telegram-bot/ptbcontrib/issues
 .. _`Telegram group`: https://telegram.me/pythontelegrambotgroup
 .. _`PEP 8 Style Guide`: https://www.python.org/dev/peps/pep-0008/
 .. _`Google Python Style Guide`: http://google.github.io/styleguide/pyguide.html

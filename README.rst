@@ -13,16 +13,16 @@ Community-based extensions for the `python-telegram-bot <https://python-telegram
    :target: https://www.gnu.org/licenses/lgpl-3.0.html
    :alt: LGPLv3 License
 
-.. image:: https://github.com/python-telegram-bot/contrib/workflows/GitHub%20Actions/badge.svg?event=push
-   :target: https://github.com/python-telegram-bot/contrib/
+.. image:: https://github.com/python-telegram-bot/ptbcontrib/workflows/GitHub%20Actions/badge.svg?event=push
+   :target: https://github.com/python-telegram-bot/ptbcontrib/
    :alt: Github Actions workflow
 
-.. image:: http://isitmaintained.com/badge/resolution/python-telegram-bot/contrib.svg
-   :target: http://isitmaintained.com/project/python-telegram-bot/contrib
+.. image:: http://isitmaintained.com/badge/resolution/python-telegram-bot/ptbcontrib.svg
+   :target: http://isitmaintained.com/project/python-telegram-bot/ptbcontrib
    :alt: Median time to resolve an issue
 
 .. image:: https://api.codacy.com/project/badge/Grade/99d901eaa09b44b4819aec05c330c968
-   :target: https://www.codacy.com/app/python-telegram-bot/contrib?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=python-telegram-bot/contrib&amp;utm_campaign=Badge_Grade
+   :target: https://www.codacy.com/app/python-telegram-bot/ptbcontrib?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=python-telegram-bot/ptbcontrib&amp;utm_campaign=Badge_Grade
    :alt: Code quality
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
@@ -64,20 +64,20 @@ Because this library is subject to more frequent changes than PTB, it is *not* a
 
 .. code:: shell
 
-    $ pip install git+https://github.com/python-telegram-bot/contrib.git
+    $ pip install git+https://github.com/python-telegram-bot/ptbcontrib.git
 
 If you want to use an extension that has some special requirements, you can install them on the fly as e.g.
 
 .. code:: shell
 
-    $ pip install "ptb_contrib[extension1,extension2] @ git+https://github.com/python-telegram-bot/contrib.git"
+    $ pip install "ptbcontrib[extension1,extension2] @ git+https://github.com/python-telegram-bot/ptbcontrib.git"
 
 Or you can install from source with:
 
 .. code:: shell
 
-    $ git clone https://github.com/python-telegram-bot/contrib
-    $ cd contrib
+    $ git clone https://github.com/python-telegram-bot/ptbcontrib
+    $ cd ptbcontrib
     $ python setup.py install
 
 ============
@@ -90,13 +90,13 @@ You can get help in several ways:
 
 2. In case you are unable to join our group due to Telegram restrictions, you can use our `IRC channel <https://webchat.freenode.net/?channels=##python-telegram-bot>`_.
 
-3. Report bugs, request new features or ask questions by `creating an issue <https://github.com/python-telegram-bot/contrib/issues/new/choose>`_.
+3. Report bugs, request new features or ask questions by `creating an issue <https://github.com/python-telegram-bot/ptbcontrib/issues/new/choose>`_.
 
 ============
 Contributing
 ============
 
-Contributions of all sizes are welcome. Please review our `contribution guidelines <https://github.com/python-telegram-bot/contrib/blob/master/.github/CONTRIBUTING.rst>`_ to get started. You can also help by `reporting bugs <https://github.com/python-telegram-bot/contrib/issues/new>`_.
+Contributions of all sizes are welcome. Please review our `contribution guidelines <https://github.com/python-telegram-bot/ptbcontrib/blob/master/.github/CONTRIBUTING.rst>`_ to get started. You can also help by `reporting bugs <https://github.com/python-telegram-bot/ptbcontrib/issues/new>`_.
 
 =======
 License

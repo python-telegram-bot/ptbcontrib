@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""The setup and build script for the ptb_contrib library."""
+"""The setup and build script for the ptbcontrib library."""
 
 import codecs
 import os
@@ -23,7 +23,7 @@ def requirements_extra() -> Dict[str, List[str]]:
     """Build the extra requirements list for each contribution"""
     extra_requirements: Dict[str, List[str]] = {}
 
-    for extension in os.walk('ptb_contrib'):
+    for extension in os.walk('ptbcontrib'):
         if extension[0].endswith('__'):
             continue
 
@@ -44,7 +44,7 @@ reqs_extra = requirements_extra()
 
 with codecs.open('README.rst', 'r', 'utf-8') as fd:
 
-    setup(name='ptb-contrib',
+    setup(name='ptbcontrib',
           author_email='devs@python-telegram-bot.org',
           license='LGPLv3',
           url='https://python-telegram-bot.org/',

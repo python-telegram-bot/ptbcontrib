@@ -2,7 +2,7 @@
 #
 # A library containing community-based extension for the python-telegram-bot library
 # Copyright (C) 2020
-# The ptb-contrib developers
+# The ptbcontrib developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser Public License as published by
@@ -18,7 +18,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import pytest
 from telegram import Message, MessageEntity
-from ptb_contrib import extract_urls
+from ptbcontrib import extract_urls
 
 
 class TestExtractURLs:
