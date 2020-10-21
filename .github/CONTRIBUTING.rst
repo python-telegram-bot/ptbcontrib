@@ -65,13 +65,13 @@ Here's how to make a one-off code change.
 
 3. **Make a commit to your feature branch**. Each commit should be self-contained and have a descriptive commit message that helps other developers understand why the changes were made.
 
-   - In case you want to add a new contribution to the library, it should be places in its own directory beneath ``ptbcontrib``. This directory may also contain a file ``requirements.txt`` listing any requirements of your contribution.
+   - In case you want to add a new contribution to the library, it should be placed in its own directory beneath ``ptbcontrib`` and contain a README file. This directory may also contain a file ``requirements.txt`` listing any requirements of your contribution. Have a look at the existing contributions for inspiration.
 
    - You can refer to relevant issues in the commit message by writing, e.g., "#105".
 
    - Your code should adhere to the `PEP 8 Style Guide`_, with the exception that we have a maximum line length of 99.
 
-   - Provide static typing with signature annotations. The documentation of `MyPy`_ will be a good start, the cheat sheet is `here`_. We also have some custom type aliases in ``telegram.utils.helpers.typing``.
+   - Provide static typing with signature annotations. The documentation of `MyPy`_ will be a good start, the cheat sheet is `here`_.
 
    - Document your code through docstrings. Have a look at the existing modules for inspirations.
 
@@ -79,7 +79,7 @@ Here's how to make a one-off code change.
 
    - The following exceptions to the above (Google's) style guides applies:
 
-        - Documenting types of global variables and complex types of class members can be done using the Sphinx docstring convention.
+    - Documenting types of global variables and complex types of class members can be done using the Sphinx docstring convention.
 
    -  In addition, ``ptbcontrib`` uses the `Black`_ coder formatting. Plugins for Black exist for some `popular editors`_. You can use those instead of manually formatting everything.
 

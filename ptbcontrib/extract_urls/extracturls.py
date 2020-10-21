@@ -25,7 +25,7 @@ from telegram import MessageEntity, Message
 
 def extract_urls(message: Message) -> List[str]:
     """
-    Extracts all Hyperlinks that are contained in a message. This includes message entities and the
+    Extracts all hyperlinks that are contained in a message. This includes message entities and the
     media caption, i.e. while of course only text *or* caption is present this works for both.
     Distinct links are returned in order of appearance.
 
