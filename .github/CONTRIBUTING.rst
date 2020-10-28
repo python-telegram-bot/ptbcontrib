@@ -1,7 +1,7 @@
 How To Contribute
 =================
 
-Every open source project lives from the generous help by contributors that sacrifice their time and ``ptbcontrib`` is no different. To make participation as pleasant as possible, this project adheres to the `Code of Conduct`_ by the Python Software Foundation.
+Every open source project lives from the generous contributions of developers who invest their spare time and ``ptbcontrib`` is no different. To make participation as pleasant as possible, this project adheres to the `Code of Conduct`_ by the Python Software Foundation.
 
 Setting things up
 -----------------
@@ -40,10 +40,6 @@ Finding something to do
 If you already know what you'd like to work on, you can skip this section.
 
 If you have an idea for something to do, first check if it's already been filed on the `issue tracker`_. If so, add a comment to the issue saying you'd like to work on it, and we'll help you get started! Otherwise, please file a new issue and assign yourself to it.
-
-Another great way to start contributing is by writing tests. Tests are really important because they help prevent developers from accidentally breaking existing code, allowing them to build cool things faster. If you're interested in helping out, let the development team know by posting to the `Telegram group`_ (use `@admins` to mention the maintainers), and we'll help you get started.
-
-That being said, we want to mention that we are very hesitant about adding new requirements to our projects. If you intend to do this, please state this in an issue and get a verification from one of the maintainers.
 
 Instructions for making a code change
 #####################################
@@ -99,21 +95,13 @@ Here's how to make a one-off code change.
 
         $ pytest -v
 
-     To run ``test_official`` (particularly useful if you made API changes), run
-
-     .. code-block::
-
-        $ export TEST_OFFICIAL=true
-
-     prior to running the tests.
-
-   - To actually make the commit (this will trigger tests for yapf, lint and pep8 automatically):
+   - To actually make the commit (this will trigger tests for black, lint and pep8 automatically):
 
      .. code-block:: bash
 
         $ git add your-file-changed.py
 
-   - yapf may change code formatting, make sure to re-add them to your commit.
+   - black may change code formatting, make sure to re-add them to your commit.
 
      .. code-block:: bash
 
@@ -129,7 +117,7 @@ Here's how to make a one-off code change.
 
    - Go to your fork on GitHub, select your branch from the dropdown menu, and click "New pull request".
 
-   - Add a descriptive comment explaining the purpose of the branch (e.g. "Add the new API feature to create inline bot queries."). This will tell the reviewer what the purpose of the branch is.
+   - Add a descriptive comment explaining the purpose of the branch (e.g. "Add the a helper to date pick via an inline keyboard."). This will tell the reviewer what the purpose of the branch is.
 
    - Click "Create pull request". An admin will assign a reviewer to your commit.
 
@@ -198,25 +186,6 @@ callable we prefer that the call also uses keyword arg syntax. For example:
 
 This gives us the flexibility to re-order arguments and more importantly
 to add new required arguments. It's also more explicit and easier to read.
-
-Properly defining optional arguments
-####################################
-
-It's always good to not initialize optional arguments at class creation,
-instead use ``**kwargs`` to get them. It's well known Telegram API can
-change without notice, in that case if a new argument is added it won't
-break the API classes. For example:
-
-.. code-block:: python
-
-    # GOOD
-    def __init__(self, id, name, last_name=None, **kwargs):
-       self.last_name = last_name
-
-    # BAD
-    def __init__(self, id, name, last_name=None):
-       self.last_name = last_name
-
 
 .. _`Code of Conduct`: https://www.python.org/psf/codeofconduct/
 .. _`issue tracker`: https://github.com/python-telegram-bot/ptbcontrib/issues

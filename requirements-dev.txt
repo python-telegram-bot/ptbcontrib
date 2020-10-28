@@ -2,7 +2,7 @@ flake8
 pep257
 pylint
 flaky
-yapf
+black
 mypy==0.770
 pre-commit
 pytest==4.2.0

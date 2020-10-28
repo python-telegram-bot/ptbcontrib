@@ -19,7 +19,7 @@ Please make sure to upgrade & recreate the issue on the latest
 version prior to opening an issue.
 -->
 
-### Module this question is about
+### Module this issue is about
 Please state which module you're reporting a bug for.
 
 ### Steps to reproduce

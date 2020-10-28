@@ -4,7 +4,7 @@ Provides two methods that allow you to easily extract hyperlinks from messages. 
 
 * both plain links and message entities,
 * both normal messages and captions,
-* extracting links to Telegram messages only.
+* extracting solely direct links to Telegram messages.
 
 Please see the docstrings for more details.
 
