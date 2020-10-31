@@ -13,10 +13,13 @@ repos:
     rev: 3.8.4
     hooks:
     -   id: flake8
--   repo: https://github.com/PyCQA/pylint
-    rev: pylint-2.6.0
+-   repo: local
     hooks:
     -   id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
         exclude: ^tests/
         args:
         - --rcfile=setup.cfg
