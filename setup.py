@@ -54,6 +54,7 @@ with codecs.open('README.rst', 'r', 'utf-8') as fd:
         description="Contrib package for the python-telegram-bot library",
         long_description=fd.read(),
         packages=packages,
+        package_data={'ptbcontrib': ['py.typed']},
         install_requires=reqs,
         extras_require=reqs_extra,
         include_package_data=True,
