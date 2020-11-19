@@ -16,6 +16,6 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains helper functions to extract URLs from messages."""
 
-from .roles import extract_urls, extract_message_links
+from .roles import Role, Roles, ChatAdminsRole, ChatCreatorRole
 
-__all__ = ['extract_urls', 'extract_message_links']
+__all__ = ['Roles', 'Role', 'ChatCreatorRole', 'ChatAdminsRole']

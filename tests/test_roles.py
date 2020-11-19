@@ -24,11 +24,9 @@ import time
 
 from copy import deepcopy
 from telegram import Message, User, InlineQuery, Update, ChatMember, Chat, TelegramError
-from telegram.ext import (
+from ptbcontrib.roles import (
     Role,
     Roles,
-    MessageHandler,
-    InlineQueryHandler,
     ChatAdminsRole,
     ChatCreatorRole,
 )
@@ -68,11 +66,6 @@ def chat_creator_role(bot):
 
 class TestRole(object):
     def test_creation(self, parent_role):
-        r = Role(parent_roles=[parent_role, parent_role])
-        assert r.chat_ids == set()
-        assert str(r) == 'Role({})'
-        assert r.parent_roles == set([parent_role])
-
         r = Role(child_roles=[parent_role, parent_role])
         assert r.chat_ids == set()
         assert str(r) == 'Role({})'
@@ -538,15 +531,15 @@ class TestRoles(object):
             roles.set_bot(bot)
 
     def test_add_kick_admin(self, roles):
-        assert roles.ADMINS.chat_ids == set()
+        assert roles.admins.chat_ids == set()
         roles.add_admin(1)
-        assert roles.ADMINS.chat_ids == set([1])
+        assert roles.admins.chat_ids == set([1])
         roles.add_admin(2)
-        assert roles.ADMINS.chat_ids == set([1, 2])
+        assert roles.admins.chat_ids == set([1, 2])
         roles.kick_admin(1)
-        assert roles.ADMINS.chat_ids == set([2])
+        assert roles.admins.chat_ids == set([2])
         roles.kick_admin(2)
-        assert roles.ADMINS.chat_ids == set()
+        assert roles.admins.chat_ids == set()
 
     def test_equality(self, parent_role, roles, bot):
         parent_role_2 = deepcopy(parent_role)
@@ -625,7 +618,7 @@ class TestRoles(object):
 
     def test_deepcopy(self, roles, parent_role):
         roles.add_admin(123)
-        roles.CHAT_ADMINS.timeout = 7
+        roles.chat_admins.timeout = 7
         child_role = Role(name='child_role')
         roles.add_role(
             name='test', chat_ids=[1, 2], parent_roles=parent_role, child_roles=child_role
@@ -635,9 +628,9 @@ class TestRoles(object):
 
         assert croles is not roles
         assert croles == roles
-        assert roles.ADMINS is not croles.ADMINS
-        assert roles.ADMINS.equals(croles.ADMINS)
-        assert roles.CHAT_ADMINS.timeout == croles.CHAT_ADMINS.timeout
+        assert roles.admins is not croles.admins
+        assert roles.admins.equals(croles.admins)
+        assert roles.chat_admins.timeout == croles.chat_admins.timeout
         assert roles['test'] is not croles['test']
         assert roles['test'].equals(croles['test'])
         assert roles['test2'] is not croles['test2']
@@ -647,16 +640,16 @@ class TestRoles(object):
         roles.add_role('role', parent_roles=parent_role)
         role = roles['role']
         assert role.chat_ids == set()
-        assert role.parent_roles == set([parent_role, roles.ADMINS])
+        assert role.parent_roles == set([parent_role, roles.admins])
         assert str(role) == 'Role(role)'
-        assert roles.ADMINS in role.parent_roles
+        assert roles.admins in role.parent_roles
 
         with pytest.raises(ValueError, match='Role name is already taken.'):
             roles.add_role('role', parent_roles=parent_role)
 
         roles.remove_role('role')
         assert not roles.get('role', None)
-        assert roles.ADMINS not in role.parent_roles
+        assert roles.admins not in role.parent_roles
 
     def test_handler_admins(self, roles, update):
         roles.add_role('role', 0)
@@ -690,7 +683,7 @@ class TestRoles(object):
         roles.add_role('role_3', chat_ids=[7, 8], parent_roles=parent_role, child_roles=child_role)
         roles.add_admin(9)
         roles.add_admin(10)
-        roles.CHAT_ADMINS.timeout = 7
+        roles.chat_admins.timeout = 7
 
         json_str = roles.encode_to_json()
         assert isinstance(json_str, str)
@@ -700,10 +693,10 @@ class TestRoles(object):
         assert rroles == roles
         assert rroles.bot is bot
         for name in rroles:
-            assert rroles[name] <= rroles.ADMINS
-        assert rroles.ADMINS.chat_ids == set([9, 10])
-        assert rroles.ADMINS.equals(roles.ADMINS)
-        assert rroles.CHAT_ADMINS.timeout == roles.CHAT_ADMINS.timeout
+            assert rroles[name] <= rroles.admins
+        assert rroles.admins.chat_ids == set([9, 10])
+        assert rroles.admins.equals(roles.admins)
+        assert rroles.chat_admins.timeout == roles.chat_admins.timeout
         assert rroles['role_1'].chat_ids == set([1, 2, 3])
         assert rroles['role_1'].equals(Role(name='role_1', chat_ids=[1, 2, 3]))
         assert rroles['role_2'].chat_ids == set([4, 5, 6])
@@ -717,7 +710,7 @@ class TestRoles(object):
             Role(name='role_3', chat_ids=[7, 8], parent_roles=parent_role, child_roles=child_role)
         )
         for name in rroles:
-            assert rroles[name] <= rroles.ADMINS
-            assert rroles[name] < rroles.ADMINS
-            assert rroles.ADMINS >= rroles[name]
-            assert rroles.ADMINS > rroles[name]
+            assert rroles[name] <= rroles.admins
+            assert rroles[name] < rroles.admins
+            assert rroles.admins >= rroles[name]
+            assert rroles.admins > rroles[name]
