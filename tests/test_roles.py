@@ -73,8 +73,8 @@ class TestRole(object):
         assert r.chat_ids == set()
         assert str(r) == 'Role({})'
         assert r.child_roles == {parent_role}
-        assert isinstance(r._Role__admin, Role)
-        assert str(r._Role__admin) == f'Role({Role._Role__DEFAULT_ADMIN_NAME})'
+        assert isinstance(r._admin, Role)
+        assert str(r._admin) == f'Role({Role._Role__DEFAULT_ADMIN_NAME})'
 
         r = Role(1)
         assert r.chat_ids == {1}
@@ -111,15 +111,15 @@ class TestRole(object):
 
     def test_add_remove_child_role(self, role, parent_role):
         assert role.child_roles == set()
-        parent_role_2 = Role(chat_ids=456, name='pr2')
+        parent2 = Role(chat_ids=456, name='pr2')
         role.add_child_role(parent_role)
         assert role.child_roles == {parent_role}
-        role.add_child_role(parent_role_2)
-        assert role.child_roles == {parent_role, parent_role_2}
+        role.add_child_role(parent2)
+        assert role.child_roles == {parent_role, parent2}
 
         role.remove_child_role(parent_role)
-        assert role.child_roles == {parent_role_2}
-        role.remove_child_role(parent_role_2)
+        assert role.child_roles == {parent2}
+        role.remove_child_role(parent2)
         assert role.child_roles == set()
 
         with pytest.raises(ValueError, match='You must not add a role as its own child!'):
@@ -250,39 +250,44 @@ class TestRole(object):
         role.name = 'foobar'
         parent_role.add_member(1)
         parent_role.add_child_role(role)
-        print('parent', id(parent_role))
-        print('role', id(role))
 
-        rrrr = ~role
-        print('rrrr', id(rrrr))
-        assert not (rrrr)(update)
+        test_role = ~role
+        assert not test_role(update)
         update.message.from_user.id = 1
         update.message.chat.id = 1
-        assert (rrrr)(update)
+        assert test_role(update)
 
     def test_filter_exclude_children(self, update, role, parent_role):
         parent_role.add_child_role(role)
         parent_role.add_member(0)
         role.add_member(1)
 
-        handler = MessageHandler(None, None, roles=~parent_role)
-        assert not role(update)
+        test_role = ~parent_role
+        assert not test_role(update)
         update.message.from_user.id = 1
         update.message.chat.id = 1
-        assert not role(update)
+        assert not test_role(update)
         update.message.from_user.id = 2
         update.message.chat.id = 1
-        assert not role(update)
+        assert not test_role(update)
 
-    def test_filter_without_user(self, update, role):
-        handler = MessageHandler(role, None)
+    def test_filter_without_user_and_chat(self, update, role):
         role.add_member(0)
         update.message = None
-        update.channel_post = Message(0, None, datetime.datetime.utcnow(), Chat(-1, 'channel'))
         assert not role(update)
 
-        role.add_member(-1)
-        assert role(update)
+    def test_always_allow_admin(self, update, role):
+        role._admin.add_member(0)
+        try:
+            assert (~Role(0))(update)
+            assert (Role(0) & ~Role(0))(update)
+            assert (Role(1) & ~Role(0))(update)
+            assert (Role(1) & ~Role(2))(update)
+            assert (Role(0) | ~Role(0))(update)
+            assert (Role(1) | ~Role(0))(update)
+            assert (Role(1) | ~Role(2))(update)
+        finally:
+            role._admin.kick_member(0)
 
 
 class TestChatAdminsRole(object):
@@ -290,21 +295,6 @@ class TestChatAdminsRole(object):
         admins = ChatAdminsRole(bot, timeout=7)
         assert admins.timeout == 7
         assert admins.bot is bot
-
-    def test_deepcopy(self, chat_admins_role):
-        chat_admins_role.cache.update({1: 2, 3: 4})
-        cadmins = deepcopy(chat_admins_role)
-
-        assert chat_admins_role is not cadmins
-        assert chat_admins_role.equals(cadmins)
-        assert chat_admins_role.chat_ids is not cadmins.chat_ids
-        assert chat_admins_role.chat_ids == cadmins.chat_ids
-        assert chat_admins_role.parent_roles is not cadmins.parent_roles
-        assert chat_admins_role.child_roles is not cadmins.child_roles
-
-        assert chat_admins_role.bot is cadmins.bot
-        assert chat_admins_role.cache == cadmins.cache
-        assert chat_admins_role.timeout == cadmins.timeout
 
     def test_simple(self, chat_admins_role, update, monkeypatch):
         def admins(*args, **kwargs):
@@ -314,35 +304,49 @@ class TestChatAdminsRole(object):
             ]
 
         monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
-        handler = MessageHandler(None, None, roles=chat_admins_role)
 
         update.message.from_user.id = 2
-        assert not role(update)
+        update.message.chat.type = Chat.GROUP
+        assert not chat_admins_role(update)
         update.message.from_user.id = 1
-        assert role(update)
+        assert chat_admins_role(update)
         update.message.from_user.id = 0
-        assert role(update)
+        assert chat_admins_role(update)
 
     def test_private_chat(self, chat_admins_role, update):
         update.message.from_user.id = 2
         update.message.chat.id = 2
-        handler = MessageHandler(None, None, roles=chat_admins_role)
 
-        assert role(update)
+        assert chat_admins_role(update)
 
     def test_no_chat(self, chat_admins_role, update):
         update.message = None
         update.inline_query = InlineQuery(1, User(0, 'TestUser', False), 'query', 0)
-        handler = InlineQueryHandler(None, roles=chat_admins_role)
 
-        assert not role(update)
+        assert not chat_admins_role(update)
 
     def test_no_user(self, chat_admins_role, update):
         update.message = None
-        update.channel_post = Message(1, None, datetime.datetime.utcnow(), Chat(0, 'channel'))
-        handler = InlineQueryHandler(None, roles=chat_admins_role)
+        update.channel_post = Message(1, datetime.datetime.utcnow(), Chat(0, 'channel'))
 
-        assert not role(update)
+        assert not chat_admins_role(update)
+
+    def test_always_allow_admins(self, chat_admins_role, update, monkeypatch):
+        def admins(*args, **kwargs):
+            return [
+                ChatMember(User(0, 'TestUser0', False), 'administrator'),
+                ChatMember(User(1, 'TestUser1', False), 'creator'),
+            ]
+
+        monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
+        update.message.chat.type = Chat.GROUP
+        update.message.from_user.id = 2
+        try:
+            assert not chat_admins_role(update)
+            chat_admins_role._admin.add_member(2)
+            assert chat_admins_role(update)
+        finally:
+            chat_admins_role._admin.kick_member(2)
 
     def test_caching(self, chat_admins_role, update, monkeypatch):
         def admins(*args, **kwargs):
@@ -352,10 +356,10 @@ class TestChatAdminsRole(object):
             ]
 
         monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
-        handler = MessageHandler(None, None, roles=chat_admins_role)
 
         update.message.from_user.id = 2
-        assert not role(update)
+        update.message.chat.type = Chat.GROUP
+        assert not chat_admins_role(update)
         assert isinstance(chat_admins_role.cache[0], tuple)
         assert pytest.approx(chat_admins_role.cache[0][0]) == time.time()
         assert chat_admins_role.cache[0][1] == [0, 1]
@@ -366,7 +370,7 @@ class TestChatAdminsRole(object):
         monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
 
         update.message.from_user.id = 1
-        assert role(update)
+        assert chat_admins_role(update)
 
         time.sleep(0.05)
 
@@ -376,30 +380,20 @@ class TestChatAdminsRole(object):
         monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
 
         update.message.from_user.id = 2
-        assert role(update)
+        assert chat_admins_role(update)
         assert isinstance(chat_admins_role.cache[0], tuple)
         assert pytest.approx(chat_admins_role.cache[0][0]) == time.time()
         assert chat_admins_role.cache[0][1] == [2]
+
+    def test_no_invert(self, chat_admins_role):
+        with pytest.raises(RuntimeError, match='can not be inverted'):
+            ~chat_admins_role
 
 
 class TestChatCreatorRole(object):
     def test_creation(self, bot):
         creator = ChatCreatorRole(bot)
         assert creator.bot is bot
-
-    def test_deepcopy(self, chat_creator_role):
-        chat_creator_role.cache.update({1: 2, 3: 4})
-        ccreator = deepcopy(chat_creator_role)
-
-        assert chat_creator_role is not ccreator
-        assert chat_creator_role.equals(ccreator)
-        assert chat_creator_role.chat_ids is not ccreator.chat_ids
-        assert chat_creator_role.chat_ids == ccreator.chat_ids
-        assert chat_creator_role.parent_roles is not ccreator.parent_roles
-        assert chat_creator_role.child_roles is not ccreator.child_roles
-
-        assert chat_creator_role.bot is ccreator.bot
-        assert chat_creator_role.cache == ccreator.cache
 
     def test_simple(self, chat_creator_role, monkeypatch, update):
         def member(*args, **kwargs):
@@ -410,38 +404,52 @@ class TestChatCreatorRole(object):
             raise TelegramError('User is not a member')
 
         monkeypatch.setattr(chat_creator_role.bot, 'get_chat_member', member)
-        handler = MessageHandler(None, None, roles=chat_creator_role)
 
         update.message.from_user.id = 0
         update.message.chat.id = -1
-        assert not role(update)
+        update.message.chat.type = Chat.GROUP
+        assert not chat_creator_role(update)
         update.message.from_user.id = 1
         update.message.chat.id = 1
-        assert role(update)
+        assert chat_creator_role(update)
         update.message.from_user.id = 2
         update.message.chat.id = -2
-        assert not role(update)
+        assert not chat_creator_role(update)
 
     def test_no_chat(self, chat_creator_role, update):
         update.message = None
         update.inline_query = InlineQuery(1, User(0, 'TestUser', False), 'query', 0)
-        handler = InlineQueryHandler(None, roles=chat_creator_role)
 
-        assert not role(update)
+        assert not chat_creator_role(update)
 
     def test_no_user(self, chat_creator_role, update):
         update.message = None
-        update.channel_post = Message(1, None, datetime.datetime.utcnow(), Chat(0, 'channel'))
-        handler = InlineQueryHandler(None, roles=chat_creator_role)
+        update.channel_post = Message(1, datetime.datetime.utcnow(), Chat(0, 'channel'))
 
-        assert not role(update)
+        assert not chat_creator_role(update)
 
     def test_private_chat(self, chat_creator_role, update):
         update.message.from_user.id = 2
         update.message.chat.id = 2
-        handler = MessageHandler(None, None, roles=chat_creator_role)
 
-        assert role(update)
+        assert chat_creator_role(update)
+
+    def test_always_allow_admins(self, chat_creator_role, update, monkeypatch):
+        def admins(*args, **kwargs):
+            return [
+                ChatMember(User(0, 'TestUser0', False), 'administrator'),
+                ChatMember(User(1, 'TestUser1', False), 'creator'),
+            ]
+
+        monkeypatch.setattr(chat_creator_role.bot, 'get_chat_administrators', admins)
+        update.message.chat.type = Chat.GROUP
+        update.message.from_user.id = 2
+        try:
+            assert not chat_creator_role(update)
+            chat_creator_role._admin.add_member(2)
+            assert chat_creator_role(update)
+        finally:
+            chat_creator_role._admin.kick_member(2)
 
     def test_caching(self, chat_creator_role, monkeypatch, update):
         def member(*args, **kwargs):
@@ -452,10 +460,10 @@ class TestChatCreatorRole(object):
             raise TelegramError('User is not a member')
 
         monkeypatch.setattr(chat_creator_role.bot, 'get_chat_member', member)
-        handler = MessageHandler(None, None, roles=chat_creator_role)
 
         update.message.from_user.id = 1
-        assert role(update)
+        update.message.chat.type = Chat.GROUP
+        assert chat_creator_role(update)
         assert chat_creator_role.cache == {0: 1}
 
         def member(*args, **kwargs):
@@ -464,21 +472,24 @@ class TestChatCreatorRole(object):
         monkeypatch.setattr(chat_creator_role.bot, 'get_chat_member', member)
 
         update.message.from_user.id = 1
-        assert role(update)
+        assert chat_creator_role(update)
 
         update.message.from_user.id = 2
-        assert not role(update)
+        assert not chat_creator_role(update)
+
+    def test_no_invert(self, chat_creator_role):
+        with pytest.raises(RuntimeError, match='can not be inverted'):
+            ~chat_creator_role
 
 
 class TestRoles(object):
     def test_creation(self, bot):
         roles = Roles(bot)
-        assert isinstance(roles, dict)
-        assert isinstance(roles.ADMINS, Role)
-        assert isinstance(roles.CHAT_ADMINS, Role)
-        assert roles.CHAT_ADMINS.bot is bot
-        assert isinstance(roles.CHAT_CREATOR, Role)
-        assert roles.CHAT_CREATOR.bot is bot
+        assert isinstance(roles.admins, Role)
+        assert isinstance(roles.chat_admins, Role)
+        assert roles.chat_admins.bot is bot
+        assert isinstance(roles.chat_creator, Role)
+        assert roles.chat_creator.bot is bot
         assert roles.bot is bot
 
     def test_set_bot(self, bot):
@@ -502,60 +513,6 @@ class TestRoles(object):
         roles.kick_admin(2)
         assert roles.admins.chat_ids == set()
 
-    def test_equality(self, parent_role, roles, bot):
-        parent_role_2 = deepcopy(parent_role)
-        child_role = Role(name='child_role')
-        child_role_2 = deepcopy(child_role)
-
-        roles2 = Roles(bot)
-        assert roles == roles2
-
-        roles.add_admin(1)
-        assert roles != roles2
-
-        roles2.add_admin(1)
-        assert roles == roles2
-
-        roles.add_role('test_role', chat_ids=123)
-        assert roles != roles2
-
-        roles2.add_role('test_role', chat_ids=123)
-        assert roles == roles2
-
-        roles.add_role('test_role_2', chat_ids=456)
-        assert roles != roles2
-
-        roles2.add_role('test_role_2', chat_ids=456)
-        assert roles == roles2
-
-        roles['test_role'].add_parent_role(parent_role)
-        roles2['test_role'].add_parent_role(parent_role_2)
-        assert roles == roles2
-
-        roles['test_role'].add_child_role(child_role)
-        assert roles != roles2
-
-        roles2['test_role'].add_child_role(child_role_2)
-        assert roles == roles2
-
-    def test_raise_errors(self, roles):
-        with pytest.raises(NotImplementedError, match='remove_role'):
-            del roles['test']
-        with pytest.raises(ValueError, match='immutable'):
-            roles['test'] = True
-        with pytest.raises(ValueError, match='immutable'):
-            roles.setdefault('test', None)
-        with pytest.raises(ValueError, match='immutable'):
-            roles.update({'test': None})
-        with pytest.raises(NotImplementedError, match='remove_role'):
-            roles.pop('test', None)
-        with pytest.raises(NotImplementedError, match='remove_role'):
-            roles.popitem('test')
-        with pytest.raises(NotImplementedError, match='remove_role'):
-            roles.clear()
-        with pytest.raises(NotImplementedError):
-            roles.copy()
-
     @pytest.mark.skipif(sys.version_info < (3, 6), reason="dicts are not ordered in py<=3.5")
     def test_dict_functionality(self, roles):
         roles.add_role('role0', 0)
@@ -577,60 +534,41 @@ class TestRoles(object):
         d = [r.chat_ids for r in roles.values()]
         assert d == [set([k]) for k in range(3)]
 
-    def test_deepcopy(self, roles, parent_role):
-        roles.add_admin(123)
-        roles.chat_admins.timeout = 7
-        child_role = Role(name='child_role')
-        roles.add_role(
-            name='test', chat_ids=[1, 2], parent_roles=parent_role, child_roles=child_role
-        )
-        roles.add_role(name='test2', chat_ids=[3, 4], child_roles=roles['test'])
-        croles = deepcopy(roles)
-
-        assert croles is not roles
-        assert croles == roles
-        assert roles.admins is not croles.admins
-        assert roles.admins.equals(croles.admins)
-        assert roles.chat_admins.timeout == croles.chat_admins.timeout
-        assert roles['test'] is not croles['test']
-        assert roles['test'].equals(croles['test'])
-        assert roles['test2'] is not croles['test2']
-        assert roles['test2'].equals(croles['test2'])
-
     def test_add_remove_role(self, roles, parent_role):
-        roles.add_role('role', parent_roles=parent_role)
+        roles.add_role('role', child_roles=[parent_role])
         role = roles['role']
         assert role.chat_ids == set()
-        assert role.parent_roles == set([parent_role, roles.admins])
+        assert role.child_roles == {parent_role}
         assert str(role) == 'Role(role)'
-        assert roles.admins in role.parent_roles
+        assert role <= roles.admins
+        assert role not in Role._admin.child_roles
 
         with pytest.raises(ValueError, match='Role name is already taken.'):
-            roles.add_role('role', parent_roles=parent_role)
+            roles.add_role('role')
 
         roles.remove_role('role')
         assert not roles.get('role', None)
-        assert roles.admins not in role.parent_roles
+        assert not role <= roles.admins
+        assert role in Role._admin.child_roles
 
-    # def test_handler_admins(self, roles, update):
-    #     roles.add_role('role', 0)
-    #     roles.add_admin(1)
-    #     handler = MessageHandler(None, None, roles=roles['role'])
-    #     assert role(update)
-    #     update.message.from_user.id = 1
-    #     update.message.chat.id = 1
-    #     assert role(update)
-    #     roles.kick_admin(1)
-    #     assert not role(update)
+    def test_handler_admins(self, roles, update):
+        roles.add_role('role', 0)
+        roles.add_admin(1)
+        assert roles['role'](update)
+        update.message.from_user.id = 1
+        update.message.chat.id = 1
+        assert roles['role'](update)
+        roles.kick_admin(1)
+        assert not roles['role'](update)
 
-    # def test_handler_admins_merged(self, roles, update):
-    #     roles.add_role('role_1', 0)
-    #     roles.add_role('role_2', 1)
-    #     roles.add_admin(2)
-    #     handler = MessageHandler(None, None, roles=roles['role_1'] & ~roles['role_2'])
-    #     assert role(update)
-    #     update.message.from_user.id = 2
-    #     update.message.chat.id = 2
-    #     assert role(update)
-    #     roles.kick_admin(2)
-    #     assert not role(update)
+    def test_handler_admins_merged(self, roles, update):
+        roles.add_role('role_1', 0)
+        roles.add_role('role_2', 1)
+        roles.add_admin(2)
+        test_role = roles['role_1'] & ~roles['role_2']
+        assert test_role(update)
+        update.message.from_user.id = 2
+        update.message.chat.id = 2
+        assert test_role(update)
+        roles.kick_admin(2)
+        assert not test_role(update)

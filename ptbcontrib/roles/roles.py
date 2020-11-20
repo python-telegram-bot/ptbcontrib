@@ -20,9 +20,18 @@
 import time
 from collections.abc import Mapping
 from threading import Lock, Event
-from typing import ClassVar, Union, List, Set, Tuple, FrozenSet, Optional, Dict, Any, Iterator
-
-from copy import deepcopy
+from typing import (
+    ClassVar,
+    Union,
+    List,
+    Set,
+    Tuple,
+    FrozenSet,
+    Optional,
+    Dict,
+    Iterator,
+    NoReturn,
+)
 
 from telegram import ChatMember, TelegramError, Bot, Chat, Update
 from telegram.ext import Filters, UpdateFilter
@@ -109,10 +118,10 @@ class Role(UpdateFilter, Filters.chat):
         name (:obj:`str`, optional): A name for this role.
     """
 
-    __DEFAULT_ADMIN_NAME: ClassVar[str] = 'ptbcontrib_roles_default_admin'
-    __admin_lock = Lock()
-    __admin_event = Event()
-    __admin: ClassVar['Role'] = None  # type: ignore[assignment]
+    _DEFAULT_ADMIN_NAME: ClassVar[str] = 'ptbcontrib_roles_default_admin'
+    _admin_lock = Lock()
+    _admin_event = Event()
+    _admin: ClassVar['Role'] = None  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -128,22 +137,22 @@ class Role(UpdateFilter, Filters.chat):
         self._child_roles: Set['Role'] = set()
         self._set_child_roles(child_roles)
 
-        # We need the if clause for the init of __admin
-        if name != self.__DEFAULT_ADMIN_NAME:
+        # We need the if clause for the init of _admin
+        if name != self._DEFAULT_ADMIN_NAME:
             self.__init_admin()
-            self.__admin_event.wait()
-            self.__admin.add_child_role(self)
+            self._admin_event.wait()
+            self._admin.add_child_role(self)
 
-    @classmethod
-    def __init_admin(cls) -> None:
-        with cls.__admin_lock:
-            if cls.__admin is None:
-                cls.__admin = cls(name=cls.__DEFAULT_ADMIN_NAME)
-                cls.__admin_event.set()
+    @staticmethod
+    def __init_admin() -> None:
+        with Role._admin_lock:
+            if Role._admin is None:
+                Role._admin = Role(name=Role._DEFAULT_ADMIN_NAME)
+                Role._admin_event.set()
 
     def _set_custom_admin(self, new_admin: 'Role') -> None:
-        with self.__admin_lock:
-            self.__admin.remove_child_role(self)
+        with self._admin_lock:
+            self._admin.remove_child_role(self)
         new_admin.add_child_role(self)
 
     @staticmethod
@@ -173,15 +182,19 @@ class Role(UpdateFilter, Filters.chat):
         with self.__lock:
             return frozenset(self._child_roles)
 
-    def __invert__(self) -> 'Role':
-        inverted_role = super().__invert__()
-        inverted_role._inverted = True
-        return inverted_role
+    def __invert__(self) -> 'InvertedRole':
+        return InvertedRole(self)
 
     def filter(  # pylint: disable=W0221
-        self, update: Update, target: 'Role' = None
+        self,
+        update: Update,
+        target: 'Role' = None,
+        inverted: bool = False,
     ) -> Optional[bool]:
-        print(self, id(self), self._inverted)
+        # Always allow admins
+        if self is not self._admin and self._admin.filter(update):
+            return not inverted
+
         user = update.effective_user
         chat = update.effective_chat
 
@@ -195,7 +208,7 @@ class Role(UpdateFilter, Filters.chat):
         if chat and chat.id in self.chat_ids:
             return True
 
-        if self._inverted:
+        if inverted:
             # If this is an inverted role (i.e. ~role) and we arrived here, the user is
             # either
             # ... in a child role of this. In this case, and must be excluded. Since the
@@ -203,17 +216,15 @@ class Role(UpdateFilter, Filters.chat):
             # ... not in a child role of this and must *not* be excluded. In particular, we
             # dont want to exclude the parents (see below). Since the output of this will be
             # negated, return False
-            print('Im inverted', self)
-            print('returning', any(child.filter(update, target=target) for child in self.child_roles))
             return any(child.filter(update, target=target) for child in self.child_roles)
-        print('not inverted', self)
+
         # If we have no result here, we need to check the roles tree in order to check if
         # a parent role allows us to handle the update
         if target:
             root = self
         else:
             # The initial call will start looking from the admin parent
-            root = self.__admin
+            root = self._admin
             target = self
         # We check all children that are parents of the target role
         return any(
@@ -318,13 +329,6 @@ class Role(UpdateFilter, Filters.chat):
     def __hash__(self) -> int:
         return id(self)
 
-    def __deepcopy__(self, memo: Dict[int, Any]) -> 'Role':
-        new_role = Role(chat_ids=list(self.chat_ids), name=self.name)
-        memo[id(self)] = new_role
-        for child_role in self.child_roles:
-            new_role.add_child_role(deepcopy(child_role, memo))
-        return new_role
-
     def __repr__(self) -> str:
         if self.name:
             return f'Role({self.name})'
@@ -333,10 +337,31 @@ class Role(UpdateFilter, Filters.chat):
         return 'Role({})'
 
 
+class InvertedRole(UpdateFilter):
+    """Represents a filter that has been inverted.
+
+    Args:
+        f: The filter to invert.
+
+    """
+
+    def __init__(self, role: Role):
+        self.role = role
+
+    def filter(self, update: Update) -> bool:
+        return not self.role.filter(update, inverted=True)
+
+    def __repr__(self) -> str:
+        return "<inverted {}>".format(self.role)
+
+
 class ChatAdminsRole(Role):
     """A :class:`telegram.ext.Role` that allows only the administrators of a chat. Private chats
     are always allowed. To minimize the number of API calls, for each chat the admins will be
     cached.
+
+    Note:
+        Instance of this class can't be inverted, as that would make little sense.
 
     Attributes:
         timeout (:obj:`int`): The caching timeout in seconds. For each chat, the admins will be
@@ -355,7 +380,16 @@ class ChatAdminsRole(Role):
         self.cache: Dict[int, Tuple[float, List[int]]] = {}
         self.timeout = timeout
 
-    def filter(self, update: Update, target: Role = None) -> Optional[bool]:
+    def __invert__(self) -> NoReturn:
+        raise RuntimeError('Instances of ChatAdminsRole can not be inverted')
+
+    def filter(
+        self, update: Update, target: Role = None, inverted: bool = False
+    ) -> Optional[bool]:
+        # Always allow admins
+        if self is not self._admin and self._admin.filter(update):
+            return not inverted
+
         user = update.effective_user
         chat = update.effective_chat
 
@@ -376,17 +410,13 @@ class ChatAdminsRole(Role):
             return user.id in admins
         return False
 
-    def __deepcopy__(self, memo: Dict[int, Any]) -> Role:
-        new_role = super().__deepcopy__(memo)
-        new_role.bot = self.bot
-        new_role.cache = self.cache
-        new_role.timeout = self.timeout
-        return new_role
-
 
 class ChatCreatorRole(Role):
     """A :class:`telegram.ext.Role` that allows only the creator of a chat. Private chats are
     always allowed. To minimize the number of API calls, for each chat the creator will be saved.
+
+    Note:
+        Instance of this class can't be inverted, as that would make little sense.
 
     Args:
         bot (:class:`telegram.Bot`): A bot to use for getting the creator of a chat.
@@ -397,7 +427,16 @@ class ChatCreatorRole(Role):
         self.bot = bot
         self.cache: Dict[int, Tuple[float, List[int]]] = {}
 
-    def filter(self, update: Update, target: Role = None) -> Optional[bool]:
+    def __invert__(self) -> NoReturn:
+        raise RuntimeError('Instances of ChatCreatorRole can not be inverted')
+
+    def filter(  # pylint: disable=R0911
+        self, update: Update, target: Role = None, inverted: bool = False
+    ) -> Optional[bool]:
+        # Always allow admins
+        if self is not self._admin and self._admin.filter(update):
+            return not inverted
+
         user = update.effective_user
         chat = update.effective_chat
 
@@ -419,12 +458,6 @@ class ChatCreatorRole(Role):
                 # user is not a chat member or bot has no access
                 return False
         return False
-
-    def __deepcopy__(self, memo: Dict[int, Any]) -> 'Role':
-        new_role = super().__deepcopy__(memo)
-        new_role.bot = self.bot
-        new_role.cache = self.cache
-        return new_role
 
 
 class Roles(Mapping):
@@ -548,32 +581,5 @@ class Roles(Mapping):
         with self.__lock:
             role = self.__roles.pop(name)
         self.admins.remove_child_role(role)
+        Role._admin.add_child_role(role)  # pylint: disable=W0212
         return role
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, Roles):
-            for name, role in self.items():
-                other_role = other.get(name, None)
-                if not other_role:
-                    return False
-                if not role.equals(other_role):
-                    return False
-            if any(self.get(name, None) is None for name in other):
-                return False
-            return self.admins.equals(other.admins)
-        return False
-
-    def __ne__(self, other: object) -> bool:
-        return not self == other
-
-    def __deepcopy__(self, memo: Dict[int, Any]) -> 'Roles':
-        new_roles = Roles(self.bot)
-        new_roles.chat_admins.timeout = self.chat_admins.timeout
-        memo[id(self)] = new_roles
-        for chat_id in self.admins.chat_ids:
-            new_roles.add_admin(chat_id)
-        for role in self.values():
-            new_roles.add_role(name=role.name, chat_ids=role.chat_ids)
-            for child_role in role.child_roles:
-                new_roles[role.name].add_child_role(deepcopy(child_role, memo))
-        return new_roles
