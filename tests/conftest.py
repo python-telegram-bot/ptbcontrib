@@ -40,15 +40,15 @@ TOKEN = '1281106207:AAHXR4nqP-ZYsPLnrHooton3zUGGnsoNjZ8'
 
 
 @pytest.fixture(scope='session')
-def bot(bot_info):
-    return make_bot(bot_info)
+def bot():
+    return make_bot()
 
 
 DEFAULT_BOTS = {}
 
 
 @pytest.fixture(scope='function')
-def default_bot(request, bot_info):
+def default_bot(request):
     param = request.param if hasattr(request, 'param') else {}
 
     defaults = Defaults(**param)
@@ -56,19 +56,19 @@ def default_bot(request, bot_info):
     if default_bot:
         return default_bot
     else:
-        default_bot = make_bot(bot_info, **{'defaults': defaults})
+        default_bot = make_bot(**{'defaults': defaults})
         DEFAULT_BOTS[defaults] = default_bot
         return default_bot
 
 
 @pytest.fixture(scope='function')
-def tz_bot(timezone, bot_info):
+def tz_bot(timezone):
     defaults = Defaults(tzinfo=timezone)
     default_bot = DEFAULT_BOTS.get(defaults)
     if default_bot:
         return default_bot
     else:
-        default_bot = make_bot(bot_info, **{'defaults': defaults})
+        default_bot = make_bot(**{'defaults': defaults})
         DEFAULT_BOTS[defaults] = default_bot
         return default_bot
 
@@ -131,7 +131,7 @@ def pytest_configure(config):
     # TODO: Write so good code that we don't need to ignore ResourceWarnings anymore
 
 
-def make_bot(bot_info, **kwargs):
+def make_bot(**kwargs):
     return Bot(TOKEN, private_key=PRIVATE_KEY, **kwargs)
 
 

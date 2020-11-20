@@ -19,7 +19,7 @@
 """This module contains the class Role, which allows to restrict access to handlers."""
 import time
 from collections.abc import Mapping
-from threading import Lock, BoundedSemaphore
+from threading import Lock, Event
 from typing import ClassVar, Union, List, Set, Tuple, FrozenSet, Optional, Dict, Any, Iterator
 
 from copy import deepcopy
@@ -56,34 +56,29 @@ class Role(UpdateFilter, Filters.chat):
 
     And:
 
-        >>> (Roles(name='group_1') & Roles(name='user_2'))
+        >>> (Role(name='group_1') & Role(name='user_2'))
 
     Grants access only for ``user_2`` within the chat ``group_1``.
 
     Or:
 
-        >>> (Roles(name='group_1') | Roles(name='user_2'))
+        >>> (Role(name='group_1') | Role(name='user_2'))
 
     Grants access for ``user_2`` and the whole chat ``group_1``.
 
     Not:
 
-        >>> ~ Roles(name='user_1')
+        >>> ~ Role(name='user_1', child_roles=Role(name='user_2'))
 
-    Grants access to everyone except ``user_1``
+    Restricts access for ``user_1`` and ``user_2``.
 
     Note:
-        Negated roles do `not` exclude their parent roles. E.g. with
-
-            >>> ~ Roles(name='user_1', parent_roles=Role(name='user_2'))
-
-        ``user_2`` will still have access, where ``user_1`` is restricted. Child roles, however
-        will be excluded.
+        Negated roles do `not` exclude their parent roles.
 
     Also works with more than two roles:
 
-        >>> (Roles(name='group_1') & (Roles(name='user_2') | Roles(name='user_3')))
-        >>> Roles(name='group_1') & (~ FRoles(name='user_2'))
+        >>> (Role(name='group_1') & (Role(name='user_2') | Role(name='user_3')))
+        >>> Role(name='group_1') & (~ Role(name='user_2'))
 
     Note:
         Roles use the same short circuiting logic that pythons `and`, `or` and `not`.
@@ -114,8 +109,9 @@ class Role(UpdateFilter, Filters.chat):
         name (:obj:`str`, optional): A name for this role.
     """
 
+    __DEFAULT_ADMIN_NAME: ClassVar[str] = 'ptbcontrib_roles_default_admin'
     __admin_lock = Lock()
-    __admin_semaphore = BoundedSemaphore()
+    __admin_event = Event()
     __admin: ClassVar['Role'] = None  # type: ignore[assignment]
 
     def __init__(
@@ -132,17 +128,18 @@ class Role(UpdateFilter, Filters.chat):
         self._child_roles: Set['Role'] = set()
         self._set_child_roles(child_roles)
 
-        if self.__admin_semaphore.acquire(blocking=False):
-            self.__init_admin()
         # We need the if clause for the init of __admin
-        if self.__admin is not None:
+        if name != self.__DEFAULT_ADMIN_NAME:
+            self.__init_admin()
+            self.__admin_event.wait()
             self.__admin.add_child_role(self)
 
     @classmethod
     def __init_admin(cls) -> None:
         with cls.__admin_lock:
             if cls.__admin is None:
-                cls.__admin__admin = cls(name='admins')
+                cls.__admin = cls(name=cls.__DEFAULT_ADMIN_NAME)
+                cls.__admin_event.set()
 
     def _set_custom_admin(self, new_admin: 'Role') -> None:
         with self.__admin_lock:
@@ -177,13 +174,14 @@ class Role(UpdateFilter, Filters.chat):
             return frozenset(self._child_roles)
 
     def __invert__(self) -> 'Role':
-        inverted_role = ~self
+        inverted_role = super().__invert__()
         inverted_role._inverted = True
         return inverted_role
 
     def filter(  # pylint: disable=W0221
         self, update: Update, target: 'Role' = None
     ) -> Optional[bool]:
+        print(self, id(self), self._inverted)
         user = update.effective_user
         chat = update.effective_chat
 
@@ -205,8 +203,10 @@ class Role(UpdateFilter, Filters.chat):
             # ... not in a child role of this and must *not* be excluded. In particular, we
             # dont want to exclude the parents (see below). Since the output of this will be
             # negated, return False
+            print('Im inverted', self)
+            print('returning', any(child.filter(update, target=target) for child in self.child_roles))
             return any(child.filter(update, target=target) for child in self.child_roles)
-
+        print('not inverted', self)
         # If we have no result here, we need to check the roles tree in order to check if
         # a parent role allows us to handle the update
         if target:
@@ -214,6 +214,7 @@ class Role(UpdateFilter, Filters.chat):
         else:
             # The initial call will start looking from the admin parent
             root = self.__admin
+            target = self
         # We check all children that are parents of the target role
         return any(
             child.filter(update, target=target) for child in root.child_roles if target <= child
@@ -250,7 +251,7 @@ class Role(UpdateFilter, Filters.chat):
         if self <= child_role:
             raise ValueError('You must not add a parent role as a child!')
         with self.__lock:
-            self._child_roles |= child_role
+            self._child_roles |= {child_role}
 
     def remove_child_role(self, child_role: 'Role') -> None:
         """Removes a child role from this role. Will do nothing, if child role is not present.
@@ -328,7 +329,7 @@ class Role(UpdateFilter, Filters.chat):
         if self.name:
             return f'Role({self.name})'
         if self.chat_ids:
-            return f'Role({self.chat_ids})'
+            return f'Role({set(self.chat_ids)})'
         return 'Role({})'
 
 
@@ -348,7 +349,7 @@ class ChatAdminsRole(Role):
             hour).
     """
 
-    def __init__(self, bot: Bot, timeout: int = 1800):
+    def __init__(self, bot: Bot, timeout: float = 1800):
         super().__init__(name='chat_admins')
         self.bot = bot
         self.cache: Dict[int, Tuple[float, List[int]]] = {}
