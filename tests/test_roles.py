@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import datetime
+import os
+import pickle
 
 import pytest
 import sys
@@ -24,6 +26,8 @@ import time
 
 from copy import deepcopy
 from telegram import Message, User, InlineQuery, Update, ChatMember, Chat, TelegramError
+from telegram.ext import BasePersistence
+
 from ptbcontrib.roles import (
     Role,
     Roles,
@@ -67,6 +71,47 @@ def chat_creator_role(bot):
     return ChatCreatorRole(bot)
 
 
+@pytest.fixture(autouse=True)
+def change_directory(tmp_path):
+    orig_dir = os.getcwd()
+    # Switch to a temporary directory so we don't have to worry about cleaning up files
+    # (str() for py<3.6)
+    os.chdir(str(tmp_path))
+    yield
+    # Go back to original directory
+    os.chdir(orig_dir)
+
+
+@pytest.fixture(scope="function")
+def base_persistence():
+    class OwnPersistence(BasePersistence):
+        def get_bot_data(self):
+            raise NotImplementedError
+
+        def get_chat_data(self):
+            raise NotImplementedError
+
+        def get_user_data(self):
+            raise NotImplementedError
+
+        def get_conversations(self, name):
+            raise NotImplementedError
+
+        def update_bot_data(self, data):
+            raise NotImplementedError
+
+        def update_chat_data(self, chat_id, data):
+            raise NotImplementedError
+
+        def update_conversation(self, name, key, new_state):
+            raise NotImplementedError
+
+        def update_user_data(self, user_id, data):
+            raise NotImplementedError
+
+    return OwnPersistence(store_chat_data=True, store_user_data=True, store_bot_data=True)
+
+
 class TestRole(object):
     def test_creation(self, parent_role):
         r = Role(child_roles=[parent_role, parent_role])
@@ -74,7 +119,7 @@ class TestRole(object):
         assert str(r) == 'Role({})'
         assert r.child_roles == {parent_role}
         assert isinstance(r._admin, Role)
-        assert str(r._admin) == f'Role({Role._Role__DEFAULT_ADMIN_NAME})'
+        assert str(r._admin) == f'Role({Role._DEFAULT_ADMIN_NAME})'
 
         r = Role(1)
         assert r.chat_ids == {1}
@@ -247,7 +292,6 @@ class TestRole(object):
 
     def test_filter_allow_parent(self, update, role, parent_role):
         role.add_member(0)
-        role.name = 'foobar'
         parent_role.add_member(1)
         parent_role.add_child_role(role)
 
@@ -288,6 +332,38 @@ class TestRole(object):
             assert (Role(1) | ~Role(2))(update)
         finally:
             role._admin.kick_member(0)
+
+    def test_pickle(self, role, parent_role):
+        role.add_member([0, 1, 3])
+        parent_role.add_member([4, 5, 6])
+        child_role = Role(name='child_role', chat_ids=[7, 8, 9])
+        role.add_child_role(child_role)
+        parent_role.add_child_role(child_role)
+
+        data = {
+            'role': role,
+            'parent': parent_role,
+            'child': child_role,
+        }
+        with open('pickle', 'wb') as file:
+            pickle.dump(data, file)
+        with open('pickle', 'rb') as file:
+            data = pickle.load(file)
+
+        assert data['role'].equals(role)
+        assert data['parent'].equals(parent_role)
+        assert data['child'].equals(child_role)
+
+        (child_1,) = data['role'].child_roles
+        (child_2,) = data['parent'].child_roles
+        assert child_1 is child_2
+
+        assert data['role'] in Role._admin.child_roles
+        assert data['parent'] in Role._admin.child_roles
+        assert data['child'] in Role._admin.child_roles
+        assert data['child'] <= data['role']
+        assert data['child'] <= data['parent']
+        assert not data['role'] <= data['parent']
 
 
 class TestChatAdminsRole(object):
@@ -572,3 +648,46 @@ class TestRoles(object):
         assert test_role(update)
         roles.kick_admin(2)
         assert not test_role(update)
+
+    @pytest.mark.filterwarnings('ignore:BasePersistence')
+    def test_pickle(self, roles, bot, base_persistence):
+        base_persistence.set_bot(bot)
+
+        roles.add_role('role', [1, 2, 3])
+        roles.add_role('parent', [4, 5, 6])
+        roles.add_role('child', [7, 8, 9])
+        roles['role'].add_child_role(roles['child'])
+        roles['parent'].add_child_role(roles['child'])
+
+        roles.admins.add_member(10)
+        roles.chat_admins.cache[42] = 24
+        roles.chat_creator.cache[43] = 34
+
+        with open('pickle', 'wb') as file:
+            data = base_persistence.replace_bot(roles)
+            pickle.dump(data, file)
+        with open('pickle', 'rb') as file:
+            data = pickle.load(file)
+            copied_roles = base_persistence.insert_bot(data)
+
+        assert copied_roles['role'].equals(roles['role'])
+        assert copied_roles['parent'].equals(roles['parent'])
+        assert copied_roles['child'].equals(roles['child'])
+
+        (child_1,) = roles['role'].child_roles
+        (child_2,) = roles['parent'].child_roles
+        assert child_1 is child_2
+
+        assert copied_roles['role'] <= copied_roles.admins
+        assert copied_roles['role'] in copied_roles.admins.child_roles
+        assert copied_roles['parent'] in copied_roles.admins.child_roles
+        assert copied_roles['child'] in copied_roles.admins.child_roles
+        assert copied_roles['child'] <= copied_roles['role']
+        assert copied_roles['child'] <= copied_roles['parent']
+        assert not copied_roles['role'] <= copied_roles['parent']
+
+        assert copied_roles.admins.equals(roles.admins)
+        assert copied_roles.chat_admins.cache[42] == 24
+        assert copied_roles.chat_creator.cache[43] == 34
+        assert copied_roles.chat_admins.bot is roles.chat_admins.bot
+        assert copied_roles.chat_creator.bot is roles.chat_creator.bot

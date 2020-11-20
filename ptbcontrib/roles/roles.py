@@ -31,10 +31,13 @@ from typing import (
     Dict,
     Iterator,
     NoReturn,
+    Any,
 )
 
 from telegram import ChatMember, TelegramError, Bot, Chat, Update
 from telegram.ext import Filters, UpdateFilter
+
+_REPLACED_LOCK: str = 'ptbcontrib_roles_replaced_lock'
 
 
 # Order of the base classes matter, as Filters.chat is a MessageFilter, but we want to
@@ -130,7 +133,7 @@ class Role(UpdateFilter, Filters.chat):
         name: str = None,
     ) -> None:
         super().__init__(chat_ids)
-        self.name = name
+        self._name = name
         self._inverted = False
         self.__lock = Lock()
 
@@ -329,12 +332,41 @@ class Role(UpdateFilter, Filters.chat):
     def __hash__(self) -> int:
         return id(self)
 
-    def __repr__(self) -> str:
-        if self.name:
-            return f'Role({self.name})'
+    @property
+    def name(self) -> str:
+        if self._name:
+            return f'Role({self._name})'
         if self.chat_ids:
             return f'Role({set(self.chat_ids)})'
         return 'Role({})'
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """
+        Gets called, when object is being pickled. Sets all variables ending on ``_lock`` to
+        :obj:`None`.
+        Returns: The dictionary describing the current state of the object.
+        """
+        state = self.__dict__.copy()
+        for key, value in state.items():
+            if isinstance(value, type(Lock())):
+                state[key] = _REPLACED_LOCK
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """
+        Gets called, when object is being un-pickled. Sets all variables ending on ``_lock`` to
+        a new :class:`threading.Lock` instance.
+        Args:
+            state: The pickled state of the object as produced by :meth:`__getstate__`.
+        """
+        for key, value in state.items():
+            if isinstance(value, str) and value == _REPLACED_LOCK:
+                state[key] = Lock()
+        self.__dict__.update(state)
+
+        self.__init_admin()
+        self._admin_event.wait()
+        self._admin.add_child_role(self)
 
 
 class InvertedRole(UpdateFilter):
@@ -425,7 +457,7 @@ class ChatCreatorRole(Role):
     def __init__(self, bot: Bot) -> None:
         super().__init__(name='chat_creator')
         self.bot = bot
-        self.cache: Dict[int, Tuple[float, List[int]]] = {}
+        self.cache: Dict[int, int] = {}
 
     def __invert__(self) -> NoReturn:
         raise RuntimeError('Instances of ChatCreatorRole can not be inverted')
@@ -583,3 +615,30 @@ class Roles(Mapping):
         self.admins.remove_child_role(role)
         Role._admin.add_child_role(role)  # pylint: disable=W0212
         return role
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """
+        Gets called, when object is being pickled. Sets all variables ending on ``_lock`` to
+        :obj:`None`.
+        Returns: The dictionary describing the current state of the object.
+        """
+        state = self.__dict__.copy()
+        for key, value in state.items():
+            if isinstance(value, type(Lock())):
+                state[key] = _REPLACED_LOCK
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """
+        Gets called, when object is being un-pickled. Sets all variables ending on ``_lock`` to
+        a new :class:`threading.Lock` instance.
+        Args:
+            state: The pickled state of the object as produced by :meth:`__getstate__`.
+        """
+        for key, value in state.items():
+            if isinstance(value, str) and value == _REPLACED_LOCK:
+                state[key] = Lock()
+        self.__dict__.update(state)
+
+        for role in self.values():
+            role._set_custom_admin(self.admins)
