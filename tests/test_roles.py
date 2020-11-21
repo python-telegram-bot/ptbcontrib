@@ -19,6 +19,7 @@
 import datetime
 import os
 import pickle
+import subprocess
 
 import pytest
 import sys
@@ -26,14 +27,24 @@ import time
 
 from copy import deepcopy
 from telegram import Message, User, InlineQuery, Update, ChatMember, Chat, TelegramError
-from telegram.ext import BasePersistence
+from telegram.ext import BasePersistence, CallbackContext, MessageHandler, Filters
 
 from ptbcontrib.roles import (
     Role,
     Roles,
     ChatAdminsRole,
     ChatCreatorRole,
+    setup_roles,
+    BOT_DATA_KEY,
+    RolesHandler,
 )
+
+
+@pytest.fixture(scope='module', autouse=True)
+def install_requirements():
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "-r", "ptbcontrib/roles/requirements.txt"]
+    )
 
 
 @pytest.fixture(scope='function')
@@ -112,7 +123,7 @@ def base_persistence():
     return OwnPersistence(store_chat_data=True, store_user_data=True, store_bot_data=True)
 
 
-class TestRole(object):
+class TestRole:
     def test_creation(self, parent_role):
         r = Role(child_roles=[parent_role, parent_role])
         assert r.chat_ids == set()
@@ -366,7 +377,7 @@ class TestRole(object):
         assert not data['role'] <= data['parent']
 
 
-class TestChatAdminsRole(object):
+class TestChatAdminsRole:
     def test_creation(self, bot):
         admins = ChatAdminsRole(bot, timeout=7)
         assert admins.timeout == 7
@@ -466,7 +477,7 @@ class TestChatAdminsRole(object):
             ~chat_admins_role
 
 
-class TestChatCreatorRole(object):
+class TestChatCreatorRole:
     def test_creation(self, bot):
         creator = ChatCreatorRole(bot)
         assert creator.bot is bot
@@ -558,7 +569,7 @@ class TestChatCreatorRole(object):
             ~chat_creator_role
 
 
-class TestRoles(object):
+class TestRoles:
     def test_creation(self, bot):
         roles = Roles(bot)
         assert isinstance(roles.admins, Role)
@@ -691,3 +702,56 @@ class TestRoles(object):
         assert copied_roles.chat_creator.cache[43] == 34
         assert copied_roles.chat_admins.bot is roles.chat_admins.bot
         assert copied_roles.chat_creator.bot is roles.chat_creator.bot
+
+
+@pytest.fixture(scope='function', autouse=True)
+def clear_bot_data(dp):
+    yield
+    dp.bot_data.pop(BOT_DATA_KEY, None)
+
+
+class TestRolesHandler:
+    def test_setup_roles(self, cdp):
+        roles = setup_roles(cdp)
+        assert isinstance(roles, Roles)
+        assert cdp.bot_data[BOT_DATA_KEY] is roles
+        # We test twice to make sure everything nothing goes wrong when roles is already there
+        roles = setup_roles(cdp)
+        assert isinstance(roles, Roles)
+        assert cdp.bot_data[BOT_DATA_KEY] is roles
+
+    def test_callback_and_context(self, cdp, update):
+        self.roles = setup_roles(cdp)
+        self.roles.admins.add_member(42)
+        self.roles.add_role(name='role', chat_ids=[1])
+        self.test_flag = False
+
+        def callback(_, context: CallbackContext):
+            self.test_flag = context.roles is self.roles
+
+        handler = MessageHandler(Filters.all, callback=callback)
+        roles_handler = RolesHandler(handler, roles=self.roles['role'])
+
+        assert not roles_handler.check_update(update)
+        update.message.from_user.id = 1
+        assert roles_handler.check_update(update)
+        update.message.from_user.id = 42
+        assert roles_handler.check_update(update)
+
+        cdp.add_handler(roles_handler)
+        cdp.process_update(update)
+        assert self.test_flag
+
+    def test_handler_error_message(self, cdp, update):
+        handler = MessageHandler(Filters.all, callback=lambda u, c: 1)
+        roles_handler = RolesHandler(handler, roles=Role(0))
+        cdp.add_handler(roles_handler)
+        self.test_flag = False
+
+        def error_handler(_, context: CallbackContext):
+            self.test_flag = 'You must set a Roles instance' in str(context.error)
+
+        cdp.add_error_handler(error_handler)
+        cdp.process_update(update)
+
+        assert self.test_flag

@@ -17,5 +17,15 @@
 """This module contains helper functions to extract URLs from messages."""
 
 from .roles import Role, Roles, ChatAdminsRole, ChatCreatorRole, InvertedRole
+from .roleshandler import RolesHandler, setup_roles, BOT_DATA_KEY
 
-__all__ = ['Roles', 'Role', 'ChatCreatorRole', 'ChatAdminsRole', 'InvertedRole']
+__all__ = [
+    'Roles',
+    'Role',
+    'ChatCreatorRole',
+    'ChatAdminsRole',
+    'InvertedRole',
+    'RolesHandler',
+    'setup_roles',
+    'BOT_DATA_KEY',
+]

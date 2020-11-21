@@ -25,7 +25,7 @@ from time import sleep
 import pytest
 import pytz
 
-from telegram import Bot
+from telegram import Bot, User
 from telegram.ext import Dispatcher, JobQueue, Updater, Defaults
 
 GITHUB_ACTION = os.getenv('GITHUB_ACTION', False)
@@ -78,10 +78,29 @@ def create_dp(bot):
     # scoped one here, but before each test, reset it (dp fixture below)
     dispatcher = Dispatcher(bot, Queue(), job_queue=JobQueue(), workers=2, use_context=True)
     dispatcher.job_queue.set_dispatcher(dispatcher)
+
+    # we mock bot.{get_me, get_my_commands} b/c those are used in the @info decorator
+    def get_me(*args, **kwargs):
+        user = User(1, 'TestBot', True)
+        dispatcher.bot.bot = user
+        return user
+
+    def get_my_commands(*args, **kwargs):
+        return []
+
+    orig_get_me = dispatcher.bot.get_me
+    orig_get_my_commands = dispatcher.bot.get_my_commands
+    dispatcher.bot.get_me = get_me
+    dispatcher.bot.get_my_commands = get_my_commands
+
     thr = Thread(target=dispatcher.start)
     thr.start()
     sleep(2)
     yield dispatcher
+
+    dispatcher.bot.get_me = orig_get_me
+    dispatcher.bot.get_my_commands = orig_get_my_commands
+
     sleep(1)
     if dispatcher.running:
         dispatcher.stop()
@@ -116,6 +135,13 @@ def dp(_dp):
         Dispatcher._set_singleton(_dp)
     yield _dp
     Dispatcher._Dispatcher__singleton_semaphore.release()
+
+
+@pytest.fixture(scope='function')
+def cdp(dp):
+    dp.use_context = True
+    yield dp
+    dp.use_context = False
 
 
 @pytest.fixture(scope='function')

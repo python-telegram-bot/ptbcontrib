@@ -56,8 +56,9 @@ class Role(UpdateFilter, Filters.chat):
     similarly for ``role_2 <= role_3``.
 
     Note:
-        If two roles are not related, i.e. neither is a (indirect) parent of the other, comparing
-        the roles will always yield ``False``.
+        * If two roles are not related, i.e. neither is a (indirect) parent of the other, comparing
+         the roles will always yield ``False``.
+        * Updates that have neither effective chat nor effective user will not be allowed.
 
     Warning:
         ``role_1 == role_2`` does not test for the hierarchical order of the roles, but in fact if
