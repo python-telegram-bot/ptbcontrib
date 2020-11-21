@@ -334,7 +334,7 @@ class Role(UpdateFilter, Filters.chat):
         return id(self)
 
     @property
-    def name(self) -> str:
+    def name(self) -> str:  # pylint: disable=C0116
         if self._name:
             return f'Role({self._name})'
         if self.chat_ids:
