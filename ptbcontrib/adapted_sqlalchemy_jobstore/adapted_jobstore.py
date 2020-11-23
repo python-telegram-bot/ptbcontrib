@@ -9,25 +9,47 @@ from telegram.ext import CallbackContext, Dispatcher
 class AdaptedSQLAlchemyJobStore(SQLAlchemyJobStore):
     """
     Wraps apscheduler.SQLAlchemyJobStore to make telegram Job class storable.
-
-    :param dispatcher (:class:`telegram.ext.Dispatcher`): Dispatcher instance
-        that will be passed to CallbackContext when recreating jobs.
-    :param args: Arguments to be passed to the SQLAlchemyJobStore constructor.
     """
-
+    
     def __init__(self, dispatcher: Dispatcher, *args, **kwargs):
+        """
+        :param dispatcher (:class:`telegram.ext.Dispatcher`): Dispatcher instance
+            that will be passed to CallbackContext when recreating jobs.
+        :param args: Arguments to be passed to the SQLAlchemyJobStore constructor.
+        """
+
         super(AdaptedSQLAlchemyJobStore, self).__init__(*args, **kwargs)
         self.dispatcher = dispatcher
 
-    def add_job(self, job):
-        job = self.prepare_job(job)
+    def add_job(self, job: apscheduler.job) -> None:
+        """
+        Called from apscheduler's internals after adding a new job.
+
+        Args:
+            job (:obj:`apscheduler.job`): The job to be persisted.
+        """
+        
+        job = self._prepare_job(job)
         super(AdaptedSQLAlchemyJobStore, self).add_job(job)
 
-    def update_job(self, job):
-        job = self.prepare_job(job)
+    def update_job(self, job: apscheduler.job) -> None:
+        """
+        Called from apscheduler's internals after updating a job.
+
+        Args:
+            job (:obj:`apscheduler.job`): The job to be updated.
+        """
+        job = self._prepare_job(job)
         super(AdaptedSQLAlchemyJobStore, self).update_job(job)
 
-    def prepare_job(self, job):
+    def _prepare_job(self, job: apscheduler.job):
+        """
+        Erase all unpickable data from telegram.ext.Job
+
+        Args:
+            job (:obj:`apscheduler.job`): The job to be processed.
+        """
+
         # depends on JobQueue._build_args (jobqueue.py:69)
         telegram_job = job.args[0].job if self.dispatcher.use_context else job.args[1]
 
@@ -39,7 +61,13 @@ class AdaptedSQLAlchemyJobStore(SQLAlchemyJobStore):
         job.args = (telegram_job_elements,)
         return job
 
-    def _reconstitute_job(self, job_state):
+    def _reconstitute_job(self, job_state: str):
+        """
+        Called from apscheduler's internals when loading job.
+
+        Args:
+            job_state (:obj:`str`): String containing pickled job state.
+        """
         job_state = pickle.loads(job_state)
         telegram_job_elements = job_state['args'][0]
         tg_job = telegram.ext.Job(callback=None,
