@@ -388,7 +388,7 @@ class InvertedRole(UpdateFilter):
         return "<inverted {}>".format(self.role)
 
 
-class ChatAdminsRole(Role):
+class ChatAdminsRole(Role):  # pylint: disable=R0901
     """A :class:`telegram.ext.Role` that allows only the administrators of a chat. Private chats
     are always allowed. To minimize the number of API calls, for each chat the admins will be
     cached.
@@ -444,7 +444,7 @@ class ChatAdminsRole(Role):
         return False
 
 
-class ChatCreatorRole(Role):
+class ChatCreatorRole(Role):  # pylint: disable=R0901
     """A :class:`telegram.ext.Role` that allows only the creator of a chat. Private chats are
     always allowed. To minimize the number of API calls, for each chat the creator will be saved.
 
