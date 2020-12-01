@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module contains the RoleHandler class."""
+"""This module contains the RolesHandler class."""
 from typing import Any
 
 from telegram import Update
@@ -39,9 +39,7 @@ def setup_roles(dispatcher: Dispatcher) -> Roles:
     Returns:
         The :class:`ptbcontrib.roles.Roles` instance to be used.
     """
-    if BOT_DATA_KEY not in dispatcher.bot_data:
-        dispatcher.bot_data[BOT_DATA_KEY] = Roles(dispatcher.bot)
-    return dispatcher.bot_data[BOT_DATA_KEY]
+    return dispatcher.bot_data.setdefault(BOT_DATA_KEY, Roles(dispatcher.bot))
 
 
 class RolesHandler(Handler):
@@ -65,10 +63,7 @@ class RolesHandler(Handler):
     def __init__(self, handler: Handler, roles: Role) -> None:
         self.handler = handler
         self.roles: Role = roles
-        super().__init__(self._callback)
-
-    def _callback(self, update: Update, context: CallbackContext) -> Any:
-        return self.handler.callback(update, context)
+        super().__init__(self.handler.callback)
 
     def check_update(self, update: Update) -> bool:
         if self.roles(update):

@@ -50,10 +50,10 @@ dp.add_handler(RolesHandler(SomeHandler(...), roles=roles.CHAT_ADMINS))
 dp.add_handler(RolesHandler(SomeHandler(...), roles=roles.CHAT_CREATOR))
 
 # You can compare the roles regarding hierarchy:
-roles.ADMINS >=  roles['my_role_1'] #True
-roles.ADMINS >=  roles['my_role_2'] #True
-roles['my_role_1'] < roles['my_role_2'] #False
-roles.ADMINS >= Role(...) #False, since neither of those is a parent of the other
+roles.ADMINS >=  roles['my_role_1']  # True
+roles.ADMINS >=  roles['my_role_2']  # True
+roles['my_role_1'] < roles['my_role_2']  # False
+roles.ADMINS >= Role(...)  # False, since neither of those is a parent of the other
 ```
 
 Please see the docstrings for more details.

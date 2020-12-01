@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-import datetime
+import datetime as dtm
 import os
 import pickle
 import subprocess
@@ -52,7 +52,7 @@ def update():
     return Update(
         0,
         Message(
-            0, datetime.datetime.utcnow(), Chat(0, 'private'), from_user=User(0, 'TestUser', False)
+            0, dtm.datetime.utcnow(), Chat(0, 'private'), from_user=User(0, 'TestUser', False)
         ),
     )
 
@@ -330,6 +330,7 @@ class TestRole:
         role.add_member(0)
         update.message = None
         assert not role(update)
+        assert not (~role)(update)
 
     def test_always_allow_admin(self, update, role):
         role._admin.add_member(0)
@@ -414,7 +415,7 @@ class TestChatAdminsRole:
 
     def test_no_user(self, chat_admins_role, update):
         update.message = None
-        update.channel_post = Message(1, datetime.datetime.utcnow(), Chat(0, 'channel'))
+        update.channel_post = Message(1, dtm.datetime.utcnow(), Chat(0, 'channel'))
 
         assert not chat_admins_role(update)
 
@@ -511,7 +512,7 @@ class TestChatCreatorRole:
 
     def test_no_user(self, chat_creator_role, update):
         update.message = None
-        update.channel_post = Message(1, datetime.datetime.utcnow(), Chat(0, 'channel'))
+        update.channel_post = Message(1, dtm.datetime.utcnow(), Chat(0, 'channel'))
 
         assert not chat_creator_role(update)
 

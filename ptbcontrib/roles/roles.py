@@ -197,7 +197,7 @@ class Role(UpdateFilter, Filters.chat):
     ) -> Optional[bool]:
         # Always allow admins
         if self is not self._admin and self._admin.filter(update):
-            return not inverted
+            return True
 
         user = update.effective_user
         chat = update.effective_chat
@@ -208,19 +208,17 @@ class Role(UpdateFilter, Filters.chat):
 
         # First check if the user/chat is in the current roles allowed chats
         if user and user.id in self.chat_ids:
-            return True
+            return not inverted
         if chat and chat.id in self.chat_ids:
-            return True
+            return not inverted
 
         if inverted:
             # If this is an inverted role (i.e. ~role) and we arrived here, the user is
             # either
-            # ... in a child role of this. In this case, and must be excluded. Since the
-            # output of this will be negated, return True
+            # ... in a child role of this. In this case it must be excluded.
             # ... not in a child role of this and must *not* be excluded. In particular, we
-            # dont want to exclude the parents (see below). Since the output of this will be
-            # negated, return False
-            return any(child.filter(update, target=target) for child in self.child_roles)
+            # dont want to exclude the parents (see below).
+            return not any(child.filter(update, target=target) for child in self.child_roles)
 
         # If we have no result here, we need to check the roles tree in order to check if
         # a parent role allows us to handle the update
@@ -382,7 +380,7 @@ class InvertedRole(UpdateFilter):
         self.role = role
 
     def filter(self, update: Update) -> bool:
-        return not self.role.filter(update, inverted=True)
+        return self.role.filter(update, inverted=True)
 
     def __repr__(self) -> str:
         return "<inverted {}>".format(self.role)

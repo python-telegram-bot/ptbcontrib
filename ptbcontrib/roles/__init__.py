@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module contains helper functions to extract URLs from messages."""
+"""This module contains classes and methods for granular, hierarchical user access management."""
 
 from .roles import Role, Roles, ChatAdminsRole, ChatCreatorRole, InvertedRole
 from .roleshandler import RolesHandler, setup_roles, BOT_DATA_KEY
