@@ -27,7 +27,6 @@ from typing import (
     Set,
     Tuple,
     FrozenSet,
-    Optional,
     Dict,
     Iterator,
     NoReturn,
@@ -194,7 +193,7 @@ class Role(UpdateFilter, Filters.chat):
         update: Update,
         target: 'Role' = None,
         inverted: bool = False,
-    ) -> Optional[bool]:
+    ) -> bool:
         # Always allow admins
         if self is not self._admin and self._admin.filter(update):
             return True
@@ -414,12 +413,10 @@ class ChatAdminsRole(Role):  # pylint: disable=R0901
     def __invert__(self) -> NoReturn:
         raise RuntimeError('Instances of ChatAdminsRole can not be inverted')
 
-    def filter(
-        self, update: Update, target: Role = None, inverted: bool = False
-    ) -> Optional[bool]:
+    def filter(self, update: Update, target: Role = None, inverted: bool = False) -> bool:
         # Always allow admins
         if self is not self._admin and self._admin.filter(update):
-            return not inverted
+            return True
 
         user = update.effective_user
         chat = update.effective_chat
@@ -463,10 +460,10 @@ class ChatCreatorRole(Role):  # pylint: disable=R0901
 
     def filter(  # pylint: disable=R0911
         self, update: Update, target: Role = None, inverted: bool = False
-    ) -> Optional[bool]:
+    ) -> bool:
         # Always allow admins
         if self is not self._admin and self._admin.filter(update):
-            return not inverted
+            return True
 
         user = update.effective_user
         chat = update.effective_chat
