@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 
+
 import pytest
 import subprocess
 import sys
@@ -25,21 +26,18 @@ from telegram.ext import Updater, MessageHandler
 from telegram import Update, Message, Chat, User
 from ptbcontrib.postgres_persistence import PostgresPersistence
 
-from sqlalchemy.orm import scoped_session
+subprocess.check_call(
+    [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        "-r",
+        "ptbcontrib/postgres_persistence/requirements.txt",
+    ]
+)
 
-
-@pytest.fixture(scope='module', autouse=True)
-def install_requirements():
-    subprocess.check_call(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            "ptbcontrib/postgres_persistence/requirements.txt",
-        ]
-    )
+from sqlalchemy.orm import scoped_session  # noqa: E402
 
 
 @pytest.fixture(scope='function')
