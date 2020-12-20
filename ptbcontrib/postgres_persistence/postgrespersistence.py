@@ -19,15 +19,11 @@
 """This module contains PostgresqlPersistence class"""
 
 
-import copy
-
 from logging import getLogger
-from typing import Any, DefaultDict, Dict, Optional, Tuple, Callable
 from collections import defaultdict
-from collections.abc import Iterable
+from typing import Dict, Any, Callable
 
-from telegram.ext import BasePersistence
-from telegram.utils.types import ConversationDict
+from telegram.ext import DictPersistence
 from telegram.utils.helpers import (
     encode_conversations_to_json,
     decode_conversations_from_json,
@@ -39,7 +35,7 @@ from sqlalchemy.sql import text
 import ujson as json
 
 
-class PostgresPersistence(BasePersistence):
+class PostgresPersistence(DictPersistence):
     """Using Postgresql database to make user/chat/bot data persistent across reboots.
 
     Attributes:
@@ -80,10 +76,6 @@ class PostgresPersistence(BasePersistence):
             raise TypeError("session must be `sqlalchemy.orm.scoped_session` object")
 
         self._session = session
-        self._user_data = None
-        self._chat_data = None
-        self._bot_data = None
-        self._conversations = None
         self.__init_database()
         self.__load_database()
 
@@ -110,116 +102,11 @@ class PostgresPersistence(BasePersistence):
         finally:
             self._session.close()
 
-    @property
-    def user_data(self) -> Optional[DefaultDict[int, Dict]]:
-        """:obj:`dict`: The user_data as a dict."""
-        return self._user_data
-
-    @property
-    def chat_data(self) -> Optional[DefaultDict[int, Dict]]:
-        """:obj:`dict`: The chat_data as a dict."""
-        return self._chat_data
-
-    @property
-    def bot_data(self) -> Optional[Dict]:
-        """:obj:`dict`: The bot_data as a dict."""
-        return self._bot_data
-
-    @property
-    def conversations(self) -> Optional[Dict[str, Dict[Tuple, Any]]]:
-        """:obj:`dict`: The conversations as a dict."""
-        return self._conversations
-
     @staticmethod
-    def _key_mapper(iterable: Iterable, func: Callable) -> Dict:
+    def _key_mapper(iterable: Dict, func: Callable) -> Dict:
         return {func(k): v for k, v in iterable.items()}
 
-    def get_user_data(self) -> DefaultDict[int, Dict[Any, Any]]:
-        """Returns the user_data created from the ``user_data_json`` or an empty
-        :obj:`defaultdict`.
-        Returns:
-            :obj:`defaultdict`: The restored user data.
-        """
-
-        return copy.deepcopy(self._user_data)
-
-    def get_chat_data(self) -> DefaultDict[int, Dict[Any, Any]]:
-        """Returns the chat_data created from the ``chat_data_json`` or an empty
-        :obj:`defaultdict`.
-        Returns:
-            :obj:`defaultdict`: The restored chat data.
-        """
-
-        return copy.deepcopy(self._chat_data)
-
-    def get_bot_data(self) -> Dict[Any, Any]:
-        """Returns the bot_data created from the ``bot_data_json`` or an empty :obj:`dict`.
-        Returns:
-            :obj:`dict`: The restored bot data.
-        """
-
-        return copy.deepcopy(self._bot_data)
-
-    def get_conversations(self, name: str) -> ConversationDict:
-        """Returns the conversations created from the ``conversations_json`` or an empty
-        :obj:`dict`.
-        Returns:
-            :obj:`dict`: The restored conversations data.
-        """
-
-        conversation = self._conversations.get(name, {})
-        return copy.deepcopy(conversation)
-
-    def update_user_data(self, user_id: int, data: Dict) -> None:
-        """Will be called by the :class:`telegram.ext.Dispatcher` after a handler has
-        handled an update.
-        Args:
-            user_id (:obj:`int`): The user the data might have been changed for.
-            data (:obj:`dict`): The :attr:`telegram.ext.dispatcher.user_data`[user_id].
-        """
-
-        if self._user_data.get(user_id) == data:
-            return
-        self._user_data[user_id] = data
-
-    def update_chat_data(self, chat_id: int, data: Dict) -> None:
-        """Will be called by the :class:`telegram.ext.Dispatcher` after a handler has
-        handled an update.
-        Args:
-            chat_id (:obj:`int`): The chat the data might have been changed for.
-            data (:obj:`dict`): The :attr:`telegram.ext.dispatcher.chat_data`[user_id].
-        """
-
-        if self._chat_data.get(chat_id) == data:
-            return
-        self._chat_data[chat_id] = data
-
-    def update_bot_data(self, data: Dict) -> None:
-        """Will update the bot_data (if changed).
-        Args:
-            data (:obj:`dict`): The :attr:`telegram.ext.dispatcher.bot_data`.
-        """
-
-        if self._bot_data == data:
-            return
-        self._bot_data = data.copy()
-
-    def update_conversation(
-        self, name: str, key: Tuple[int, ...], new_state: Optional[object]
-    ) -> None:
-        """Will update the conversations for the given handler.
-        Args:
-            name (:obj:`str`): The handler's name.
-            key (:obj:`tuple`): The key the state is changed for.
-            new_state (:obj:`tuple` | :obj:`any`): The new state for the given key.
-        """
-
-        # map ints to strings to allow json dump
-        if self._conversations.setdefault(name, {}).get(key) == new_state:
-            return
-        self._conversations[name][key] = new_state
-
-    def _dump_into_json(self) -> Dict[str, Any]:
+    def _dump_into_json(self) -> Any:
         """Dumps data into json format for inserting in db."""
 
         to_dump = {
@@ -233,8 +120,7 @@ class PostgresPersistence(BasePersistence):
 
     def flush(self) -> None:
         """Will be called by :class:`telegram.ext.Updater` upon receiving a stop signal. Gives the
-        persistence a chance to finish up saving or close a database connection gracefully. If this
-        is not of any importance just pass will be sufficient.
+        persistence a chance to finish up saving or close a database connection gracefully.
         """
 
         self.logger.info("Saving user/chat/bot data before shutdown")
@@ -247,7 +133,7 @@ class PostgresPersistence(BasePersistence):
         except Exception as excp:  # pylint: disable=W0703
             self._session.close()
             self.logger.error(
-                "Failed to save user/chat/bot data before shutdown... " "Logging exception:",
+                "Failed to save user/chat/bot data before shutdown...\nLogging exception:",
                 exc_info=excp,
             )
         else:
