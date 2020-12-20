@@ -17,7 +17,6 @@ handler_2 = MessageHandler(~ReplyToMessageFilter(Filters.sticker), callback)
 handler_3 = MessageHandler(Filters.document &  ReplyToMessageFilter(Filters.document), callback)
 ```
 
-
 ## Requirements
 
 *   `python-telegram-bot>=13.0`
