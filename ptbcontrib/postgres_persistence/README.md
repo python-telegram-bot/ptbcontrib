@@ -1,9 +1,9 @@
 # Persistence class with Postgresql database as backend
 
-## Notes:
+## Notes
 Data needs to be JSON-serializable & will be written to the DB only on shutdown.
 
-## How to use:
+## How to use
 
 ```python
 from sqlalchemy import create_engine
