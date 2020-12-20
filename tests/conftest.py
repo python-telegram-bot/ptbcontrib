@@ -25,7 +25,7 @@ from time import sleep
 import pytest
 import pytz
 
-from telegram import Bot
+from telegram import Bot, User
 from telegram.ext import Dispatcher, JobQueue, Updater, Defaults
 
 GITHUB_ACTION = os.getenv('GITHUB_ACTION', False)
@@ -40,15 +40,15 @@ TOKEN = '1281106207:AAHXR4nqP-ZYsPLnrHooton3zUGGnsoNjZ8'
 
 
 @pytest.fixture(scope='session')
-def bot(bot_info):
-    return make_bot(bot_info)
+def bot():
+    return make_bot()
 
 
 DEFAULT_BOTS = {}
 
 
 @pytest.fixture(scope='function')
-def default_bot(request, bot_info):
+def default_bot(request):
     param = request.param if hasattr(request, 'param') else {}
 
     defaults = Defaults(**param)
@@ -56,19 +56,19 @@ def default_bot(request, bot_info):
     if default_bot:
         return default_bot
     else:
-        default_bot = make_bot(bot_info, **{'defaults': defaults})
+        default_bot = make_bot(**{'defaults': defaults})
         DEFAULT_BOTS[defaults] = default_bot
         return default_bot
 
 
 @pytest.fixture(scope='function')
-def tz_bot(timezone, bot_info):
+def tz_bot(timezone):
     defaults = Defaults(tzinfo=timezone)
     default_bot = DEFAULT_BOTS.get(defaults)
     if default_bot:
         return default_bot
     else:
-        default_bot = make_bot(bot_info, **{'defaults': defaults})
+        default_bot = make_bot(**{'defaults': defaults})
         DEFAULT_BOTS[defaults] = default_bot
         return default_bot
 
@@ -78,10 +78,29 @@ def create_dp(bot):
     # scoped one here, but before each test, reset it (dp fixture below)
     dispatcher = Dispatcher(bot, Queue(), job_queue=JobQueue(), workers=2, use_context=True)
     dispatcher.job_queue.set_dispatcher(dispatcher)
+
+    # we mock bot.{get_me, get_my_commands} b/c those are used in the @info decorator
+    def get_me(*args, **kwargs):
+        user = User(1, 'TestBot', True)
+        dispatcher.bot.bot = user
+        return user
+
+    def get_my_commands(*args, **kwargs):
+        return []
+
+    orig_get_me = dispatcher.bot.get_me
+    orig_get_my_commands = dispatcher.bot.get_my_commands
+    dispatcher.bot.get_me = get_me
+    dispatcher.bot.get_my_commands = get_my_commands
+
     thr = Thread(target=dispatcher.start)
     thr.start()
     sleep(2)
     yield dispatcher
+
+    dispatcher.bot.get_me = orig_get_me
+    dispatcher.bot.get_my_commands = orig_get_my_commands
+
     sleep(1)
     if dispatcher.running:
         dispatcher.stop()
@@ -119,6 +138,13 @@ def dp(_dp):
 
 
 @pytest.fixture(scope='function')
+def cdp(dp):
+    dp.use_context = True
+    yield dp
+    dp.use_context = False
+
+
+@pytest.fixture(scope='function')
 def updater(bot):
     up = Updater(bot=bot, workers=2, use_context=False)
     yield up
@@ -131,7 +157,7 @@ def pytest_configure(config):
     # TODO: Write so good code that we don't need to ignore ResourceWarnings anymore
 
 
-def make_bot(bot_info, **kwargs):
+def make_bot(**kwargs):
     return Bot(TOKEN, private_key=PRIVATE_KEY, **kwargs)
 
 
