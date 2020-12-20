@@ -1,0 +1,27 @@
+# Apply Filters to `update.effective_message.reply_to_message`
+
+Provides a class `ReplyToMessageFilter` that allows you to apply Filters to `update.effective_message.reply_to_message`.
+
+```python
+from telegram.ext import Filters, MessageHandler
+from ptbcontrib.reply_to_message_filter import ReplyToMessageFilter
+    
+# accepts only messages that are replies to text messages
+handler_1 = MessageHandler(ReplyToMessageFilter(Filters.text), callback)
+    
+# accepts only messages that are replies to non-sticker messages
+handler_2 = MessageHandler(~ReplyToMessageFilter(Filters.sticker), callback)
+    
+# accepts only messages containing documents that are replies to
+# a message containing a document
+handler_3 = MessageHandler(Filters.document &  ReplyToMessageFilter(Filters.document), callback)
+```
+
+
+## Requirements
+
+*   `python-telegram-bot>=13.0`
+
+## Authors
+
+*   [Hinrich Mahler](https://github.com/bibo-joshi)
