@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # A library containing community-based extension for the python-telegram-bot library
-# Copyright (C) 2020
+# Copyright (C) 2020-2021
 # The ptbcontrib developers
 #
 # This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@ import sys
 
 from telegram.ext import Updater, MessageHandler
 from telegram import Update, Message, Chat, User
-from ptbcontrib.postgres_persistence import PostgresPersistence
 
 subprocess.check_call(
     [
@@ -37,6 +36,7 @@ subprocess.check_call(
     ]
 )
 
+from ptbcontrib.postgres_persistence import PostgresPersistence
 from sqlalchemy.orm import scoped_session  # noqa: E402
 
 
