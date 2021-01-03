@@ -36,8 +36,8 @@ subprocess.check_call(
     ]
 )
 
-from ptbcontrib.postgres_persistence import PostgresPersistence
 from sqlalchemy.orm import scoped_session  # noqa: E402
+from ptbcontrib.postgres_persistence import PostgresPersistence  # noqa: E402
 
 
 @pytest.fixture(scope='function')
@@ -111,8 +111,8 @@ class TestPostgresPersistence:
             if not context.bot_data['test1'] == 'test2':
                 pytest.fail()
 
-        h1 = MessageHandler(None, first, pass_user_data=True, pass_chat_data=True)
-        h2 = MessageHandler(None, second, pass_user_data=True, pass_chat_data=True)
+        h1 = MessageHandler(None, first)
+        h2 = MessageHandler(None, second)
         dp.add_handler(h1)
         dp.process_update(update)
 
@@ -121,6 +121,17 @@ class TestPostgresPersistence:
         dp.process_update(update)
 
         assert self.executed != ""
+        assert self.commited == 555
+        assert self.ses_closed is True
+
+    def test_load_on_boot(self, monkeypatch):
+        session = scoped_session("a")
+        monkeypatch.setattr(session, 'execute', self.mocked_execute)
+        monkeypatch.setattr(session, 'commit', self.mock_commit)
+        monkeypatch.setattr(session, 'close', self.mock_ses_close)
+
+        PostgresPersistence(session)
+        assert self.executed.text == "SELECT data FROM persistence"
         assert self.commited == 555
         assert self.ses_closed is True
 
