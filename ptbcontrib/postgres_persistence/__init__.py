@@ -14,18 +14,8 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module contains classes and methods for granular, hierarchical user access management."""
+"""This module contains postgresql based persistence class."""
 
-from .roles import Role, Roles, ChatAdminsRole, ChatCreatorRole, InvertedRole
-from .roleshandler import RolesHandler, setup_roles, BOT_DATA_KEY
+from .postgrespersistence import PostgresPersistence
 
-__all__ = [
-    'Roles',
-    'Role',
-    'ChatCreatorRole',
-    'ChatAdminsRole',
-    'InvertedRole',
-    'RolesHandler',
-    'setup_roles',
-    'BOT_DATA_KEY',
-]
+__all__ = ['PostgresPersistence']

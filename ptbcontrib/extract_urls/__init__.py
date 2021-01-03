@@ -1,5 +1,5 @@
 # A library containing community-based extension for the python-telegram-bot library
-# Copyright (C) 2020
+# Copyright (C) 2020-2021
 # The ptbcontrib developers
 #
 # This program is free software: you can redistribute it and/or modify
