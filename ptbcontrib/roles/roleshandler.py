@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains the RolesHandler class."""
-from typing import Any
+from typing import Any, Union
 
 from telegram import Update
 from telegram.ext import Handler, CallbackContext, Dispatcher
 
-from .roles import Role, Roles
+from .roles import Role, Roles, InvertedRole
 
 BOT_DATA_KEY: str = 'ptbcontrib_roles_bot_data_key'
 """:obj:`str`: The key used to store roles in ``bot_data``."""
@@ -62,7 +62,7 @@ class RolesHandler(Handler):
 
     def __init__(self, handler: Handler, roles: Role) -> None:
         self.handler = handler
-        self.roles: Role = roles
+        self.roles: Union[Role, InvertedRole] = roles
         super().__init__(self.handler.callback)
 
     def check_update(self, update: Update) -> bool:
