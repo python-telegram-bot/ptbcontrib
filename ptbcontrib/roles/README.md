@@ -63,7 +63,7 @@ roles.ADMINS >= Role(...)  # False, since neither of those is a parent of the ot
 
 Please see the docstrings for more details.
 
-### Note on `ConversationHandler`
+## Note on `ConversationHandler`
 
 Unfortunately `RolesHandler(my_conversation_handler, roles=roles)` does *not* work. However, checking the roles for every step of the conversation is rather inefficient anyway. Instead, by applying `RolesHandler` to the `entry_points` of the `ConversationHandler`, the conversation can only be started by the selected roles and re-checking the roles within the conversation is not necessary.
 
