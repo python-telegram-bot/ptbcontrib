@@ -12,12 +12,14 @@ Usage:
 ```python
 from ptbcontrib.send_by_kwargs import send_by_kwargs
     
+kwargs = {'text': 'Hello there', 'caption': 'General Kenobi'}
+
 # Sends using send_message
-send_by_kwargs(bot, {'text': 'Hello there!'}, chat_id=123})
+send_by_kwargs(bot, kwargs, chat_id=123)
     
-# Sends using send_photo
+# Sends using send_photo with a caption and ignores the text kwarg
 with open('photo.jpg', 'rb') as file:
-    send_by_kwargs(bot, {'photo': file, 'chat_id' : 123})
+    send_by_kwargs(bot, kwargs, photo=file, chat_id=123)
 ```
 
 Please see the docstrings for more details.
