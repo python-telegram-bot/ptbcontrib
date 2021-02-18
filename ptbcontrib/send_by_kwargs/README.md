@@ -2,8 +2,8 @@
 
 Provides a methods that allows to send any kind of message by just providing a dictionary of keyword arguments.
 
-* Tries to auto-detect the appropriate `send_*` method
-* If the call to selected `send_*` method fails, gives a helpful error message
+*   Tries to auto-detect the appropriate `send_*` method
+*   If the call to selected `send_*` method fails, gives a helpful error message
 
 **Note:** Due to `send_dice` currently being the only method that only has `chat_id` as required parameter, this will *always* be chosen if `chat_id` is present in the keywords arguments but no other method fits. 
 
