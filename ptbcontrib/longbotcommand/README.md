@@ -33,6 +33,7 @@ BOT_COMMANDS: List[LongBotCommand] = [
 
 def help(update: Update, context: CallbackContext) -> None:
     for command in context.bot.commands:
+        # This will only work if you already used set_my_commands!
         update.message.reply_text(f"/{command.command}\n\n{command.long_description}")
 
 def lorem(update: Update, context: CallbackContext) -> None:
