@@ -78,3 +78,9 @@ class TestLongBotCommand:
 
     def test_long_desc_dict(self, long_desc_command, bot_command):
         assert long_desc_command.to_dict() == bot_command.to_dict()
+
+    def test_short_desc_json(self, short_desc_command, bot_command):
+        assert short_desc_command.to_json() == bot_command.to_json()
+
+    def test_long_desc_json(self, long_desc_command, bot_command):
+        assert long_desc_command.to_json() == bot_command.to_json()
