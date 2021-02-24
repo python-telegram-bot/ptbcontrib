@@ -23,7 +23,7 @@ that allows for a longer description (e. g. for /help purposes).
 from telegram import BotCommand
 
 
-class ExtBotCommand(BotCommand):
+class LongBotCommand(BotCommand):
     """
     Allows for a longer description (>256 characters) to be stored alongside
     the shorter one allowed for :class:`telegram.BotCommand` by Telegram's API limit.
@@ -41,12 +41,20 @@ class ExtBotCommand(BotCommand):
         long_description (:obj:`str`): The command's longer description.
     """
 
-    def __init__(self, command: str, description: str, long_description: str = None):
+    def __init__(self, command: str, description: str, long_description: str = None) -> None:
         # parent class BotCommand is initializaed with required parameters
         super().__init__(command, description)
+        # private attribute, as per suggestion
+        self._long_description = long_description
+
+    @property
+    def long_description(self) -> str:
+        """
+        Returns the appropriate description (long if provided on init, short otherwise)
+        """
+
         # if long_description was specified, use it as the long description
-        if long_description is not None:
-            self.long_description = long_description
+        if self._long_description is not None:
+            return self._long_description
         # if long_description wasn't specified, use the short description
-        else:
-            self.long_description = description
+        return self.description
