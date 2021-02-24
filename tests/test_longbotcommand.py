@@ -16,27 +16,10 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-import subprocess
-
 import pytest
-import sys
 
 from telegram import BotCommand
 from ptbcontrib.longbotcommand import LongBotCommand
-
-
-@pytest.fixture(scope='module', autouse=True)
-def install_requirements():
-    subprocess.check_call(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            "ptbcontrib/longbotcommand/requirements.txt",
-        ]
-    )
 
 
 @pytest.fixture(scope='function')

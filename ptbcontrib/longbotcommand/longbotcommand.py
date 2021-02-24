@@ -27,6 +27,7 @@ class LongBotCommand(BotCommand):
     """
     Allows for a longer description (>256 characters) to be stored alongside
     the shorter one allowed for :class:`telegram.BotCommand` by Telegram's API limit.
+    Passing this to `set_my_commands` ignores `long_bot_description`.
 
     Args:
         command (:obj:`str`): The command's handle, pass exactly like
