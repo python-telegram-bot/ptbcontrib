@@ -28,7 +28,8 @@ class TestUsernameToChatAPI:
             },
         }
 
-        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"))
+        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"),
+                                                 status=200)
 
         def mockreturn(*args, **kwargs):
             return response
@@ -56,7 +57,8 @@ class TestUsernameToChatAPI:
             },
         }
 
-        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"))
+        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"),
+                                                 status=200)
 
         def mockreturn(*args, **kwargs):
             return response
@@ -86,7 +88,8 @@ class TestUsernameToChatAPI:
             # this add the flood wait time when the flood wait error happens
             api_result["retry_after"] = 12
 
-        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"))
+        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"),
+                                                 status=error_code)
 
         def mockreturn(*args, **kwargs):
             return response
