@@ -1,6 +1,6 @@
 # Wrapper for the [usernameToChatAPI](https://github.com/Poolitzer/usernameToChatAPI)
 
-This provides a wrapper for the [usernameToChatAPI](https://github.com/Poolitzer/usernameToChatAPI). The wrapper returns a Chat object like getChat would, and takes care of the (request) logic in the background.
+This provides a wrapper for the [usernameToChatAPI](https://github.com/Poolitzer/usernameToChatAPI). The wrapper returns a `telegram.Chat` object like `telegram.Bot.get_chat` would, and takes care of the (request) logic in the background.
 
 ```python
 from ptbcontrib.username_to_chat_api import UsernameToChatAPI
