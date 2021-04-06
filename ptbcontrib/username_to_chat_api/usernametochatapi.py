@@ -72,15 +72,15 @@ class UsernameToChatAPI:  # pylint: disable=too-few-public-methods
             'GET', self._url, fields={"api_key": self._api_key, "username": username}
         )
         result = json.loads(response.data.decode('utf-8'))
-        if result["ok"]:
+        status_code = response.status
+        if status_code == 200:
             return Chat.de_json(result["result"], self._bot)
-        error_code = result["error_code"]
         message = result["description"]
-        if error_code == 401:
+        if status_code == 401:
             raise error.Unauthorized(message)
-        if error_code == 400:
+        if status_code == 400:
             raise error.BadRequest(message)
-        if error_code == 429:
+        if status_code == 429:
             raise error.RetryAfter(result["retry_after"])
         # this can not happen with the API right now, but we don't want to swallow future
         # errors
