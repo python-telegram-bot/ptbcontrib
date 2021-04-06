@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """
-This module contains a subclass for the BotCommand class
-that allows for a longer description (e. g. for /help purposes).
+This module contains a wrapper for the usernameToChatAPI.
 """
 
 from .usernametochatapi import UsernameToChatAPI

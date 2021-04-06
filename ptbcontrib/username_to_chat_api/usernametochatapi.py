@@ -36,8 +36,8 @@ from telegram import error, Chat, Bot
 
 class UsernameToChatAPI:  # pylint: disable=too-few-public-methods
     """
-    This class stores the URL and api key for a UsernameToChatAPI instance. Then, the correct
-    request is being made and the Chat returned.
+    This class stores the URL and api key for a UsernameToChatAPI instance, and then provides a
+    method to get the Chat object for an username.
 
      Args:
          api_url (:obj:`str`): The base URL (speak: domain) to the API.
@@ -63,6 +63,10 @@ class UsernameToChatAPI:  # pylint: disable=too-few-public-methods
     def resolve(self, username: str) -> Chat:
         """
         Returns the Chat object for an username.
+
+        Args:
+            username (:obj:`str`): The username to get the :obj:`telegram.Chat` for. Passing
+            a leading @ is not required, but it will work nonetheless.
         """
         response = self._http.request(
             'GET', self._url, fields={"api_key": self._api_key, "username": username}
