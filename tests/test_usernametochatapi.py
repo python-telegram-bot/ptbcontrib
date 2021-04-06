@@ -71,8 +71,20 @@ class TestUsernameToChatAPI:
         assert chat.title == "channel_name"
         assert chat.description == "A description."
 
-    def test_errors(self, monkeypatch, bot):
-        api_result = {"ok": False, "error_code": 401, "description": "Unauthorized"}
+    @pytest.mark.parametrize(
+        "error_code,description, error_object",
+        [
+            (401, "Unauthorized", error.Unauthorized),
+            (400, "Bad Request: chat not found", error.BadRequest),
+            (429, "Telegram forces us to wait", error.RetryAfter),
+            (499, "This cant happen", error.TelegramError),
+        ],
+    )
+    def test_errors(self, monkeypatch, bot, error_code, description, error_object):
+        api_result = {"ok": False, "error_code": error_code, "description": description}
+        if error_code == 429:
+            # this add the flood wait time when the flood wait error happens
+            api_result["retry_after"] = 12
 
         response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"))
 
@@ -81,42 +93,12 @@ class TestUsernameToChatAPI:
 
         monkeypatch.setattr(urllib3.PoolManager, "request", mockreturn)
         wrapper = UsernameToChatAPI("URL", "key", bot)
-        with pytest.raises(error.Unauthorized):
+        with pytest.raises(error_object):
             wrapper.resolve("username")
 
-        api_result = {"ok": False, "error_code": 400, "description": "Bad Request: chat not found"}
-        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"))
-
-        def mockreturn(*args, **kwargs):
-            return response
-
-        monkeypatch.setattr(urllib3.PoolManager, "request", mockreturn)
-        with pytest.raises(error.BadRequest):
-            wrapper.resolve("username")
-
-        api_result = {
-            "ok": False,
-            "error_code": 429,
-            "description": "Bad Request: chat not found",
-            "retry_after": 12,
-        }
-        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"))
-
-        def mockreturn(*args, **kwargs):
-            return response
-
-        monkeypatch.setattr(urllib3.PoolManager, "request", mockreturn)
-        try:
-            wrapper.resolve("username")
-        except error.RetryAfter as e:
-            assert e.retry_after == 12
-
-        api_result = {"ok": False, "error_code": 499, "description": "This cant happen"}
-        response = urllib3.response.HTTPResponse(body=json.dumps(api_result).encode("UTF-8"))
-
-        def mockreturn(*args, **kwargs):
-            return response
-
-        monkeypatch.setattr(urllib3.PoolManager, "request", mockreturn)
-        with pytest.raises(error.TelegramError):
-            wrapper.resolve("username")
+        if error_code == 429:
+            try:
+                wrapper.resolve("username")
+            except error.RetryAfter as e:
+                # specific check that the flood wait time out is provided
+                assert e.retry_after == 12
