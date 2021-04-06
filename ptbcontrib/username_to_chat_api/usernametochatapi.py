@@ -29,12 +29,12 @@ except ImportError:  # pragma: no cover
 try:
     import ujson as json
 except ImportError:  # pragma: no cover
-    import json
+    import json  # type: ignore[no-redef]
 
 from telegram import error, Chat, Bot
 
 
-class UsernameToChatAPI:
+class UsernameToChatAPI:  # pylint: disable=too-few-public-methods
     """
     This class stores the URL and api key for a UsernameToChatAPI instance. Then, the correct
     request is being made and the Chat returned.
@@ -64,22 +64,20 @@ class UsernameToChatAPI:
         """
         Returns the Chat object for an username.
         """
-        r = self._http.request(
+        response = self._http.request(
             'GET', self._url, fields={"api_key": self._api_key, "username": username}
         )
-        print(r)
-        result = json.loads(r.data.decode('utf-8'))
+        result = json.loads(response.data.decode('utf-8'))
         if result["ok"]:
             return Chat.de_json(result["result"], self._bot)
-        else:
-            error_code = result["error_code"]
-            message = result["description"]
-            if error_code == 401:
-                raise error.Unauthorized(message)
-            elif error_code == 400:
-                raise error.BadRequest(message)
-            elif error_code == 429:
-                raise error.RetryAfter(result["retry_after"])
-            # this can not happen with the API right now, but we don't want to swallow future
-            # errors
-            raise error.TelegramError(result["description"])
+        error_code = result["error_code"]
+        message = result["description"]
+        if error_code == 401:
+            raise error.Unauthorized(message)
+        if error_code == 400:
+            raise error.BadRequest(message)
+        if error_code == 429:
+            raise error.RetryAfter(result["retry_after"])
+        # this can not happen with the API right now, but we don't want to swallow future
+        # errors
+        raise error.TelegramError(result["description"])

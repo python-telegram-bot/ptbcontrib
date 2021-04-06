@@ -11,7 +11,7 @@ try:
 except ImportError:
     import json
 
-from ptbcontrib.username_to_chat_API import UsernameToChatAPI
+from ptbcontrib.username_to_chat_api import UsernameToChatAPI
 
 
 class TestUsernameToChatAPI:

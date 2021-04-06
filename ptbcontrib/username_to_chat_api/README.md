@@ -3,11 +3,10 @@
 This provides a wrapper for the [usernameToChatAPI](https://github.com/Poolitzer/usernameToChatAPI). The wrapper returns a Chat object like getChat would, and takes care of the (request) logic in the background.
 
 ```python
-from ptbcontrib.username_to_chat_API import UsernameToChatAPI
+from ptbcontrib.username_to_chat_api import UsernameToChatAPI
 from telegram import Bot, error
 
 import time
-
 
 bot = Bot("BOT_TOKEN")
 # or you could get it from updater.bot
