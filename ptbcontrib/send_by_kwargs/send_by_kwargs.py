@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module contains helper functions to extract URLs from messages."""
+"""This module contains a helper function that allows to send any kind of message by kwargs."""
 import inspect
 from collections import OrderedDict
 from typing import List, Dict, Union, Callable
@@ -66,13 +66,11 @@ def get_relevant_kwargs(method: Callable, kwargs: Dict[str, object]) -> Dict[str
     signature = CACHED_SIGNATURES.setdefault(method.__name__, inspect.signature(method))
     relevant_kwargs = {}
     for name, param in signature.parameters.items():
-        if param.default == inspect.Parameter.empty:
-            if name not in kwargs:
-                raise MissingRequiredParam(name)
-            relevant_kwargs[name] = kwargs[name]
+        if param.default == inspect.Parameter.empty and name not in kwargs:
+            raise MissingRequiredParam(name)
         # we don't just do kwargs.get(name, None) here to make sure
         # that this still works with telegram.ext.Defaults
-        elif name in kwargs:
+        if name in kwargs:
             relevant_kwargs[name] = kwargs[name]
     return relevant_kwargs
 
@@ -98,6 +96,11 @@ def send_by_kwargs(
 
     Returns:
         :class:`telegram.Message` | List[:class:`telegram.Message`]:
+
+    Raises:
+        KeyError | RuntimeError: KeyError, if a suitable method was selected, but it's missing a
+            required parameter. RuntimeError, if no method could be selected or the selected method
+            raised an exception.
     """
     if kwargs is None:
         kwargs = {}
@@ -115,13 +118,13 @@ def send_by_kwargs(
         relevant_kwargs = get_relevant_kwargs(method, kwargs)
     except MissingRequiredParam as exc:
         raise KeyError(
-            f'Selected method {method.__name__}, but the required parameter '
-            f'{exc.param_name} is missing in the provided kwargs.'
+            f'Selected method {method.__name__!r}, but the required parameter '
+            f'{exc.param_name!r} is missing in the provided kwargs.'
         ) from exc
 
     try:
         return method(**relevant_kwargs)
     except Exception as exc:
         raise RuntimeError(
-            f'Selected method {method.__name__}, but it raised the above exception.'
+            f'Selected method {method.__name__!r}, but it raised the above exception.'
         ) from exc

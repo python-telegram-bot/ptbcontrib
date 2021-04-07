@@ -48,12 +48,12 @@ class TestSendByKwargs:
         kwargs = {args[0]: args[0]}
 
         with pytest.raises(
-            KeyError, match=f'Selected method {method}, but the required parameter'
+            KeyError, match=f"Selected method '{method}', but the required parameter"
         ):
             send_by_kwargs(bot, kwargs)
 
         with pytest.raises(
-            KeyError, match=f'Selected method {method}, but the required parameter'
+            KeyError, match=f"Selected method '{method}', but the required parameter"
         ):
             send_by_kwargs(bot, **kwargs)
 
@@ -62,6 +62,10 @@ class TestSendByKwargs:
         argvalues=list(UNIQUE_KWARGS_SHUFFLED),
     )
     def test_kwargs_passing(self, method, bot, monkeypatch):
+        """
+        This essentially makes sure that get_relevant_kwargs doesn't pass kwargs that are not
+        accepted by the selected method.
+        """
 
         signature = inspect.signature(getattr(bot, method))
         expected_kwargs = {name: True for name, param in signature.parameters.items()}
@@ -158,11 +162,11 @@ class TestSendByKwargs:
         assert self.test_flag
 
     def test_method_raises_exception(self, bot, monkeypatch):
-        def mock(**kw):
+        def mock(**_kw):
             raise TelegramError()
 
         signature = inspect.signature(bot.send_message)
         CACHED_SIGNATURES['mock'] = signature
         monkeypatch.setattr(bot, 'send_message', mock)
-        with pytest.raises(RuntimeError, match='Selected method mock, but it raised'):
+        with pytest.raises(RuntimeError, match="Selected method 'mock', but it raised"):
             send_by_kwargs(bot, chat_id=123, text='Hi')
