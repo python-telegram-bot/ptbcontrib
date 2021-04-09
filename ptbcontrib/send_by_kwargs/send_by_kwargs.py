@@ -90,8 +90,8 @@ def send_by_kwargs(
 
     Args:
         bot (:class:`telegram.Bot`): The bot to send the message with.
-        kwargs (Dict[:obj:`str`, :obj:`object:], optional): The keyword arguments as dictionary.
-        **_kwargs (Dict[:obj:`str`, :obj:`object:], optional): Additional keyword arguments passed
+        kwargs (Dict[:obj:`str`, :obj:`object`], optional): The keyword arguments as dictionary.
+        **_kwargs (Dict[:obj:`str`, :obj:`object`], optional): Additional keyword arguments passed
             as actual keyword arguments.
 
     Returns:
