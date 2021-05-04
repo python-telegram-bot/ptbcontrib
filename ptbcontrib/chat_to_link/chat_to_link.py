@@ -69,7 +69,7 @@ def get_chat_link(
     """
     bot = chat.bot
     if chat.username:
-        return chat.username
+        return f"https://t.me/{chat.username}"
     if chat.invite_link:
         return chat.invite_link
 
