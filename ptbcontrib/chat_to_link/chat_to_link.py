@@ -20,7 +20,8 @@
 from datetime import datetime
 from typing import Union
 
-from telegram import Chat, error
+from telegram import Chat
+from telegram.error import BadRequest
 from telegram.utils.helpers import DEFAULT_NONE
 from telegram.utils.types import JSONDict, ODVInput
 
@@ -88,7 +89,7 @@ def get_chat_link(
         else:
             invite_link = chat.export_invite_link()
         return invite_link
-    except error.BadRequest as exc:
+    except BadRequest as exc:
         if exc.message == "Not enough rights to manage chat invite link":
             return ""
         raise exc
