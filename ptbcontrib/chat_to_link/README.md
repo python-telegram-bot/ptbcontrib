@@ -1,4 +1,4 @@
-# Get Joinable Link from Chat
+# Get joinable link from Chat
 
 Provides a method to get a joinable link from a `telegram.Chat` object. To do so, it tries
 to get a link in the following order:
