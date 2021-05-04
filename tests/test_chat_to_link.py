@@ -35,7 +35,7 @@ def bot_factory():
 
 
 @pytest.fixture(scope="function")
-def chat(_bot_factory):
+def chat(bot_factory):
     return Chat(1, type="channel", name="test channel", bot=bot_factory)
 
 
