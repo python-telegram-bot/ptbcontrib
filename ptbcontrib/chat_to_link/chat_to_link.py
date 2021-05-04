@@ -39,9 +39,13 @@ def get_chat_link(
      3. Chat's invite link from bot (`bot.get_chat.invite_link`)
      4. Create invite link if `member_limit` or `expire_date` is passed
         (`bot.create_chat_invite_link`).
-     5. Export primary invite link (`bot.export_chat_invite_link`).
+     5. Otherwise export primary invite link (`bot.export_chat_invite_link`).
      6. Empty string since there is no valid link and the bot doesn't have permission
         to create one either.
+
+    This function doesn't check to see if the bot has enough permissions to create/export
+    invite links. Instead, it makes the API call and relies on the response (new link or
+    error message) to determine the outcome. This way we can avoid an extra API call.
 
     Warning:
         This function might make up to 2 API calls to get a valid chat link.
