@@ -75,20 +75,6 @@ class TestChatToLink:
 
         assert link == invite_link
 
-    def test_create_chat_invite_link(self, chat, bot_chat_dict):
-        invite_link = 'https://t.me/joinchat/m4Zho3YdtexiMzI0'
-        res = {
-            'invite_link': invite_link,
-            'creator': {'id': -1, 'is_bot': True, 'first_name': 'test bot', 'username': 'testbot'},
-            'is_primary': False,
-            'is_revoked': False,
-        }
-        chat.bot._post = Mock(side_effect=[bot_chat_dict, res])
-
-        link = get_chat_link(chat, member_limit=2)
-
-        assert link == invite_link
-
     def test_export_chat_invite_link(self, chat, bot_chat_dict):
         invite_link = 'https://t.me/joinchat/m4Zho4YdtexiMzI0'
         res = invite_link
@@ -98,9 +84,6 @@ class TestChatToLink:
 
         assert link == invite_link
 
-    # member_limit=None will result in using bot.export_chat_invite_link
-    # member_limit=1 will result in using bot.create_chat_invite_link
-    @pytest.mark.parametrize("member_limit", [None, 1])
     def test_bot_permission_error(self, chat, bot_chat_dict, member_limit):
         chat.bot._post = Mock(
             side_effect=[bot_chat_dict, BadRequest("Not enough rights to manage chat invite link")]
@@ -110,7 +93,6 @@ class TestChatToLink:
 
         assert link == ""
 
-    @pytest.mark.parametrize("member_limit", [None, 1])
     def test_bot_other_error(self, chat, member_limit, bot_chat_dict):
         chat.bot._post = Mock(side_effect=[bot_chat_dict, BadRequest("Some other error")])
 
