@@ -17,9 +17,6 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains a helper function to get joinable links from chats."""
-from datetime import datetime
-from typing import Union
-
 from telegram import Chat
 from telegram.error import BadRequest
 from telegram.utils.helpers import DEFAULT_NONE
@@ -28,8 +25,6 @@ from telegram.utils.types import JSONDict, ODVInput
 
 def get_chat_link(
     chat: Chat,
-    expire_date: Union[int, datetime] = None,
-    member_limit: int = None,
     timeout: ODVInput[float] = DEFAULT_NONE,
     api_kwargs: JSONDict = None,
 ) -> str:
@@ -79,16 +74,7 @@ def get_chat_link(
         return bot_chat.invite_link
 
     try:
-        if expire_date or member_limit:
-            invite_link = chat.create_invite_link(
-                expire_date,
-                member_limit,
-                timeout=timeout,
-                api_kwargs=api_kwargs,
-            ).invite_link
-        else:
-            invite_link = chat.export_invite_link()
-        return invite_link
+        return chat.export_invite_link(timeout=timeout, api_kwargs=api_kwargs)
     except BadRequest as exc:
         if exc.message == "Not enough rights to manage chat invite link":
             return ""
