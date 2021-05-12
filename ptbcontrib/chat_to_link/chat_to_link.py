@@ -19,14 +19,10 @@
 """This module contains a helper function to get joinable links from chats."""
 from telegram import Chat
 from telegram.error import BadRequest
-from telegram.utils.helpers import DEFAULT_NONE
-from telegram.utils.types import JSONDict, ODVInput
 
 
 def get_chat_link(
     chat: Chat,
-    timeout: ODVInput[float] = DEFAULT_NONE,
-    api_kwargs: JSONDict = None,
 ) -> str:
     """
     Gets a link for the chat in the following order if the link is valid:
@@ -74,7 +70,7 @@ def get_chat_link(
         return bot_chat.invite_link
 
     try:
-        return chat.export_invite_link(timeout=timeout, api_kwargs=api_kwargs)
+        return chat.export_invite_link()
     except BadRequest as exc:
         if exc.message == "Not enough rights to manage chat invite link":
             return ""
