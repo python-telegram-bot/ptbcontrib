@@ -84,17 +84,17 @@ class TestChatToLink:
 
         assert link == invite_link
 
-    def test_bot_permission_error(self, chat, bot_chat_dict, member_limit):
+    def test_bot_permission_error(self, chat, bot_chat_dict):
         chat.bot._post = Mock(
             side_effect=[bot_chat_dict, BadRequest("Not enough rights to manage chat invite link")]
         )
 
-        link = get_chat_link(chat, member_limit=member_limit)
+        link = get_chat_link(chat)
 
         assert link == ""
 
-    def test_bot_other_error(self, chat, member_limit, bot_chat_dict):
+    def test_bot_other_error(self, chat, bot_chat_dict):
         chat.bot._post = Mock(side_effect=[bot_chat_dict, BadRequest("Some other error")])
 
         with pytest.raises(BadRequest):
-            get_chat_link(chat, member_limit=member_limit)
+            get_chat_link(chat)
