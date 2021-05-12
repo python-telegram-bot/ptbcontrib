@@ -29,9 +29,7 @@ def get_chat_link(
      1. Chat's username (`chat.username`).
      2. Chat's invite link (`chat.invite_link`).
      3. Chat's invite link from bot (`bot.get_chat.invite_link`)
-     4. Create invite link if `member_limit` or `expire_date` is passed
-        (`bot.create_chat_invite_link`).
-     5. Otherwise export primary invite link (`bot.export_chat_invite_link`).
+     5. Eexport primary invite link (`bot.export_chat_invite_link`).
      6. Empty string since there is no valid link and the bot doesn't have permission
         to create one either.
 
@@ -44,20 +42,9 @@ def get_chat_link(
 
     Args:
         chat (:obj:`telegram.Chat`): The chat to get a link from.
-        expire_date (:obj:`int` | :obj:`datetime.datetime`, optional): Date when the link will
-            expire.
-            For timezone naive :obj:`datetime.datetime` objects, the default timezone of the
-            bot will be used.
-        member_limit (:obj:`int`, optional): Maximum number of users that can be members of
-            the chat simultaneously after joining the chat via this invite link; 1-99999.
-        timeout (:obj:`int` | :obj:`float`, optional): If this value is specified, use it as
-            the read timeout from the server (instead of the one specified during creation of
-            the connection pool).
-        api_kwargs (:obj:`dict`, optional): Arbitrary keyword arguments to be passed to the
-            Telegram API.
 
     Returns:
-        :obj:`str`: Chat link if there is any. Otherwise an empty string.
+        :obj:`str`: Chat link as a URL if there is any. Otherwise an empty string.
     """
     bot = chat.bot
     if chat.username:
