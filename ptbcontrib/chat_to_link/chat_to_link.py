@@ -29,7 +29,7 @@ def get_chat_link(
      1. Chat's username (`chat.username`).
      2. Chat's invite link (`chat.invite_link`).
      3. Chat's invite link from bot (`bot.get_chat.invite_link`)
-     5. Eexport primary invite link (`bot.export_chat_invite_link`).
+     5. Export primary invite link (`bot.export_chat_invite_link`).
      6. Empty string since there is no valid link and the bot doesn't have permission
         to create one either.
 
