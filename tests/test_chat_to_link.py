@@ -55,7 +55,7 @@ class TestChatToLink:
 
         link = get_chat_link(chat)
 
-        assert link == username
+        assert link == f"https://t.me/{username}"
 
     def test_chat_invite_link(self, chat):
         invite_link = "https://t.me/joinchat/RQ4-ELmRIl82ZDZk"
