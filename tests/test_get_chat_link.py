@@ -21,7 +21,7 @@ from unittest.mock import Mock
 import pytest
 from telegram import Chat
 from telegram.error import BadRequest
-from ptbcontrib.chat_to_link import get_chat_link
+from ptbcontrib.get_chat_link import get_chat_link
 
 from .conftest import make_bot
 

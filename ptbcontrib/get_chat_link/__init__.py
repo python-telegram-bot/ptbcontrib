@@ -16,6 +16,6 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains a helper function to get joinable links from chats."""
 
-from .chat_to_link import get_chat_link
+from .get_chat_link import get_chat_link
 
 __all__ = ['get_chat_link']
