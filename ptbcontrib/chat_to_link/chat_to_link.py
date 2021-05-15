@@ -31,7 +31,7 @@ def get_chat_link(
      2. Chat's invite link (`chat.invite_link`).
      3. Chat's invite link from bot (`bot.get_chat.invite_link`)
      4. Export primary invite link (`bot.export_chat_invite_link`).
-     5. Empty string since there is no valid link and the bot doesn't have permission
+     5. ``None`` since there is no valid link and the bot doesn't have permission
         to create one either.
 
     This function doesn't check to see if the bot has enough permissions to create/export
@@ -45,7 +45,7 @@ def get_chat_link(
         chat (:obj:`telegram.Chat`): The chat to get a link from.
 
     Returns:
-        :obj:`str`: Chat link as a URL if there is any. Otherwise an empty string.
+        :obj:`Optional[str]`: Chat link as a URL if there is any. Otherwise None.
     """
     bot = chat.bot
     if chat.link:

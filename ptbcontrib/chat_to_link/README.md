@@ -10,7 +10,7 @@ to get a link in the following order:
 
 4.  Export primary invite link (`bot.export_chat_invite_link`).
 
-5.  Empty string since there is no valid link and the bot doesn't have permission
+5.  `None` since there is no valid link and the bot doesn't have permission
    to create one either.
 
 Please see the docstrings for more details.
