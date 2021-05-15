@@ -13,6 +13,8 @@ to get a link in the following order:
 5.  `None` since there is no valid link and the bot doesn't have permission
    to create one either.
 
+**Warning**: This function might make up to 2 API calls to get a valid chat link.
+
 Please see the docstrings for more details.
 
 ## Requirements
