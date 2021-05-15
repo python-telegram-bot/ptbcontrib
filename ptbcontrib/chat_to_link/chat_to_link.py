@@ -27,7 +27,7 @@ def get_chat_link(chat: Chat) -> Optional[str]:
     Gets a link for the chat in the following order if the link is valid:
      1. Chat's link (`chat.link`).
      2. Chat's invite link (`chat.invite_link`).
-     3. Chat's invite link from bot (`bot.get_chat.invite_link`)
+     3. Chat's invite link from bot (`bot.get_chat(chat.id).invite_link`)
      4. Export primary invite link (`bot.export_chat_invite_link`).
      5. ``None`` since there is no valid link and the bot doesn't have permission
         to create one either.

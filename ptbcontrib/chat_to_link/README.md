@@ -6,7 +6,7 @@ to get a link in the following order:
 
 2.  Chat's invite link (`chat.invite_link`).
 
-3.  Chat's invite link from bot (`bot.get_chat.invite_link`).
+3.  Chat's invite link from bot (`bot.get_chat(chat.id).invite_link`).
 
 4.  Export primary invite link (`bot.export_chat_invite_link`).
 
