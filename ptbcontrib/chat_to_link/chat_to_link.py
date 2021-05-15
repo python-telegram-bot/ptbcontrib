@@ -17,13 +17,14 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains a helper function to get joinable links from chats."""
+from typing import Optional
 from telegram import Chat
 from telegram.error import BadRequest
 
 
 def get_chat_link(
     chat: Chat,
-) -> str:
+) -> Optional[str]:
     """
     Gets a link for the chat in the following order if the link is valid:
      1. Chat's link (`chat.link`).
@@ -60,5 +61,5 @@ def get_chat_link(
         return chat.export_invite_link()
     except BadRequest as exc:
         if exc.message == "Not enough rights to manage chat invite link":
-            return ""
+            return None
         raise exc
