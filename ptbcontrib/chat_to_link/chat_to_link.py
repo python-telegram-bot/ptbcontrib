@@ -60,6 +60,6 @@ def get_chat_link(
     try:
         return chat.export_invite_link()
     except BadRequest as exc:
-        if exc.message == "Not enough rights to manage chat invite link":
+        if exc.message.lower() == "not enough rights to manage chat invite link":
             return None
         raise exc
