@@ -91,7 +91,7 @@ class TestChatToLink:
 
         link = get_chat_link(chat)
 
-        assert link == ""
+        assert link is None
 
     def test_bot_other_error(self, chat, bot_chat_dict):
         chat.bot._post = Mock(side_effect=[bot_chat_dict, BadRequest("Some other error")])
