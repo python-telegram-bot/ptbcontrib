@@ -26,7 +26,7 @@ def get_chat_link(
 ) -> str:
     """
     Gets a link for the chat in the following order if the link is valid:
-     1. Chat's username (`chat.username`).
+     1. Chat's link (`chat.link`).
      2. Chat's invite link (`chat.invite_link`).
      3. Chat's invite link from bot (`bot.get_chat.invite_link`)
      4. Export primary invite link (`bot.export_chat_invite_link`).
@@ -47,8 +47,8 @@ def get_chat_link(
         :obj:`str`: Chat link as a URL if there is any. Otherwise an empty string.
     """
     bot = chat.bot
-    if chat.username:
-        return f"https://t.me/{chat.username}"
+    if chat.link:
+        return chat.link
     if chat.invite_link:
         return chat.invite_link
 

@@ -2,7 +2,7 @@
 
 Provides a method to get a joinable link from a `telegram.Chat` object. To do so, it tries
 to get a link in the following order:
-1.  Chat's username (`chat.username`).
+1.  Chat's link (`chat.link`).
 
 2.  Chat's invite link (`chat.invite_link`).
 
