@@ -22,9 +22,7 @@ from telegram import Chat
 from telegram.error import BadRequest
 
 
-def get_chat_link(
-    chat: Chat,
-) -> Optional[str]:
+def get_chat_link(chat: Chat) -> Optional[str]:
     """
     Gets a link for the chat in the following order if the link is valid:
      1. Chat's link (`chat.link`).
@@ -60,6 +58,6 @@ def get_chat_link(
     try:
         return chat.export_invite_link()
     except BadRequest as exc:
-        if exc.message.lower() == "not enough rights to manage chat invite link":
+        if "not enough rights" in exc.message.lower():
             return None
         raise exc
