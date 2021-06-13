@@ -82,7 +82,7 @@ def create_dp(bot):
     # we mock bot.{get_me, get_my_commands} b/c those are used in the @info decorator
     def get_me(*args, **kwargs):
         user = User(1, 'TestBot', True)
-        dispatcher.bot.bot = user
+        dispatcher.bot._bot = user
         return user
 
     def get_my_commands(*args, **kwargs):
@@ -125,10 +125,12 @@ def dp(_dp):
     _dp.handlers = {}
     _dp.groups = []
     _dp.error_handlers = {}
-    _dp.__stop_event = Event()
-    _dp.__exception_event = Event()
-    _dp.__async_queue = Queue()
-    _dp.__async_threads = set()
+    # For some reason if we setattr with the name mangled, then some tests(like async) run forever,
+    # due to threads not acquiring, (blocking). This adds these attributes to the __dict__.
+    object.__setattr__(_dp, '__stop_event', Event())
+    object.__setattr__(_dp, '__exception_event', Event())
+    object.__setattr__(_dp, '__async_queue', Queue())
+    object.__setattr__(_dp, '__async_threads', set())
     _dp.persistence = None
     _dp.use_context = False
     if _dp._Dispatcher__singleton_semaphore.acquire(blocking=0):
