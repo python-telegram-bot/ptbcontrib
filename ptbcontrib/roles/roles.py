@@ -34,14 +34,12 @@ from typing import (
 )
 
 from telegram import ChatMember, TelegramError, Bot, Chat, Update
-from telegram.ext import Filters, UpdateFilter
+from telegram.ext import UpdateFilter
 
 _REPLACED_LOCK: str = 'ptbcontrib_roles_replaced_lock'
 
 
-# Order of the base classes matter, as Filters.chat is a MessageFilter, but we want to
-# misuse it as UpdateFilter
-class Role(UpdateFilter, Filters.chat):
+class Role(UpdateFilter):
     """This class represents a security level used by :class:`telegram.ext.Roles`. Roles have a
     hierarchy, i.e. a role can do everthing, its child roles can do. To compare two roles you may
     use the following syntax::
@@ -132,11 +130,11 @@ class Role(UpdateFilter, Filters.chat):
         child_roles: Union['Role', List['Role'], Tuple['Role', ...]] = None,
         name: str = None,
     ) -> None:
-        super().__init__(chat_ids)
         self._name = name
         self._inverted = False
         self.__lock = Lock()
 
+        self._chat_ids = self._parse_chat_id(chat_ids)
         self._child_roles: Set['Role'] = set()
         self._set_child_roles(child_roles)
 
@@ -145,6 +143,14 @@ class Role(UpdateFilter, Filters.chat):
             self.__init_admin()
             self._admin_event.wait()
             self._admin.add_child_role(self)
+
+    @staticmethod
+    def _parse_chat_id(chat_id: Union[int, List[int], Tuple[int, ...], None]) -> Set[int]:
+        if chat_id is None:
+            return set()
+        if isinstance(chat_id, int):
+            return {chat_id}
+        return set(chat_id)
 
     @staticmethod
     def __init_admin() -> None:
@@ -173,6 +179,12 @@ class Role(UpdateFilter, Filters.chat):
     ) -> None:
         with self.__lock:
             self._child_roles = self._parse_child_role(child_role)
+
+    @property
+    def chat_ids(self) -> FrozenSet[int]:
+        """Chat IDs of this role as frozenset (to ensure thread safety)."""
+        with self.__lock:
+            return frozenset(self._chat_ids)
 
     @property
     def child_roles(self) -> FrozenSet['Role']:
@@ -241,7 +253,8 @@ class Role(UpdateFilter, Filters.chat):
             chat_id(:obj:`int` | List[:obj:`int`], optional): Which chat ID(s) to allow
                 through.
         """
-        self.add_chat_ids(chat_id)
+        with self.__lock:
+            self._chat_ids |= self._parse_chat_id(chat_id)
 
     def kick_member(self, chat_id: Union[int, List[int], Tuple[int, ...]]) -> None:
         """Kicks one ore more user(s)/chat(s) to from role. Will do nothing, if user/chat is not
@@ -250,7 +263,8 @@ class Role(UpdateFilter, Filters.chat):
         Args:
             chat_id(:obj:`int` | List[:obj:`int`], optional): The users/chats id
         """
-        self.remove_chat_ids(chat_id)
+        with self.__lock:
+            self._chat_ids -= self._parse_chat_id(chat_id)
 
     def add_child_role(self, child_role: 'Role') -> None:
         """Adds a child role to this role. Will do nothing, if child role is already present.
