@@ -10,12 +10,11 @@ Provides adapter for `SQLAlchemyJobStore` class from apscheduler package, that e
 
 Provided adapter erases all problematic fields and changes `telegram.ext.Job` instance to make it serializable. After that he passes savable Job to the apscheduler's storage. When job is loaded back, adapter recreates the job into it's original form. 
 
-
 ## Requirements
 
 *   `python-telegram-bot>=13.0`
 
-## Author
+## Authors
 
-* [Niko Bolg](https://github.com/nkbolg)
-* [Starry Shivam](https://github.com/starry69)
+*   [Niko Bolg](https://github.com/nkbolg)
+*   [Starry Shivam](https://github.com/starry69)
