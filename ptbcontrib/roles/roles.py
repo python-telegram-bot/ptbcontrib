@@ -145,7 +145,7 @@ class Role(UpdateFilter):
             self._admin.add_child_role(self)
 
     @staticmethod
-    def _parse_chat_id(chat_id: Union[int, List[int], Tuple[int, ...]]) -> Set[int]:
+    def _parse_chat_id(chat_id: Union[int, List[int], Tuple[int, ...], None]) -> Set[int]:
         if chat_id is None:
             return set()
         if isinstance(chat_id, int):
