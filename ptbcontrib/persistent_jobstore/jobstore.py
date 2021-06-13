@@ -16,13 +16,13 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This fine contains AdaptedSQLAlchemyJobStore."""
+"""This file contains AdaptedSQLAlchemyJobStore."""
 
-
-import pickle  # skipcq: BAN-B403
+from typing import Any
+import pickle
 import telegram
-
 import apscheduler.job
+
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from telegram.ext import CallbackContext, Dispatcher
 
@@ -32,14 +32,14 @@ class AdaptedSQLAlchemyJobStore(SQLAlchemyJobStore):
     Wraps apscheduler.SQLAlchemyJobStore to make telegram Job class storable.
     """
 
-    def __init__(self, dispatcher: Dispatcher, *args, **kwargs) -> None:
+    def __init__(self, dispatcher: Dispatcher, *args: Any, **kwargs: Any) -> None:
         """
         :param dispatcher (:class:`telegram.ext.Dispatcher`): Dispatcher instance
             that will be passed to CallbackContext when recreating jobs.
         :param args: Arguments to be passed to the SQLAlchemyJobStore constructor.
         """
 
-        super(AdaptedSQLAlchemyJobStore, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.dispatcher = dispatcher
 
     def add_job(self, job: apscheduler.job) -> None:
@@ -50,7 +50,7 @@ class AdaptedSQLAlchemyJobStore(SQLAlchemyJobStore):
         """
 
         job = self._prepare_job(job)
-        super(AdaptedSQLAlchemyJobStore, self).add_job(job)
+        super().add_job(job)
 
     def update_job(self, job: apscheduler.job) -> None:
         """
@@ -59,7 +59,7 @@ class AdaptedSQLAlchemyJobStore(SQLAlchemyJobStore):
             job (:obj:`apscheduler.job`): The job to be updated.
         """
         job = self._prepare_job(job)
-        super(AdaptedSQLAlchemyJobStore, self).update_job(job)
+        super().update_job(job)
 
     @staticmethod
     def _prepare_job(job: apscheduler.job) -> apscheduler.job:
@@ -82,14 +82,15 @@ class AdaptedSQLAlchemyJobStore(SQLAlchemyJobStore):
         job.args = (job_elements,)  # ensure tuple by (,)
         return job
 
-    def _reconstitute_job(self, job_state: str) -> apscheduler.job:
+    def _reconstitute_job(self, job_state: bytes) -> apscheduler.job:
         """
         Called from apscheduler's internals when loading job.
         Args:
             job_state (:obj:`str`): String containing pickled job state.
         """
-        job_state = pickle.loads(job_state)  # skipcq: BAN-B301
-        telegram_job_elements = job_state["args"][0]
+
+        job_state_dict = pickle.loads(job_state)
+        telegram_job_elements = job_state_dict["args"][0]
         tg_job = telegram.ext.Job(
             callback=None,
             context=telegram_job_elements["context"],
@@ -97,10 +98,10 @@ class AdaptedSQLAlchemyJobStore(SQLAlchemyJobStore):
         )
         ctx = CallbackContext.from_job(tg_job, self.dispatcher)
         # picked from SQLAlchemyJobStore._reconstitute_job
-        job_state["args"] = (ctx,)
-        job_state["jobstore"] = self
+        job_state_dict["args"] = (ctx,)
+        job_state_dict["jobstore"] = self
         job = apscheduler.job.Job.__new__(apscheduler.job.Job)
-        job.__setstate__(job_state)
-        job._scheduler = self._scheduler  # skipcq: PYL-W0212
-        job._jobstore_alias = self._alias  # skipcq: PYL-W0212
+        job.__setstate__(job_state_dict)
+        job._scheduler = self._scheduler  # pylint: disable=W0212
+        job._jobstore_alias = self._alias  # pylint: disable=W0212
         return job

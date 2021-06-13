@@ -34,7 +34,7 @@ subprocess.check_call(
     ]
 )
 
-from ptbcontrib.persistent_jobstore import AdaptedSQLAlchemyJobStore
+from ptbcontrib.persistent_jobstore import AdaptedSQLAlchemyJobStore  # noqa: E402
 
 
 @pytest.fixture(scope='function')
