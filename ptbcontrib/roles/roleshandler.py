@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains the RolesHandler class."""
-from typing import Any, Union
+from typing import Any, Union, Optional
+from abc import ABC, abstractmethod
 
 from telegram import Update
 from telegram.ext import Handler, CallbackContext, Dispatcher
@@ -28,8 +29,24 @@ BOT_DATA_KEY: str = 'ptbcontrib_roles_bot_data_key'
 """:obj:`str`: The key used to store roles in ``bot_data``."""
 
 
+class RolesBotData(ABC):
+    """Fill me"""
+
+    @abstractmethod
+    def get_roles(self) -> Optional[Roles]:
+        """Fil me"""
+        ...
+
+    @abstractmethod
+    def set_roles(self,roles: Roles) -> None:
+        """Fill me"""
+        ...
+
+
 def setup_roles(dispatcher: Dispatcher) -> Roles:
     """
+    Change me!
+
     Retrieves the :class:`ptbcontrib.roles.Roles` instance stored in :attr:`dispatcher.bot_data`
     or creates a new one and saves it under :attr:`BOT_DATA_KEY`.
 
@@ -39,7 +56,19 @@ def setup_roles(dispatcher: Dispatcher) -> Roles:
     Returns:
         The :class:`ptbcontrib.roles.Roles` instance to be used.
     """
-    return dispatcher.bot_data.setdefault(BOT_DATA_KEY, Roles(dispatcher.bot))
+    if isinstance(dispatcher.bot_data,RolesBotData):
+        roles = dispatcher.bot_data.get_roles()
+        if roles is None:
+            roles = Roles(dispatcher.bot)
+            dispatcher.bot_data.set_roles(roles)
+            return roles
+        else:
+            return roles
+
+    if isinstance(dispatcher.bot_data,dict):
+        return dispatcher.bot_data.setdefault(BOT_DATA_KEY, Roles(dispatcher.bot))
+
+    raise TypeError('bot_data must either be a dict or implement RolesBotData!')
 
 
 class RolesHandler(Handler):
@@ -78,6 +107,16 @@ class RolesHandler(Handler):
         check_result: Any,
     ) -> None:
         self.handler.collect_additional_context(context, update, dispatcher, check_result)
-        if BOT_DATA_KEY not in context.bot_data:
-            raise RuntimeError('You must set a Roles instance before you can use RolesHandlers.')
-        context.roles = context.bot_data[BOT_DATA_KEY]
+
+        if isinstance(context.bot_data,dict):
+            if BOT_DATA_KEY not in context.bot_data:
+                raise RuntimeError('You must set a Roles instance before you can use RolesHandlers.')
+            context.roles = context.bot_data[BOT_DATA_KEY]
+
+        if isinstance(context.bot_data,RolesBotData):
+            roles = dispatcher.bot_data.get_roles()
+            if roles is None:
+                raise RuntimeError('You must set a Roles instance before you can use RolesHandlers.')
+            context.roles = roles
+
+        raise TypeError('bot_data must either be a dict or implement RolesBotData!')

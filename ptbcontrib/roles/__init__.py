@@ -17,7 +17,7 @@
 """This module contains classes and methods for granular, hierarchical user access management."""
 
 from .roles import Role, Roles, ChatAdminsRole, ChatCreatorRole, InvertedRole
-from .roleshandler import RolesHandler, setup_roles, BOT_DATA_KEY
+from .roleshandler import RolesHandler, setup_roles, BOT_DATA_KEY, RolesBotData
 
 __all__ = [
     'Roles',
@@ -28,4 +28,5 @@ __all__ = [
     'RolesHandler',
     'setup_roles',
     'BOT_DATA_KEY',
+    'RolesBotData',
 ]

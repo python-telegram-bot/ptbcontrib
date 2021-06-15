@@ -25,11 +25,11 @@ my_role_1.add_child_role(my_role_2)
 def add_to_my_role_2(update, context):
     user = update.effective_user
     # 'roles' is stored in context.bot_data[BOT_DATA_KEY]
-    context.bot_data[BOT_DATA_KEY]['my_role_2'].add_member(user.id)
+    context.roles['my_role_2'].add_member(user.id)
     
 def add_to_my_role_1(update, context):
     user_id = int(update.message.text)
-    context.bot_data[BOT_DATA_KEY]['my_role_1'].add_member(user_id)
+    context.roles['my_role_1'].add_member(user_id)
 
 ...
 
