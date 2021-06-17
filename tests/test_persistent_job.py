@@ -18,6 +18,8 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import subprocess
 import sys
+import os
+import platform
 import datetime as dtm
 import pytest
 
@@ -34,62 +36,67 @@ subprocess.check_call(
     ]
 )
 
-from ptbcontrib.persistent_jobstore import AdaptedSQLAlchemyJobStore  # noqa: E402
+from ptbcontrib.persistent_jobstore import PTBSQLAlchemyJobStore  # noqa: E402
 
 
 @pytest.fixture(scope='function')
-def jq(_dp):
+def jq(cdp):
     jq = JobQueue()
-    jq.set_dispatcher(_dp)
-    job_store = AdaptedSQLAlchemyJobStore(dispatcher=_dp, url="sqlite:///:memory:")
+    jq.set_dispatcher(cdp)
+    job_store = PTBSQLAlchemyJobStore(dispatcher=cdp, url="sqlite:///:memory:")
     jq.scheduler.add_jobstore(job_store)
     jq.start()
     yield jq
     jq.stop()
 
 
+@pytest.fixture(scope='function')
+def jobstore(jq):
+    return jq.scheduler._jobstores["default"]
+
+
 def dummy_job(ctx):
     # check if arg is instance of CallbackContext or not
     # to make sure it's properly serialized
-    assert isinstance(ctx, CallbackContext)
+    if not isinstance(ctx, CallbackContext):
+        pytest.fail()
 
 
-def test_default_jobstore_instance(jq):
-    assert isinstance(jq.scheduler._jobstores["default"], AdaptedSQLAlchemyJobStore)
+@pytest.mark.skipif(
+    os.getenv('GITHUB_ACTIONS', False) and platform.system() in ['Windows', 'Darwin'],
+    reason="On Windows & MacOS precise timings are not accurate.",
+)
+class TestPTBJobstore:
+    def test_default_jobstore_instance(self, jobstore):
+        assert isinstance(jobstore, PTBSQLAlchemyJobStore)
 
+    def test_next_runtime(self, jq, jobstore):
+        jq.run_repeating(dummy_job, 10, first=0.1)
+        assert jobstore.get_next_run_time().second == pytest.approx(
+            dtm.datetime.now().second + 10, 1
+        )
 
-def test_next_runtime(jq):
-    jq.run_repeating(dummy_job, 10, first=0)
-    assert (
-        jq.scheduler._jobstores["default"].get_next_run_time().second
-        == dtm.datetime.now().second + 10
-    )
+    def test_lookup_job(self, jq, jobstore):
+        initial_job = jq.run_once(dummy_job, 1)
+        job = jobstore.lookup_job(initial_job.id)
+        assert job == initial_job.job
+        assert job.name == initial_job.job.name
+        assert job.func == initial_job.job.func
 
+    def test_non_existent_job(self, jobstore):
+        assert jobstore.lookup_job("foo") is None
 
-def test_lookup_job(jq):
-    initial_job = jq.run_once(dummy_job, 1)
-    jobstore = jq.scheduler._jobstores["default"]
-    job = jobstore.lookup_job(initial_job.id)
-    assert job == initial_job.job
+    def test_get_all_jobs(self, jq, jobstore):
+        j1 = jq.run_once(dummy_job, 1)
+        j2 = jq.run_once(dummy_job, 2)
+        j3 = jq.run_once(dummy_job, 3)
+        jobs = jobstore.get_all_jobs()
+        assert jobs == [j1.job, j2.job, j3.job]
 
-
-def test_non_existent_job(jq):
-    assert jq.scheduler._jobstores["default"].lookup_job("foo") is None
-
-
-def test_get_all_jobs(jq):
-    j1 = jq.run_once(dummy_job, 1)
-    j2 = jq.run_once(dummy_job, 2)
-    j3 = jq.run_once(dummy_job, 3)
-    jobs = jq.scheduler._jobstores["default"].get_all_jobs()
-    assert jobs == [j1.job, j2.job, j3.job]
-
-
-def test_remove_job(jq):
-    j1 = jq.run_once(dummy_job, 1)
-    j2 = jq.run_once(dummy_job, 2)
-    jobstore = jq.scheduler._jobstores["default"]
-    jobstore.remove_job(j1.id)
-    assert jobstore.get_all_jobs() == [j2.job]
-    jobstore.remove_job(j2.id)
-    assert jobstore.get_all_jobs() == []
+    def test_remove_job(self, jq, jobstore):
+        j1 = jq.run_once(dummy_job, 1)
+        j2 = jq.run_once(dummy_job, 2)
+        jobstore.remove_job(j1.id)
+        assert jobstore.get_all_jobs() == [j2.job]
+        jobstore.remove_job(j2.id)
+        assert jobstore.get_all_jobs() == []
