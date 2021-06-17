@@ -10,7 +10,7 @@ Provides an adapter for the `SQLAlchemyJobStore` class from APScheduler package,
 
 The provided adapter erases all problematic fields and changes `telegram.ext.Job` instance to make it serializable. After that it passes savable `Job` instances to the APScheduler storage. When job is loaded back, the adapter recreates the job into it's original form. 
 
-### Usage:
+### Usage
 ```python
 from telegram.ext import Updater
 from ptbcontrib.persistent_jobstore import PTBSQLAlchemyJobStore
