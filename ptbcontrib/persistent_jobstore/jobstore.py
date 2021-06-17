@@ -79,9 +79,9 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         # is unpickleable. we'll recreate CallbackContext
         # in _reconstitute_job method.
         if isinstance(job.args[0], CallbackContext):
-            # APScheduler stores args as tuple so we ensure
-            # tuple by (,)
-            prepped_job._modify(args=(job.args[0].job.name,))  # pylint: disable=W0212
+            tg_job = job.args[0].job
+            # APScheduler stores args as tuple.
+            prepped_job.args = (tg_job.name, tg_job.context)
         return prepped_job
 
     def _reconstitute_job(self, job_state: bytes) -> APSJob:
@@ -97,6 +97,7 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         tg_job = telegram.ext.Job(
             callback=None,
             name=job.args[0],
+            context=job.args[1],
         )
         ctx = CallbackContext.from_job(tg_job, self.dispatcher)
         job._modify(args=(ctx,))  # pylint: disable=W0212
