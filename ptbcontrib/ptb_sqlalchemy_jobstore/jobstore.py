@@ -48,7 +48,7 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
             logger.warning(
                 "Use of SQLite db is not supported  due to "
                 "multi-threading limitations of SQLite databases "
-                "You can still try to use it, but it will likely to "
+                "You can still try to use it, but it will likely "
                 "behave differently from what you expect."
             )
 
