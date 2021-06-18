@@ -82,8 +82,8 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         """
         # make new job which is copy of actual job cause
         # modifying actual job also modifies jobs in threadpool
-        # executor which are currently runnin/goin to run and
-        # we'll get job name in argument instead of CallbackContext.
+        # executor which are currently running/going to run and
+        # we'll get incorrect argument instead of CallbackContext.
         prepped_job = APSJob.__new__(APSJob)
         prepped_job.__setstate__(job.__getstate__())
         # remove CallbackContext from job args since
