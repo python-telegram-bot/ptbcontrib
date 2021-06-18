@@ -16,6 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+import logging
 import subprocess
 import sys
 import os
@@ -32,11 +33,11 @@ subprocess.check_call(
         "pip",
         "install",
         "-r",
-        "ptbcontrib/persistent_jobstore/requirements.txt",
+        "ptbcontrib/ptb_sqlalchemy_jobstore/requirements.txt",
     ]
 )
 
-from ptbcontrib.persistent_jobstore import PTBSQLAlchemyJobStore  # noqa: E402
+from ptbcontrib.ptb_sqlalchemy_jobstore import PTBSQLAlchemyJobStore  # noqa: E402
 
 
 @pytest.fixture(scope='function')
@@ -100,3 +101,8 @@ class TestPTBJobstore:
         assert jobstore.get_all_jobs() == [j2.job]
         jobstore.remove_job(j2.id)
         assert jobstore.get_all_jobs() == []
+
+    def test_sqlite_warning(self, caplog, cdp):
+        with caplog.at_level(logging.WARNING):
+            PTBSQLAlchemyJobStore(cdp, url="sqlite:///:memory:")
+        assert "Use of SQLite db is not supported" in caplog.text

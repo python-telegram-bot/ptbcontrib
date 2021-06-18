@@ -13,7 +13,7 @@ The provided adapter erases all problematic fields and changes `telegram.ext.Job
 ### Usage
 ```python
 from telegram.ext import Updater
-from ptbcontrib.persistent_jobstore import PTBSQLAlchemyJobStore
+from ptbcontrib.ptb_sqlalchemy_jobstore import PTBSQLAlchemyJobStore
 
 DB_URI = "postgresql://botuser:@localhost:5432/botdb"
 

@@ -18,6 +18,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This file contains PTBSQLAlchemyJobStore."""
 
+import logging
 from typing import Any
 import telegram
 from apscheduler.job import Job as APSJob
@@ -26,12 +27,15 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from telegram.ext import CallbackContext, Dispatcher
 
 
+logger = logging.getLogger(__name__)
+
+
 class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
     """
     Wraps apscheduler.SQLAlchemyJobStore to make :class:`telegram.ext.Job` class storable.
     """
 
-    def __init__(self, dispatcher: Dispatcher, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, dispatcher: Dispatcher, **kwargs: Any) -> None:
         """
         Args:
             dispatcher (:class:`telegram.ext.Dispatcher`): Dispatcher instance
@@ -40,7 +44,15 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
                 the SQLAlchemyJobStore constructor.
         """
 
-        super().__init__(*args, **kwargs)
+        if "url" in kwargs and kwargs["url"].startswith("sqlite:///"):
+            logger.warning(
+                "Use of SQLite db is not supported  due to "
+                "multi-threading limitations of SQLite databases "
+                "You can still try to use it, but it will likely to "
+                "behave differently from what you expect."
+            )
+
+        super().__init__(**kwargs)
         self.dispatcher = dispatcher
 
     def add_job(self, job: APSJob) -> None:
