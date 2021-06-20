@@ -30,16 +30,35 @@ BOT_DATA_KEY: str = 'ptbcontrib_roles_bot_data_key'
 
 
 class RolesBotData(ABC):
-    """Fill me"""
+    """
+    Fill me
+
+    Defines the abstract class RolesBotData.
+    It has two abstract methods: get_roles and set_roles
+    """
 
     @abstractmethod
     def get_roles(self) -> Optional[Roles]:
-        """Fil me"""
+        """
+        Fill me
+
+        An abstract method meant to fetch an existing set of roles.
+
+        Returns:
+            The preexisting :class: 'Roles' instance, if there is one
+        """
         ...
 
     @abstractmethod
     def set_roles(self,roles: Roles) -> None:
-        """Fill me"""
+        """
+        Fill me
+
+        An abstract method that implements a set of roles.
+
+        Args:
+            roles (:class: 'Roles'): The set of roles
+        """
         ...
 
 
@@ -47,8 +66,12 @@ def setup_roles(dispatcher: Dispatcher) -> Roles:
     """
     Change me!
 
-    Retrieves the :class:`ptbcontrib.roles.Roles` instance stored in :attr:`dispatcher.bot_data`
-    or creates a new one and saves it under :attr:`BOT_DATA_KEY`.
+    ??? Can we be sure that there is either an instance of Roles or a dict? Can there be nothing?
+
+    Checks if the :attr: 'dispatcher.bot_data' stores an instance
+    of the class :class:`ptbcontrib.roles.Roles` or a dict.
+    In the first case, either the existing instance is retrieved or a new one is created and
+    saved under :attr:`BOT_DATA_KEY`.
 
     Args:
         dispatcher (:class:`telegram.ext.Dispatcher`): The dispatcher
