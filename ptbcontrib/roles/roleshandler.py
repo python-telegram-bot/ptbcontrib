@@ -40,9 +40,8 @@ class RolesBotData(ABC):
     @abstractmethod
     def get_roles(self) -> Optional[Roles]:
         """
-        Fill me
-
         An abstract method meant to fetch an existing set of roles.
+        Must be overridden.
 
         Returns:
             The preexisting :class: 'Roles' instance, if there is one
@@ -50,11 +49,10 @@ class RolesBotData(ABC):
         ...
 
     @abstractmethod
-    def set_roles(self,roles: Roles) -> None:
+    def set_roles(self, roles: Roles) -> None:
         """
-        Fill me
-
         An abstract method that implements a set of roles.
+        Must be overridden.
 
         Args:
             roles (:class: 'Roles'): The set of roles
@@ -64,14 +62,12 @@ class RolesBotData(ABC):
 
 def setup_roles(dispatcher: Dispatcher) -> Roles:
     """
-    Change me!
-
-    ??? Can we be sure that there is either an instance of Roles or a dict? Can there be nothing?
-
-    Checks if the :attr: 'dispatcher.bot_data' stores an instance
-    of the class :class:`ptbcontrib.roles.Roles` or a dict.
-    In the first case, either the existing instance is retrieved or a new one is created and
-    saved under :attr:`BOT_DATA_KEY`.
+    Checks if :attr:`dispatcher.bot_data` stores an instance
+    of the class :class:`ptbcontrib.roles.Roles` and creates a new one, if not.
+    If :attr:`dispatcher.bot_data` is a dict, the ``Roles`` object will be saved  under the key
+    :attr:`BOT_DATA_KEY`. Otherwise, :attr:`dispatcher.bot_data` must be an instance of
+    :class:`RolesBotData` and the corresponding methods will be used to retrieve and save the
+    ``Roles`` object.
 
     Args:
         dispatcher (:class:`telegram.ext.Dispatcher`): The dispatcher
@@ -79,16 +75,16 @@ def setup_roles(dispatcher: Dispatcher) -> Roles:
     Returns:
         The :class:`ptbcontrib.roles.Roles` instance to be used.
     """
-    if isinstance(dispatcher.bot_data,RolesBotData):
+    if isinstance(dispatcher.bot_data, RolesBotData):
         roles = dispatcher.bot_data.get_roles()
         if roles is None:
             roles = Roles(dispatcher.bot)
             dispatcher.bot_data.set_roles(roles)
             return roles
-        else:
-            return roles
 
-    if isinstance(dispatcher.bot_data,dict):
+        return roles
+
+    if isinstance(dispatcher.bot_data, dict):
         return dispatcher.bot_data.setdefault(BOT_DATA_KEY, Roles(dispatcher.bot))
 
     raise TypeError('bot_data must either be a dict or implement RolesBotData!')
@@ -131,15 +127,21 @@ class RolesHandler(Handler):
     ) -> None:
         self.handler.collect_additional_context(context, update, dispatcher, check_result)
 
-        if isinstance(context.bot_data,dict):
+        if isinstance(context.bot_data, dict):
             if BOT_DATA_KEY not in context.bot_data:
-                raise RuntimeError('You must set a Roles instance before you can use RolesHandlers.')
+                raise RuntimeError(
+                    'You must set a Roles instance before you can use RolesHandlers.'
+                )
             context.roles = context.bot_data[BOT_DATA_KEY]
+            return
 
-        if isinstance(context.bot_data,RolesBotData):
+        if isinstance(context.bot_data, RolesBotData):
             roles = dispatcher.bot_data.get_roles()
             if roles is None:
-                raise RuntimeError('You must set a Roles instance before you can use RolesHandlers.')
+                raise RuntimeError(
+                    'You must set a Roles instance before you can use RolesHandlers.'
+                )
             context.roles = roles
+            return
 
         raise TypeError('bot_data must either be a dict or implement RolesBotData!')
