@@ -74,3 +74,4 @@ Unfortunately `RolesHandler(my_conversation_handler, roles=roles)` does *not* wo
 ## Authors
 
 *   [Hinrich Mahler](https://github.com/bibo-joshi)
+*   [GrandMoffPinky](https://github.com/grandmoffpinky)
