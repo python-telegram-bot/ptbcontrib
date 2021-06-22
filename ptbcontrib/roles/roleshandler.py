@@ -31,10 +31,8 @@ BOT_DATA_KEY: str = 'ptbcontrib_roles_bot_data_key'
 
 class RolesBotData(ABC):
     """
-    Fill me
-
-    Defines the abstract class RolesBotData.
-    It has two abstract methods: get_roles and set_roles
+    Abstract base class providing an interface to be used by :meth:`set_roles`.
+    Inherit from this class when using a custom type for ``bot_data``
     """
 
     @abstractmethod
