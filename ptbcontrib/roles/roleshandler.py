@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains the RolesHandler class."""
-from typing import Any, Union
+from typing import Any, Union, Optional
+from abc import ABC, abstractmethod
 
 from telegram import Update
 from telegram.ext import Handler, CallbackContext, Dispatcher
@@ -28,10 +29,43 @@ BOT_DATA_KEY: str = 'ptbcontrib_roles_bot_data_key'
 """:obj:`str`: The key used to store roles in ``bot_data``."""
 
 
+class RolesBotData(ABC):
+    """
+    Abstract base class providing an interface to be used by :meth:`set_roles`.
+    Inherit from this class when using a custom type for ``bot_data``
+    """
+
+    @abstractmethod
+    def get_roles(self) -> Optional[Roles]:
+        """
+        An abstract method meant to fetch an existing set of roles.
+        Must be overridden.
+
+        Returns:
+            The preexisting :class: 'Roles' instance, if there is one
+        """
+        ...
+
+    @abstractmethod
+    def set_roles(self, roles: Roles) -> None:
+        """
+        An abstract method that implements a set of roles.
+        Must be overridden.
+
+        Args:
+            roles (:class: 'Roles'): The set of roles
+        """
+        ...
+
+
 def setup_roles(dispatcher: Dispatcher) -> Roles:
     """
-    Retrieves the :class:`ptbcontrib.roles.Roles` instance stored in :attr:`dispatcher.bot_data`
-    or creates a new one and saves it under :attr:`BOT_DATA_KEY`.
+    Checks if :attr:`dispatcher.bot_data` stores an instance
+    of the class :class:`ptbcontrib.roles.Roles` and creates a new one, if not.
+    If :attr:`dispatcher.bot_data` is a dict, the ``Roles`` object will be saved  under the key
+    :attr:`BOT_DATA_KEY`. Otherwise, :attr:`dispatcher.bot_data` must be an instance of
+    :class:`RolesBotData` and the corresponding methods will be used to retrieve and save the
+    ``Roles`` object.
 
     Args:
         dispatcher (:class:`telegram.ext.Dispatcher`): The dispatcher
@@ -39,7 +73,19 @@ def setup_roles(dispatcher: Dispatcher) -> Roles:
     Returns:
         The :class:`ptbcontrib.roles.Roles` instance to be used.
     """
-    return dispatcher.bot_data.setdefault(BOT_DATA_KEY, Roles(dispatcher.bot))
+    if isinstance(dispatcher.bot_data, RolesBotData):
+        roles = dispatcher.bot_data.get_roles()
+        if roles is None:
+            roles = Roles(dispatcher.bot)
+            dispatcher.bot_data.set_roles(roles)
+            return roles
+
+        return roles
+
+    if isinstance(dispatcher.bot_data, dict):
+        return dispatcher.bot_data.setdefault(BOT_DATA_KEY, Roles(dispatcher.bot))
+
+    raise TypeError('bot_data must either be a dict or implement RolesBotData!')
 
 
 class RolesHandler(Handler):
@@ -78,6 +124,22 @@ class RolesHandler(Handler):
         check_result: Any,
     ) -> None:
         self.handler.collect_additional_context(context, update, dispatcher, check_result)
-        if BOT_DATA_KEY not in context.bot_data:
-            raise RuntimeError('You must set a Roles instance before you can use RolesHandlers.')
-        context.roles = context.bot_data[BOT_DATA_KEY]
+
+        if isinstance(context.bot_data, dict):
+            if BOT_DATA_KEY not in context.bot_data:
+                raise RuntimeError(
+                    'You must set a Roles instance before you can use RolesHandlers.'
+                )
+            context.roles = context.bot_data[BOT_DATA_KEY]
+            return
+
+        if isinstance(context.bot_data, RolesBotData):
+            roles = dispatcher.bot_data.get_roles()
+            if roles is None:
+                raise RuntimeError(
+                    'You must set a Roles instance before you can use RolesHandlers.'
+                )
+            context.roles = roles
+            return
+
+        raise TypeError('bot_data must either be a dict or implement RolesBotData!')

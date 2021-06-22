@@ -20,6 +20,7 @@ import datetime as dtm
 import os
 import pickle
 import subprocess
+from typing import Optional
 
 import pytest
 import sys
@@ -37,6 +38,7 @@ from ptbcontrib.roles import (
     setup_roles,
     BOT_DATA_KEY,
     RolesHandler,
+    RolesBotData,
 )
 
 
@@ -708,20 +710,60 @@ class TestRoles:
 @pytest.fixture(scope='function', autouse=True)
 def clear_bot_data(dp):
     yield
-    dp.bot_data.pop(BOT_DATA_KEY, None)
+    dp.bot_data = dict()
+
+
+class RolesData(RolesBotData):
+    def __init__(self):
+        self.roles = None
+
+    def get_roles(self) -> Optional[Roles]:
+        return self.roles
+
+    def set_roles(self, roles: Roles) -> None:
+        self.roles = roles
 
 
 class TestRolesHandler:
-    def test_setup_roles(self, cdp):
+    @pytest.mark.parametrize('roles_bot_data', [True, False])
+    def test_setup_roles(self, cdp, roles_bot_data):
+        if roles_bot_data:
+            cdp.bot_data = RolesData()
         roles = setup_roles(cdp)
         assert isinstance(roles, Roles)
-        assert cdp.bot_data[BOT_DATA_KEY] is roles
+        if not roles_bot_data:
+            assert cdp.bot_data[BOT_DATA_KEY] is roles
+        else:
+            assert cdp.bot_data.get_roles() is roles
         # We test twice to make sure everything nothing goes wrong when roles is already there
         roles = setup_roles(cdp)
         assert isinstance(roles, Roles)
-        assert cdp.bot_data[BOT_DATA_KEY] is roles
+        if not roles_bot_data:
+            assert cdp.bot_data[BOT_DATA_KEY] is roles
+        else:
+            assert cdp.bot_data.get_roles() is roles
 
-    def test_callback_and_context(self, cdp, update):
+    def test_setup_roles_invalid_bot_data_type(self, cdp):
+        cdp.bot_data = 17
+        with pytest.raises(TypeError, match='dict or implement RolesBotData'):
+            setup_roles(cdp)
+
+    def test_collect_additional_context_invalid_bot_data(self, cdp, update):
+        cdp.bot_data = 'yet another deathstar'
+
+        def callback(_, __):
+            pass
+
+        handler = MessageHandler(Filters.all, callback=callback)
+        roles_handler = RolesHandler(handler, roles=None)
+        context = CallbackContext.from_update(update, cdp)
+        with pytest.raises(TypeError, match='dict or implement RolesBotData'):
+            roles_handler.collect_additional_context(context, cdp, update, True)
+
+    @pytest.mark.parametrize('roles_bot_data', [True, False])
+    def test_callback_and_context(self, cdp, update, roles_bot_data):
+        if roles_bot_data:
+            cdp.bot_data = RolesData()
         self.roles = setup_roles(cdp)
         self.roles.admins.add_member(42)
         self.roles.add_role(name='role', chat_ids=[1])
@@ -743,7 +785,10 @@ class TestRolesHandler:
         cdp.process_update(update)
         assert self.test_flag
 
-    def test_handler_error_message(self, cdp, update):
+    @pytest.mark.parametrize('roles_bot_data', [True, False])
+    def test_handler_error_message(self, cdp, update, roles_bot_data):
+        if roles_bot_data:
+            cdp.bot_data = RolesData()
         handler = MessageHandler(Filters.all, callback=lambda u, c: 1)
         roles_handler = RolesHandler(handler, roles=Role(0))
         cdp.add_handler(roles_handler)
