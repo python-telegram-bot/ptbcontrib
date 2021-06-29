@@ -93,7 +93,7 @@ def extract_message_links(
         # links to private massages are of the form t.me/c/chat_id/message_id
         pattern = re.compile(r't.me/c/[0-9]+/[0-9]+')
     elif public_only:
-        # links to private massages are of the form t.me/group_name/message_id
+        # links to public massages are of the form t.me/group_name/message_id
         # group names consist of a-z, 0-9 and underscore with at least 5 characters
         pattern = re.compile(r't.me/[a-z0-9_]{5,}/[0-9]+')
     else:
