@@ -1,8 +1,8 @@
 # Bot persistence via a Redis database
 ## Notes
 
- 1. `RedisPersistence` class only writes data to the database when the bot is shut down.
- 2. As `RedisPersistence` is a subclass of `DictPersistence`, all data set to be stored by the class must be JSON-serializable.
+1. `RedisPersistence` class only writes data to the database when the bot is shut down.
+2. As `RedisPersistence` is a subclass of `DictPersistence`, all data set to be stored by the class must be JSON-serializable.
 
 ## How to use
 ### Passing URL of the database
