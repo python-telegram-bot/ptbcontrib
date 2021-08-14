@@ -161,7 +161,7 @@ class PostgresPersistence(DictPersistence):
         Args:
             name (:obj:`str`): The handler's name.
             key (:obj:`tuple`): The key the state is changed for.
-            new_state (:obj:`tuple`
+            new_state (:obj:`tuple` | :obj:`any`): The new state for the given key.
         """
         super().update_conversation(name, key, new_state)
         if not self.on_flush:
