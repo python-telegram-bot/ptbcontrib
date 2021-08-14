@@ -59,6 +59,7 @@ class TestPostgresPersistence:
     executed = ""
     commited = 0
     ses_closed = False
+    flush_flag = False
 
     @pytest.fixture(autouse=True, name='reset')
     def reset_fixture(self):
@@ -68,6 +69,7 @@ class TestPostgresPersistence:
         self.executed = ""
         self.commited = 0
         self.ses_closed = False
+        self.flush_flag = False
 
     def mocked_execute(self, query):
         self.executed = query
@@ -79,9 +81,17 @@ class TestPostgresPersistence:
     def mock_ses_close(self):
         self.ses_closed = True
 
+    def test_no_args(self):
+        with pytest.raises(TypeError, match="provide either url or session."):
+            PostgresPersistence()
+
     def test_invalid_scoped_session_obj(self):
-        with pytest.raises(TypeError):
-            PostgresPersistence("scoop")
+        with pytest.raises(TypeError, match="must needs to be `sqlalchemy.orm.scoped"):
+            PostgresPersistence(session="scoop")
+
+    def test_invalid_uri(self):
+        with pytest.raises(TypeError, match="isn't a valid PostgreSQL"):
+            PostgresPersistence(url="sqlite:///owo.db")
 
     def test_with_handler(self, bot, update, monkeypatch):
         session = scoped_session("a")
@@ -89,7 +99,7 @@ class TestPostgresPersistence:
         monkeypatch.setattr(session, 'commit', self.mock_commit)
         monkeypatch.setattr(session, 'close', self.mock_ses_close)
 
-        u = Updater(bot=bot, persistence=PostgresPersistence(session))
+        u = Updater(bot=bot, persistence=PostgresPersistence(session=session))
         dp = u.dispatcher
 
         def first(update, context):
@@ -124,13 +134,52 @@ class TestPostgresPersistence:
         assert self.commited == 555
         assert self.ses_closed is True
 
+    @pytest.mark.parametrize(["on_flush", "expected"], [(False, True), (True, False)])
+    def test_on_flush(self, bot, update, monkeypatch, on_flush, expected):
+        session = scoped_session("a")
+        monkeypatch.setattr(session, 'execute', self.mocked_execute)
+        monkeypatch.setattr(session, 'commit', self.mock_commit)
+        monkeypatch.setattr(session, 'close', self.mock_ses_close)
+
+        persistence = PostgresPersistence(session=session, on_flush=on_flush)
+
+        def mocked_update_database():
+            self.flush_flag = True
+
+        monkeypatch.setattr(persistence, '_update_database', mocked_update_database)
+        u = Updater(bot=bot, persistence=persistence)
+        dp = u.dispatcher
+
+        def first(update, context):
+            context.user_data['test1'] = 'test2'
+            context.chat_data[3] = 'test4'
+            context.bot_data['test1'] = 'test2'
+
+        def second(update, context):
+            if not context.user_data['test1'] == 'test2':
+                pytest.fail()
+            if not context.chat_data[3] == 'test4':
+                pytest.fail()
+            if not context.bot_data['test1'] == 'test2':
+                pytest.fail()
+
+        h1 = MessageHandler(None, first)
+        h2 = MessageHandler(None, second)
+        dp.add_handler(h1)
+        dp.process_update(update)
+
+        dp.remove_handler(h1)
+        dp.add_handler(h2)
+        dp.process_update(update)
+        assert self.flush_flag is expected
+
     def test_load_on_boot(self, monkeypatch):
         session = scoped_session("a")
         monkeypatch.setattr(session, 'execute', self.mocked_execute)
         monkeypatch.setattr(session, 'commit', self.mock_commit)
         monkeypatch.setattr(session, 'close', self.mock_ses_close)
 
-        PostgresPersistence(session)
+        PostgresPersistence(session=session)
         assert self.executed.text == "SELECT data FROM persistence"
         assert self.commited == 555
         assert self.ses_closed is True
@@ -141,6 +190,6 @@ class TestPostgresPersistence:
         monkeypatch.setattr(session, 'commit', self.mock_commit)
         monkeypatch.setattr(session, 'close', self.mock_ses_close)
 
-        PostgresPersistence(session).flush()
+        PostgresPersistence(session=session).flush()
         assert self.executed != ""
         assert self.commited == 555

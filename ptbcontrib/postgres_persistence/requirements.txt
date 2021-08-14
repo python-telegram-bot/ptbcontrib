@@ -1,3 +1,2 @@
 python-telegram-bot>=12.0
 SQLAlchemy
-ujson
