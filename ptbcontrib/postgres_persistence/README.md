@@ -1,10 +1,24 @@
-# Persistence class with Postgresql database as backend
+# Persistence class with PostgreSQL database as backend
 
 ## Notes
-Data needs to be JSON-serializable & will be written to the DB only on shutdown.
+Data must needs to be JSON serialisable since `PostgresPersistence` is a
+subclass of PTB's `DictPersistence` which encodes and saves data in JSON format.
 
 ## How to use
 
+**Using with postgreSQL database URL**
+
+```python
+from ptbcontrib.postgres_persistence import PostgresPersistence
+
+
+# Your Postgresql database URL
+DB_URI = "postgresql://username:pw@hostname:port/db_name"
+
+updater = Updater(..., persistence=PostgresPersistence(url=DB_URI))
+```
+
+**Using with existing SQLAlchemy scoped session**
 ```python
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -20,19 +34,17 @@ def start_session() -> scoped_session:
     engine = create_engine(DB_URI, client_encoding="utf8")
     return scoped_session(sessionmaker(bind=engine, autoflush=False))
 
-# start the session
-session = start_session()
-
-# And pass it in Updater...
-updater = Updater(...., persistence=PostgresPersistence(session))
+updater = Updater(..., persistence=PostgresPersistence(session=start_session()))
 ```
+
 
 ## Requirements
 
 *   `python-telegram-bot>=12.0`
 *   `SQLAlchemy`
-*   `ujson`
+*   `ujson` (Optional)
 
 ## Authors
 
 *   [Stɑrry Shivɑm](https://github.com/starry69)
+
