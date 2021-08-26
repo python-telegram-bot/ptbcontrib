@@ -54,34 +54,18 @@ class PostgresPersistence(DictPersistence):
         url (:obj:`str`, Optional) the postgresql database url.
         session (:obj:`scoped_session`, Optional): sqlalchemy scoped session.
         on_flush (:obj:`bool`, optional): if set to :obj:`True` :class:`PostgresPersistence`
-            will only update bot/chat/user data in database on shutdown.
-        store_user_data (:obj:`bool`, optional): Whether user_data should be saved by this
-            persistence class. Default is :obj:`True`.
-        store_chat_data (:obj:`bool`, optional): Whether user_data should be saved by this
-            persistence class. Default is :obj:`True`.
-        store_bot_data (:obj:`bool`, optional): Whether bot_data should be saved by this
-            persistence class. Default is :obj:`True` .
-
+            will only update bot/chat/user data when :meth:flush is called.
+        **kwargs (:obj:`dict`): Arbitrary keyword Arguments to be passed to
+            the DictPersistence constructor.
     """
 
-    # pylint: disable=R0913
     def __init__(
         self,
         url: str = None,
         session: scoped_session = None,
         on_flush: bool = False,
-        store_user_data: bool = True,
-        store_chat_data: bool = True,
-        store_bot_data: bool = True,
+        **kwargs: Any,
     ) -> None:
-
-        super().__init__(
-            store_user_data=store_user_data,
-            store_chat_data=store_chat_data,
-            store_bot_data=store_bot_data,
-        )
-
-        self.logger = getLogger(__name__)
 
         if url:
             if not url.startswith("postgresql://"):
@@ -95,7 +79,10 @@ class PostgresPersistence(DictPersistence):
             self._session = session
 
         else:
-            raise TypeError("You must needs to provide either url or session.")
+            raise TypeError("You must need to provide either url or session.")
+
+        self.logger = getLogger(__name__)
+        super().__init__(**kwargs)
 
         self.on_flush = on_flush
         self.__init_database()
