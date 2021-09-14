@@ -35,7 +35,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -W ignore -m pip install --upgrade pip
-          python -W ignore -m pip install -U codecov pytest-cov
           python -W ignore -m pip install -r requirements.txt
           python -W ignore -m pip install -r requirements-dev.txt
 
@@ -49,8 +48,7 @@ jobs:
           exit ${global_exit}
         env:
           JOB_INDEX: ${{ strategy.job-index }}
-          TEST_BUILD: ${{ matrix.test-build }}
-          TEST_PRE_COMMIT: ${{ matrix.test-pre-commit }}
+          TEST_BUILD: "true"
         shell: bash --noprofile --norc {0}
   test_pre_commit:
     name: test-pre-commit
