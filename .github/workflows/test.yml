@@ -40,12 +40,9 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pytest -v -m nocoverage
-          nocov_exit=$?
-          pytest -v -m "not nocoverage" --cov
-          cov_exit=$?
-          global_exit=$(( nocov_exit > cov_exit ? nocov_exit : cov_exit ))
-          exit ${global_exit}
+          python run_tests.py
+          exit_code=$?
+          exit ${exit_code}
         env:
           JOB_INDEX: ${{ strategy.job-index }}
           TEST_BUILD: "true"

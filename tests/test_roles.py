@@ -35,7 +35,6 @@ from telegram import (
     ChatMember,
     Chat,
     TelegramError,
-    __version__,
 )
 from telegram.ext import BasePersistence, CallbackContext, MessageHandler, Filters
 
@@ -672,10 +671,6 @@ class TestRoles:
         roles.kick_admin(2)
         assert not test_role(update)
 
-    @pytest.mark.skipif(
-        tuple(int(x) for x in __version__.split(".")) > (13, 6),
-        reason="Not compatible with PTB version > 13.6",
-    )
     @pytest.mark.filterwarnings('ignore:BasePersistence')
     def test_pickle(self, roles, bot, base_persistence):
         base_persistence.set_bot(bot)
