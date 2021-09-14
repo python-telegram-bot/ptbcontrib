@@ -74,7 +74,14 @@ def run_tests(changed: bool, names: List[str]) -> int:
                 str(ptbcontrib_path / name / "requirements.txt"),
             ]
         )
-        out = pytest.main(['-k', name])
+        out = subprocess.check_call(
+            [
+                'pytest',
+                '-v',
+                '-k',
+                name,
+            ]
+        )
         if out != ExitCode.OK:
             failure = True
 
@@ -82,7 +89,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
 
 
 if __name__ == '__main__':
-    """Parse the arguments, run the tests and return exit code."""
+    # Parse the arguments, run the tests and return exit code.
 
     parser = ArgumentParser(
         description=(
