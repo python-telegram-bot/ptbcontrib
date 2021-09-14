@@ -10,10 +10,11 @@ repos:
         - --diff
         - --check
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.4
+    rev: 3.9.2
     hooks:
     -   id: flake8
--   repo: local
+-   repo: https://github.com/PyCQA/pylint
+    rev: v2.10.2
     hooks:
     -   id: pylint
         name: pylint
@@ -28,3 +29,11 @@ repos:
     hooks:
     -   id: mypy
         exclude: ^tests/
+
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v2.26.0
+    hooks:
+    -   id: pyupgrade
+        files: (run_tests\.py)|((ptbcontrib|tests)/.*\.py)$
+        args:
+          - --py36-plus
