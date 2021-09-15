@@ -23,7 +23,6 @@ from argparse import ArgumentParser
 from pathlib import Path
 from typing import List
 
-import pytest
 from _pytest.config import ExitCode
 from pygit2 import Repository
 

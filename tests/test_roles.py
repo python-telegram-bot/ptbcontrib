@@ -19,7 +19,6 @@
 import datetime as dtm
 import os
 import pickle
-import subprocess
 from typing import Optional
 
 import pytest
@@ -48,13 +47,6 @@ from ptbcontrib.roles import (
     RolesHandler,
     RolesBotData,
 )
-
-
-@pytest.fixture(scope='module', autouse=True)
-def install_requirements():
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "-r", "ptbcontrib/roles/requirements.txt"]
-    )
 
 
 @pytest.fixture(scope='function')
