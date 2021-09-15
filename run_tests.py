@@ -23,7 +23,6 @@ from argparse import ArgumentParser
 from pathlib import Path
 from typing import List
 
-from _pytest.config import ExitCode
 from pygit2 import Repository
 
 root_path = Path(__file__).parent.resolve()
@@ -56,10 +55,15 @@ def get_changed_contrib_names() -> List[str]:
 
 def run_tests(changed: bool, names: List[str]) -> int:
     """Run the required tests and install requirements for each one"""
+    print('changed', changed)
+    print('names', names)
+
     if changed:
         names = get_changed_contrib_names()
     elif not names:
         names = contrib_names
+
+    print('running pytest for', names)
 
     for name in names:
         try:
@@ -73,7 +77,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
                     str(ptbcontrib_path / name / "requirements.txt"),
                 ]
             )
-            out = subprocess.check_call(
+            subprocess.check_call(
                 [
                     'pytest',
                     '-v',
