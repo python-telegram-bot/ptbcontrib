@@ -61,29 +61,29 @@ def run_tests(changed: bool, names: List[str]) -> int:
     elif not names:
         names = contrib_names
 
-    failure = False
     for name in names:
-        subprocess.check_call(
-            [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "-r",
-                str(ptbcontrib_path / name / "requirements.txt"),
-            ]
-        )
-        out = subprocess.check_call(
-            [
-                'pytest',
-                '-v',
-                str(root_path / 'tests' / f'test_{name}.py'),
-            ]
-        )
-        if out != ExitCode.OK:
-            failure = True
+        try:
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "-r",
+                    str(ptbcontrib_path / name / "requirements.txt"),
+                ]
+            )
+            out = subprocess.check_call(
+                [
+                    'pytest',
+                    '-v',
+                    str(root_path / 'tests' / f'test_{name}.py'),
+                ]
+            )
 
-    return 1 if failure else 0
+            return 0
+        except subprocess.CalledProcessError as exc:
+            return exc.returncode
 
 
 if __name__ == '__main__':
