@@ -55,16 +55,12 @@ def get_changed_contrib_names() -> List[str]:
 
 def run_tests(changed: bool, names: List[str]) -> int:
     """Run the required tests and install requirements for each one"""
-    print('changed', changed)
-    print('names', names)
-
     if changed:
         names = get_changed_contrib_names()
     elif not names:
         names = contrib_names
 
-    print('running pytest for', names)
-
+    exit_code = 0
     for name in names:
         try:
             subprocess.check_call(
@@ -85,9 +81,10 @@ def run_tests(changed: bool, names: List[str]) -> int:
                 ]
             )
 
-            return 0
         except subprocess.CalledProcessError as exc:
-            return exc.returncode
+            exit_code = exc.returncode
+
+    return exit_code
 
 
 if __name__ == '__main__':
