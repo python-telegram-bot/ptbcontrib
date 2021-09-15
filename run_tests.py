@@ -77,8 +77,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
             [
                 'pytest',
                 '-v',
-                '-k',
-                name,
+                str(root_path / 'tests' / f'test_{name}.py'),
             ]
         )
         if out != ExitCode.OK:
