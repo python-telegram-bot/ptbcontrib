@@ -39,7 +39,7 @@ class TestUsernameToChatAPI:
         wrapper = UsernameToChatAPI("URL", "key", bot)
         chat = wrapper.resolve("username")
         assert type(chat) == Chat
-        assert chat.id == 123
+        assert chat.id == 456
         assert chat.type == Chat.PRIVATE
         assert chat.username == "username"
         assert chat.first_name == "name"
