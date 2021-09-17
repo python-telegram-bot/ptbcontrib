@@ -29,6 +29,12 @@ updater.start_polling()
 updater.idle()
 ```
 
+## Note
+You MUST define an explicit ID for the job and use `replace_existing=True` or you will get a new copy of the job every time your application restarts! To pass those extra arguments you can
+use `job_kwargs` parameter that accepts arbitrary arguments as a dictionary and is present in all `JobQueue.run_*` methods.
+
+For more information please have a look at APS scheduler's documentation about adding jobs by clicking [here](https://apscheduler.readthedocs.io/en/stable/userguide.html#adding-jobs).
+
 ## Requirements
 
 *   `python-telegram-bot>=13.0`
