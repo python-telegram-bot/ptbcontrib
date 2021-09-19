@@ -89,8 +89,10 @@ class PostgresPersistence(DictPersistence):
         self.__load_database()
 
     def __init_database(self) -> None:
-        """creates table for persistence data if not exists"""
-
+        """
+        creates table for storing the data if table
+        doesn't exist already inside database.
+        """
         create_table_qry = """
             CREATE TABLE IF NOT EXISTS persistence(
             data json NOT NULL);"""
@@ -108,6 +110,14 @@ class PostgresPersistence(DictPersistence):
             self._bot_data = data.get("bot_data", {})
             self._conversations = decode_conversations_from_json(data.get("conversations", "{}"))
             self.logger.info("Database loaded successfully!")
+
+            # if it is a fresh setup we'll add some placeholder data so we
+            # can perform `UPDATE` opearations on it, cause SQL only allows
+            # `UPDATE` operations if column have some data already present inside it.
+            if not data:
+                insert_qry = "INSERT INTO persistence (data) VALUES (:jsondata)"
+                self._session.execute(text(insert_qry), {"jsondata": "{}"})
+                self._session.commit()
         finally:
             self._session.close()
 
