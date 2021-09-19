@@ -71,7 +71,7 @@ class TestPostgresPersistence:
         self.ses_closed = False
         self.flush_flag = False
 
-    def mocked_execute(self, query):
+    def mocked_execute(self, query, *args, **kwargs):
         self.executed = query
         return FakeExecResult()
 
@@ -180,7 +180,10 @@ class TestPostgresPersistence:
         monkeypatch.setattr(session, 'close', self.mock_ses_close)
 
         PostgresPersistence(session=session)
-        assert self.executed.text == "SELECT data FROM persistence"
+        assert self.executed.text in {
+            "SELECT data FROM persistence",
+            "INSERT INTO persistence (data) VALUES (:jsondata)",
+        }
         assert self.commited == 555
         assert self.ses_closed is True
 
