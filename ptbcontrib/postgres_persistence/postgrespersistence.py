@@ -90,7 +90,8 @@ class PostgresPersistence(DictPersistence):
 
     def __init_database(self) -> None:
         """
-        creates table for persistence data if not exists already.
+        creates table for storing the data if table
+        doesn't exist already inside database.
         """
         create_table_qry = """
             CREATE TABLE IF NOT EXISTS persistence(
@@ -117,7 +118,6 @@ class PostgresPersistence(DictPersistence):
                 insert_qry = "INSERT INTO persistence (data) VALUES (:jsondata)"
                 self._session.execute(text(insert_qry), {"jsondata": "{}"})
                 self._session.commit()
-
         finally:
             self._session.close()
 
