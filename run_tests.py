@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """Helper script to run the test suites for ptbcontrib"""
+import itertools
 import subprocess
 import sys
 from argparse import ArgumentParser
@@ -27,6 +28,7 @@ from pygit2 import Repository
 
 root_path = Path(__file__).parent.resolve()
 ptbcontrib_path = root_path / 'ptbcontrib'
+test_path = root_path / 'tests'
 contrib_paths = [
     x for x in ptbcontrib_path.iterdir() if x.is_dir() and '__pycache__' not in x.name
 ]
@@ -40,7 +42,12 @@ def get_changed_contrib_names() -> List[str]:
     if main_branch is None:
         raise RuntimeError("Can't find `main` branch to compare to.")
 
-    file_paths = (patch.delta.new_file.path for patch in repo.diff(main_branch))
+    file_paths = set(
+        itertools.chain.from_iterable(
+            (patch.delta.old_file.path, patch.delta.new_file.path)
+            for patch in repo.diff(a=main_branch)
+        )
+    )
     changed_contribs = set()
 
     for filepath in file_paths:
@@ -49,6 +56,10 @@ def get_changed_contrib_names() -> List[str]:
             for contrib_path in contrib_paths:
                 if contrib_path in path_parents:
                     changed_contribs.add(contrib_path.name)
+            if test_path in path_parents:
+                for contrib_path in contrib_paths:
+                    if filepath.endswith(f'test_{contrib_path.parts[-1]}.py'):
+                        changed_contribs.add(contrib_path.name)
 
     return list(changed_contribs)
 
@@ -106,7 +117,8 @@ if __name__ == '__main__':
         default=False,
         help=(
             'When passed, the git diff will be checked for all files that differ from the main '
-            'branch. Only the corresponding tests suits will be run.'
+            'branch. Only the corresponding tests suits will be run. Note that this may fail to '
+            'identify some changed files in edge cases - please use the -n flag in that case.'
         ),
     )
     group.add_argument(
