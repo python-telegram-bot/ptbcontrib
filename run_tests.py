@@ -18,7 +18,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """Helper script to run the test suites for ptbcontrib"""
 import itertools
-import subprocess
+import subprocess  # nosec
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
@@ -29,6 +29,7 @@ from pygit2 import Repository
 root_path = Path(__file__).parent.resolve()
 ptbcontrib_path = root_path / 'ptbcontrib'
 test_path = root_path / 'tests'
+
 contrib_paths = [
     x for x in ptbcontrib_path.iterdir() if x.is_dir() and '__pycache__' not in x.name
 ]
@@ -74,7 +75,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
     exit_code = 0
     for name in names:
         try:
-            subprocess.check_call(
+            subprocess.check_call(  # nosec
                 [
                     sys.executable,
                     "-m",
@@ -84,7 +85,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
                     str(ptbcontrib_path / name / "requirements.txt"),
                 ]
             )
-            subprocess.check_call(
+            subprocess.check_call(  # nosec
                 [
                     'pytest',
                     '-v',
