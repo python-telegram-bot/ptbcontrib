@@ -104,9 +104,9 @@ if __name__ == '__main__':
 
     parser = ArgumentParser(
         description=(
-            'Helper script to run the tests suite for ptbcontrib. If no arguments are provided, '
-            'runs tests for all contributions. At most one of the optional arguments may be used.'
-            'If no optional argument is specified, will run all available test suits.'
+            'Helper script to run the tests suite for ptbcontrib. At most one of the optional '
+            'arguments may be used. If no optional argument is specified, will run all available'
+            'test suits.'
         )
     )
     group = parser.add_mutually_exclusive_group()
