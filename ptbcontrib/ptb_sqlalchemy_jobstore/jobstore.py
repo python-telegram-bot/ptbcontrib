@@ -130,5 +130,4 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
             for handler in self.dispatcher.handlers.get(group):
                 if isinstance(handler, ConversationHandler):
                     if handler.conversation_timeout is not None:
-                        print(handler.name)
                         raise Exception("PTBSQLAlchemyJobStore does not support ConversationHandlers with timeouts!")
