@@ -24,7 +24,7 @@ import telegram
 from apscheduler.job import Job as APSJob
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from telegram.ext import CallbackContext, Dispatcher
+from telegram.ext import CallbackContext, Dispatcher, ConversationHandler
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,7 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
 
         super().__init__(**kwargs)
         self.dispatcher = dispatcher
+        self.timeout_check_passed = False
 
     def add_job(self, job: APSJob) -> None:
         """
@@ -61,6 +62,10 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         Args:
             job (:obj:`apscheduler.job`): The job to be persisted.
         """
+        if not self.timeout_check_passed:
+            self._check_ch_timeouts()
+            self.timeout_check_passed = True
+
         job = self._prepare_job(job)
         super().add_job(job)
 
@@ -114,3 +119,16 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         ctx = CallbackContext.from_job(tg_job, self.dispatcher)
         job._modify(args=(ctx,))  # pylint: disable=W0212
         return job
+
+    def _check_ch_timeouts(self) -> None:
+        """
+        Called on first run of add_job and checks if there are
+        any ConversationHandlers with active conversation_timeout.
+        """
+
+        for group in self.dispatcher.handlers:
+            for handler in self.dispatcher.handlers.get(group):
+                if isinstance(handler, ConversationHandler):
+                    if handler.conversation_timeout is not None:
+                        print(handler.name)
+                        raise Exception("PTBSQLAlchemyJobStore does not support ConversationHandlers with timeouts!")

@@ -35,6 +35,8 @@ use `job_kwargs` parameter that accepts arbitrary arguments as a dictionary and 
 
 For more information please have a look at APS scheduler's documentation about adding jobs by clicking [here](https://apscheduler.readthedocs.io/en/stable/userguide.html#adding-jobs).
 
+### Conversations with timeouts
+Current version does not support ConversationHandlers with active `conversation_timeout`.
 ## Requirements
 
 *   `python-telegram-bot>=13.0`
