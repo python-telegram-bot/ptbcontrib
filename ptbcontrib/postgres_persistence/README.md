@@ -40,7 +40,7 @@ updater = Updater(..., persistence=PostgresPersistence(session=start_session()))
 
 ## Requirements
 
-*   `python-telegram-bot>=12.0`
+*   `20>python-telegram-bot>=12.0`
 *   `SQLAlchemy`
 *   `ujson` (Optional)
 

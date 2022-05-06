@@ -19,7 +19,7 @@ Please see the docstrings for more details.
 
 ## Requirements
 
-*   `python-telegram-bot>=13.4`
+*   `20>python-telegram-bot>=13.4`
 
 ## Authors
 
