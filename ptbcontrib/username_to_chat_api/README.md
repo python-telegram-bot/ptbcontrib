@@ -25,7 +25,7 @@ except error.RetryAfter as e:
 
 ## Requirements
 
-*   `python-telegram-bot>=13.0`
+*   `20>python-telegram-bot>=13.0`
 
 ## Authors
 

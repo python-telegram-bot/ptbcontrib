@@ -37,7 +37,7 @@ For more information please have a look at APS scheduler's documentation about a
 
 ## Requirements
 
-*   `python-telegram-bot>=13.0`
+*   `20>python-telegram-bot>=13.0`
 *   `SQLAlchemy`
 
 ## Authors
