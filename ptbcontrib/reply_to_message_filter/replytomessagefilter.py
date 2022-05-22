@@ -20,7 +20,7 @@
 from typing import Dict, Optional, Union
 
 from telegram import Update
-from telegram.ext import BaseFilter, UpdateFilter
+from telegram.ext.filters import BaseFilter, UpdateFilter
 
 
 class ReplyToMessageFilter(UpdateFilter):
@@ -36,8 +36,8 @@ class ReplyToMessageFilter(UpdateFilter):
     """
 
     def __init__(self, filters: BaseFilter):
+        super().__init__(name=str(filters), data_filter=filters.data_filter)
         self.filters = filters
-        self.data_filter = self.filters.data_filter
 
     def filter(self, update: Update) -> Optional[Union[bool, Dict]]:
         """See :meth:`telegram.ext.BaseFilter.filter`."""
@@ -46,11 +46,11 @@ class ReplyToMessageFilter(UpdateFilter):
 
         reply_to_message = update.effective_message.reply_to_message
         if update.channel_post:
-            return self.filters(Update(1, channel_post=reply_to_message))
+            return self.filters.check_update(Update(1, channel_post=reply_to_message))
         if update.edited_channel_post:
-            return self.filters(Update(1, edited_channel_post=reply_to_message))
+            return self.filters.check_update(Update(1, edited_channel_post=reply_to_message))
         if update.message:
-            return self.filters(Update(1, message=reply_to_message))
+            return self.filters.check_update(Update(1, message=reply_to_message))
         if update.edited_message:
-            return self.filters(Update(1, edited_message=reply_to_message))
+            return self.filters.check_update(Update(1, edited_message=reply_to_message))
         return False
