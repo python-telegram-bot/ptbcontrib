@@ -56,7 +56,7 @@ jobs:
           if [[ ${{ matrix.python-version }} == 3.10 ]]; then
             meta_exit=0
           else
-            pytest -k test_meta
+            pytest -k tests\test_meta.py
             meta_exit=$?
           fi
 
