@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
@@ -50,32 +50,19 @@ jobs:
             python run_tests.py
           fi
           exit_code=$?
-          exit ${exit_code}
+
+          # run build-tests only on <3.10 for now as long as there are contributions that require
+          # ptb <v20
+          if [[ ${{ matrix.python-version }} == 3.10 ]]; then
+            meta_exit=0
+          else
+            pytest -k test_meta
+            meta_exit=$?
+          fi
+
+          global_exit=$(( exit_code > meta_exit ? exit_code : meta_exit ))
+          exit ${global_exit}
         env:
           JOB_INDEX: ${{ strategy.job-index }}
           TEST_BUILD: "true"
         shell: bash --noprofile --norc {0}
-  test_pre_commit:
-    name: test-pre-commit
-    runs-on: ${{matrix.os}}
-    strategy:
-      matrix:
-        python-version: [3.7]
-        os: [ubuntu-latest]
-      fail-fast: False
-    steps:
-      - uses: actions/checkout@v2
-      - name: Initialize vendored libs
-        run:
-          git submodule update --init --recursive
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -W ignore -m pip install --upgrade pip
-          python -W ignore -m pip install -r requirements.txt
-          python -W ignore -m pip install -r requirements-dev.txt
-      - name: Run pre-commit tests
-        run: pre-commit run --all-files

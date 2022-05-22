@@ -1,10 +1,7 @@
 [tool.black]
 line-length = 99
-target-version = ['py36']
-skip-string-normalization = true
+target-version = ['py37', 'py38', 'py39', 'py310']
 
-# We need to force-exclude the negated include pattern
-# so that pre-commit run --all-files does the correct thing
-# see https://github.com/psf/black/issues/1778
-force-exclude = '^(?!/(run_tests|((ptbcontrib|tests)/).*))\.py$'
-include = '(run_tests\.py)|((ptbcontrib|tests)/.*\.py)$'
+[tool.isort]  # black config
+profile = "black"
+line_length = 99

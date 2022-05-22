@@ -17,44 +17,44 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import pytest
-
 from telegram import BotCommand
+
 from ptbcontrib.longbotcommand import LongBotCommand
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def bot_command():
-    return BotCommand(command='test', description='desc')
+    return BotCommand(command="test", description="desc")
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def short_desc_command():
-    return LongBotCommand(command='test', description='desc')
+    return LongBotCommand(command="test", description="desc")
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def long_desc_command():
-    return LongBotCommand(command='test', description='desc', long_description='long desc')
+    return LongBotCommand(command="test", description="desc", long_description="long desc")
 
 
 class TestLongBotCommand:
     def test_short_desc_init(self, short_desc_command):
-        assert short_desc_command.command == 'test'
-        assert short_desc_command.description == 'desc'
-        assert short_desc_command.long_description == 'desc'
+        assert short_desc_command.command == "test"
+        assert short_desc_command.description == "desc"
+        assert short_desc_command.long_description == "desc"
 
     def test_long_desc_init(self, long_desc_command):
-        assert long_desc_command.command == 'test'
-        assert long_desc_command.description == 'desc'
-        assert long_desc_command.long_description == 'long desc'
+        assert long_desc_command.command == "test"
+        assert long_desc_command.description == "desc"
+        assert long_desc_command.long_description == "long desc"
 
     def test_short_desc_change(self, short_desc_command):
-        short_desc_command.description = 'new desc'
-        assert short_desc_command.long_description == 'new desc'
+        short_desc_command.description = "new desc"
+        assert short_desc_command.long_description == "new desc"
 
     def test_long_desc_change(self, long_desc_command):
-        long_desc_command.description = 'new desc'
-        assert long_desc_command.long_description == 'long desc'
+        long_desc_command.description = "new desc"
+        assert long_desc_command.long_description == "long desc"
 
     def test_short_desc_dict(self, short_desc_command, bot_command):
         assert short_desc_command.to_dict() == bot_command.to_dict()

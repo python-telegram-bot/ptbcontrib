@@ -19,19 +19,15 @@
 """This module contains PostgresqlPersistence class"""
 
 
-from logging import getLogger
 from collections import defaultdict
-from typing import Dict, Tuple, Any, Callable, Optional
-
-from telegram.ext import DictPersistence
-from telegram.utils.helpers import (
-    encode_conversations_to_json,
-    decode_conversations_from_json,
-)
+from logging import getLogger
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.sql import text
-from sqlalchemy.orm import sessionmaker, scoped_session
+from telegram.ext import DictPersistence
+from telegram.utils.helpers import decode_conversations_from_json, encode_conversations_to_json
 
 try:
     import ujson as json

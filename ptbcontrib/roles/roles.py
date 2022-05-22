@@ -19,24 +19,13 @@
 """This module contains the class Role, which allows to restrict access to handlers."""
 import time
 from collections.abc import Mapping
-from threading import Lock, Event
-from typing import (
-    ClassVar,
-    Union,
-    List,
-    Set,
-    Tuple,
-    FrozenSet,
-    Dict,
-    Iterator,
-    NoReturn,
-    Any,
-)
+from threading import Event, Lock
+from typing import Any, ClassVar, Dict, FrozenSet, Iterator, List, NoReturn, Set, Tuple, Union
 
-from telegram import ChatMember, TelegramError, Bot, Chat, Update
+from telegram import Bot, Chat, ChatMember, TelegramError, Update
 from telegram.ext import UpdateFilter
 
-_REPLACED_LOCK: str = 'ptbcontrib_roles_replaced_lock'
+_REPLACED_LOCK: str = "ptbcontrib_roles_replaced_lock"
 
 
 class Role(UpdateFilter):
@@ -119,15 +108,15 @@ class Role(UpdateFilter):
         name (:obj:`str`, optional): A name for this role.
     """
 
-    _DEFAULT_ADMIN_NAME: ClassVar[str] = 'ptbcontrib_roles_default_admin'
+    _DEFAULT_ADMIN_NAME: ClassVar[str] = "ptbcontrib_roles_default_admin"
     _admin_lock = Lock()
     _admin_event = Event()
-    _admin: ClassVar['Role'] = None  # type: ignore[assignment]
+    _admin: ClassVar["Role"] = None  # type: ignore[assignment]
 
     def __init__(
         self,
         chat_ids: Union[int, List[int], Tuple[int, ...]] = None,
-        child_roles: Union['Role', List['Role'], Tuple['Role', ...]] = None,
+        child_roles: Union["Role", List["Role"], Tuple["Role", ...]] = None,
         name: str = None,
     ) -> None:
         self._name = name
@@ -135,7 +124,7 @@ class Role(UpdateFilter):
         self.__lock = Lock()
 
         self._chat_ids = self._parse_chat_id(chat_ids)
-        self._child_roles: Set['Role'] = set()
+        self._child_roles: Set["Role"] = set()
         self._set_child_roles(child_roles)
 
         # We need the if clause for the init of _admin
@@ -159,15 +148,15 @@ class Role(UpdateFilter):
                 Role._admin = Role(name=Role._DEFAULT_ADMIN_NAME)
                 Role._admin_event.set()
 
-    def _set_custom_admin(self, new_admin: 'Role') -> None:
+    def _set_custom_admin(self, new_admin: "Role") -> None:
         with self._admin_lock:
             self._admin.remove_child_role(self)
         new_admin.add_child_role(self)
 
     @staticmethod
     def _parse_child_role(
-        child_role: Union['Role', List['Role'], Tuple['Role', ...], None]
-    ) -> Set['Role']:
+        child_role: Union["Role", List["Role"], Tuple["Role", ...], None]
+    ) -> Set["Role"]:
         if child_role is None:
             return set()
         if isinstance(child_role, Role):
@@ -175,7 +164,7 @@ class Role(UpdateFilter):
         return set(child_role)
 
     def _set_child_roles(
-        self, child_role: Union['Role', List['Role'], Tuple['Role', ...], None]
+        self, child_role: Union["Role", List["Role"], Tuple["Role", ...], None]
     ) -> None:
         with self.__lock:
             self._child_roles = self._parse_child_role(child_role)
@@ -187,7 +176,7 @@ class Role(UpdateFilter):
             return frozenset(self._chat_ids)
 
     @property
-    def child_roles(self) -> FrozenSet['Role']:
+    def child_roles(self) -> FrozenSet["Role"]:
         """Child roles of this role. This role can do anything, its child roles can do.
         May be empty.
 
@@ -197,15 +186,16 @@ class Role(UpdateFilter):
         with self.__lock:
             return frozenset(self._child_roles)
 
-    def __invert__(self) -> 'InvertedRole':
+    def __invert__(self) -> "InvertedRole":
         return InvertedRole(self)
 
     def filter(  # pylint: disable=W0221
         self,
         update: Update,
-        target: 'Role' = None,
+        target: "Role" = None,
         inverted: bool = False,
     ) -> bool:
+        """Checks if the update should be handled."""
         # Always allow admins
         if self is not self._admin and self._admin.filter(update):
             return True
@@ -266,20 +256,20 @@ class Role(UpdateFilter):
         with self.__lock:
             self._chat_ids -= self._parse_chat_id(chat_id)
 
-    def add_child_role(self, child_role: 'Role') -> None:
+    def add_child_role(self, child_role: "Role") -> None:
         """Adds a child role to this role. Will do nothing, if child role is already present.
 
         Args:
             child_role (:class:`telegram.ext.Role`): The child role
         """
         if self is child_role:
-            raise ValueError('You must not add a role as its own child!')
+            raise ValueError("You must not add a role as its own child!")
         if self <= child_role:
-            raise ValueError('You must not add a parent role as a child!')
+            raise ValueError("You must not add a parent role as a child!")
         with self.__lock:
             self._child_roles |= {child_role}
 
-    def remove_child_role(self, child_role: 'Role') -> None:
+    def remove_child_role(self, child_role: "Role") -> None:
         """Removes a child role from this role. Will do nothing, if child role is not present.
 
         Args:
@@ -314,7 +304,7 @@ class Role(UpdateFilter):
     def __ne__(self, other: object) -> bool:
         return not self == other
 
-    def equals(self, other: 'Role') -> bool:
+    def equals(self, other: "Role") -> bool:
         """Test if two roles are equal in terms of hierarchy. Returns :obj:``True``, if the
         :attr:`chat_ids` coincide and the child roles are equal in terms of this method.
 
@@ -347,10 +337,10 @@ class Role(UpdateFilter):
     @property
     def name(self) -> str:  # pylint: disable=C0116
         if self._name:
-            return f'Role({self._name})'
+            return f"Role({self._name})"
         if self.chat_ids:
-            return f'Role({set(self.chat_ids)})'
-        return 'Role({})'
+            return f"Role({set(self.chat_ids)})"
+        return "Role({})"
 
     def __getstate__(self) -> Dict[str, Any]:
         """
@@ -393,6 +383,7 @@ class InvertedRole(UpdateFilter):
         self.role = role
 
     def filter(self, update: Update) -> bool:
+        """Checks if the update should be handled."""
         return self.role.filter(update, inverted=True)
 
     def __repr__(self) -> str:
@@ -419,13 +410,13 @@ class ChatAdminsRole(Role):  # pylint: disable=R0901
     """
 
     def __init__(self, bot: Bot, timeout: float = 1800):
-        super().__init__(name='chat_admins')
+        super().__init__(name="chat_admins")
         self.bot = bot
         self.cache: Dict[int, Tuple[float, List[int]]] = {}
         self.timeout = timeout
 
     def __invert__(self) -> NoReturn:
-        raise RuntimeError('Instances of ChatAdminsRole can not be inverted')
+        raise RuntimeError("Instances of ChatAdminsRole can not be inverted")
 
     def filter(self, update: Update, target: Role = None, inverted: bool = False) -> bool:
         # Always allow admins
@@ -465,12 +456,12 @@ class ChatCreatorRole(Role):  # pylint: disable=R0901
     """
 
     def __init__(self, bot: Bot) -> None:
-        super().__init__(name='chat_creator')
+        super().__init__(name="chat_creator")
         self.bot = bot
         self.cache: Dict[int, int] = {}
 
     def __invert__(self) -> NoReturn:
-        raise RuntimeError('Instances of ChatCreatorRole can not be inverted')
+        raise RuntimeError("Instances of ChatCreatorRole can not be inverted")
 
     def filter(  # pylint: disable=R0911
         self, update: Update, target: Role = None, inverted: bool = False
@@ -533,7 +524,7 @@ class Roles(Mapping):
         self.__roles: Dict[str, Role] = {}
         self.bot = bot
 
-        self.admins = Role(name='admins')
+        self.admins = Role(name="admins")
         self.chat_admins = ChatAdminsRole(bot=self.bot)
         self.chat_creator = ChatCreatorRole(bot=self.bot)
 
@@ -552,7 +543,7 @@ class Roles(Mapping):
             ValueError
         """
         if isinstance(self.bot, Bot):
-            raise ValueError('Bot is already set for this Roles instance')
+            raise ValueError("Bot is already set for this Roles instance")
         self.bot = bot
 
     def __getitem__(self, item: str) -> Role:
@@ -588,7 +579,7 @@ class Roles(Mapping):
         self,
         name: str,
         chat_ids: Union[int, List[int], Tuple[int, ...]] = None,
-        child_roles: Union['Role', List['Role'], Tuple['Role', ...]] = None,
+        child_roles: Union["Role", List["Role"], Tuple["Role", ...]] = None,
     ) -> None:
         """Creates and registers a new role. :attr:`admins` will automatically be added to the
         roles parent roles, i.e. admins can do everything. The role can be accessed by it's
@@ -605,7 +596,7 @@ class Roles(Mapping):
             ValueError
         """
         if name in self:
-            raise ValueError('Role name is already taken.')
+            raise ValueError("Role name is already taken.")
         role = Role(chat_ids=chat_ids, child_roles=child_roles, name=name)
         role._set_custom_admin(self.admins)  # pylint: disable=W0212
         with self.__lock:

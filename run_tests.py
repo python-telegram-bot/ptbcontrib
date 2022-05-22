@@ -27,11 +27,11 @@ from typing import List
 from pygit2 import Repository
 
 root_path = Path(__file__).parent.resolve()
-ptbcontrib_path = root_path / 'ptbcontrib'
-test_path = root_path / 'tests'
+ptbcontrib_path = root_path / "ptbcontrib"
+test_path = root_path / "tests"
 
 contrib_paths = [
-    x for x in ptbcontrib_path.iterdir() if x.is_dir() and '__pycache__' not in x.name
+    x for x in ptbcontrib_path.iterdir() if x.is_dir() and "__pycache__" not in x.name
 ]
 contrib_names = [contrib.name for contrib in contrib_paths]
 
@@ -39,7 +39,7 @@ contrib_names = [contrib.name for contrib in contrib_paths]
 def get_changed_contrib_names() -> List[str]:
     """Get all changed files as compared to remote/main"""
     repo = Repository(root_path)
-    main_branch = repo.lookup_branch('main')
+    main_branch = repo.lookup_branch("main")
     if main_branch is None:
         raise RuntimeError("Can't find `main` branch to compare to.")
 
@@ -52,14 +52,14 @@ def get_changed_contrib_names() -> List[str]:
     changed_contribs = set()
 
     for filepath in file_paths:
-        if '__pycache__' not in filepath:
+        if "__pycache__" not in filepath:
             path_parents = (root_path / Path(filepath)).parents
             for contrib_path in contrib_paths:
                 if contrib_path in path_parents:
                     changed_contribs.add(contrib_path.name)
             if test_path in path_parents:
                 for contrib_path in contrib_paths:
-                    if filepath.endswith(f'test_{contrib_path.parts[-1]}.py'):
+                    if filepath.endswith(f"test_{contrib_path.parts[-1]}.py"):
                         changed_contribs.add(contrib_path.name)
 
     return list(changed_contribs)
@@ -85,11 +85,29 @@ def run_tests(changed: bool, names: List[str]) -> int:
                     str(ptbcontrib_path / name / "requirements.txt"),
                 ]
             )
+
+            result = subprocess.run(  # nosec
+                [sys.executable, "-m", "telegram"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            if (
+                result.stdout
+                and result.stdout.startswith("python-telegram-bot 13")
+                and sys.version_info >= (3, 10)
+            ):
+                print(
+                    f"Ignoring contribution {name}, as this PTB version is not "
+                    f"supported on Python {sys.version}. "
+                )
+                continue
+
             subprocess.check_call(  # nosec
                 [
-                    'pytest',
-                    '-v',
-                    str(root_path / 'tests' / f'test_{name}.py'),
+                    "pytest",
+                    "-v",
+                    str(root_path / "tests" / f"test_{name}.py"),
                 ]
             )
 
@@ -99,36 +117,36 @@ def run_tests(changed: bool, names: List[str]) -> int:
     return exit_code
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Parse the arguments, run the tests and return exit code.
 
     parser = ArgumentParser(
         description=(
-            'Helper script to run the tests suite for ptbcontrib. At most one of the optional '
-            'arguments may be used. If no optional argument is specified, will run all available'
-            'test suits.'
+            "Helper script to run the tests suite for ptbcontrib. At most one of the optional "
+            "arguments may be used. If no optional argument is specified, will run all available"
+            "test suits."
         )
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
-        '-c',
-        '--changed',
-        dest='changed',
-        action='store_true',
+        "-c",
+        "--changed",
+        dest="changed",
+        action="store_true",
         default=False,
         help=(
-            'When passed, the git diff will be checked for all files that differ from the main '
-            'branch. Only the corresponding tests suits will be run. Note that this may fail to '
-            'identify some changed files in edge cases - please use the -n flag in that case.'
+            "When passed, the git diff will be checked for all files that differ from the main "
+            "branch. Only the corresponding tests suits will be run. Note that this may fail to "
+            "identify some changed files in edge cases - please use the -n flag in that case."
         ),
     )
     group.add_argument(
-        '-n',
-        '--names',
-        dest='names',
+        "-n",
+        "--names",
+        dest="names",
         default=[],
-        nargs='*',
-        help='Use to specify the names of the contributions that you want to test.',
+        nargs="*",
+        help="Use to specify the names of the contributions that you want to test.",
         choices=contrib_names,
     )
 

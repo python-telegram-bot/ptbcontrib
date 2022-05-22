@@ -16,17 +16,17 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains classes and methods for granular, hierarchical user access management."""
 
-from .roles import Role, Roles, ChatAdminsRole, ChatCreatorRole, InvertedRole
-from .roleshandler import RolesHandler, setup_roles, BOT_DATA_KEY, RolesBotData
+from .roles import ChatAdminsRole, ChatCreatorRole, InvertedRole, Role, Roles
+from .roleshandler import BOT_DATA_KEY, RolesBotData, RolesHandler, setup_roles
 
 __all__ = [
-    'Roles',
-    'Role',
-    'ChatCreatorRole',
-    'ChatAdminsRole',
-    'InvertedRole',
-    'RolesHandler',
-    'setup_roles',
-    'BOT_DATA_KEY',
-    'RolesBotData',
+    "Roles",
+    "Role",
+    "ChatCreatorRole",
+    "ChatAdminsRole",
+    "InvertedRole",
+    "RolesHandler",
+    "setup_roles",
+    "BOT_DATA_KEY",
+    "RolesBotData",
 ]
