@@ -1,6 +1,7 @@
 import pytest
-from httpx import Response, AsyncClient
 
+
+from httpx import Response, AsyncClient
 from telegram import Chat, error
 
 from ptbcontrib.username_to_chat_api import UsernameToChatAPI

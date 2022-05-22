@@ -22,7 +22,7 @@ and puts the response in a Chat object, as well as puts the error to the fitting
 """
 from httpx import AsyncClient
 
-from telegram import error, Chat, Bot
+from telegram import Bot, Chat, error
 
 
 class UsernameToChatAPI:
