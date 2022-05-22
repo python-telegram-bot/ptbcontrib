@@ -68,16 +68,20 @@ def get_changed_contrib_names() -> List[str]:
 def run_tests(changed: bool, names: List[str]) -> int:
     """Run the required tests and install requirements for each one"""
     if changed:
+        print("checking only change fies")
         names = get_changed_contrib_names()
     elif not names:
+        print("checking all files")
         names = contrib_names
 
+    print("contribs to check:", names)
     exit_code = 0
     for name in names:
+        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA going for contrib", name)
         try:
             print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
             print("installing requirements from", str(ptbcontrib_path / name / "requirements.txt"))
-            subprocess.check_call(  # nosec
+            out = subprocess.check_call(  # nosec
                 [
                     sys.executable,
                     "-m",
@@ -87,6 +91,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
                     str(ptbcontrib_path / name / "requirements.txt"),
                 ]
             )
+            print("process ifinisehd with return code", out)
             print("done. Checking version")
 
             result = subprocess.run(  # nosec
@@ -107,15 +112,17 @@ def run_tests(changed: bool, names: List[str]) -> int:
                 )
                 continue
 
-            subprocess.check_call(  # nosec
+            out = subprocess.check_call(  # nosec
                 [
                     "pytest",
                     "-v",
                     str(root_path / "tests" / f"test_{name}.py"),
                 ]
             )
+            print("process ifinisehd with return code", out)
 
         except subprocess.CalledProcessError as exc:
+            print("got an exception:", exc, repr(exc))
             exit_code = exc.returncode
 
     return exit_code
