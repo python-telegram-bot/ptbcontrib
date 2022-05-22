@@ -21,7 +21,6 @@ This module contains a class that, once initiated, works as a shortcut to the Us
 and puts the response in a Chat object, as well as puts the error to the fitting TelegramErrors.
 """
 from httpx import AsyncClient
-
 from telegram import Bot, Chat, error
 
 
