@@ -18,6 +18,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains a helper function to get joinable links from chats."""
 from typing import Optional
+
 from telegram import Chat
 from telegram.error import BadRequest
 

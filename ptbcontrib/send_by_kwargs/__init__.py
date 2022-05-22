@@ -18,4 +18,4 @@
 
 from .send_by_kwargs import send_by_kwargs
 
-__all__ = ['send_by_kwargs']
+__all__ = ["send_by_kwargs"]

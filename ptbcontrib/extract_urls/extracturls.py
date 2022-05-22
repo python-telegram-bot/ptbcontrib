@@ -18,9 +18,9 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains helper functions to extract URLs from messages."""
 import re
-from typing import List, Dict
+from typing import Dict, List
 
-from telegram import MessageEntity, Message
+from telegram import Message, MessageEntity
 
 
 def extract_urls(message: Message) -> List[str]:
@@ -87,16 +87,16 @@ def extract_message_links(
         :obj:`list`: A list of message links contained in the message
     """
     if private_only and public_only:
-        raise ValueError('Only one of the optional arguments may be set to True.')
+        raise ValueError("Only one of the optional arguments may be set to True.")
 
     if private_only:
         # links to private massages are of the form t.me/c/chat_id/message_id
-        pattern = re.compile(r't.me/c/[0-9]+/[0-9]+')
+        pattern = re.compile(r"t.me/c/[0-9]+/[0-9]+")
     elif public_only:
         # links to public massages are of the form t.me/group_name/message_id
         # group names consist of a-z, 0-9 and underscore with at least 5 characters
-        pattern = re.compile(r't.me/[a-z0-9_]{5,}/[0-9]+')
+        pattern = re.compile(r"t.me/[a-z0-9_]{5,}/[0-9]+")
     else:
-        pattern = re.compile(r't.me/(c/[0-9]+|[a-z0-9_]{5,})/[0-9]+')
+        pattern = re.compile(r"t.me/(c/[0-9]+|[a-z0-9_]{5,})/[0-9]+")
 
     return [url for url in extract_urls(message) if re.search(pattern, url)]

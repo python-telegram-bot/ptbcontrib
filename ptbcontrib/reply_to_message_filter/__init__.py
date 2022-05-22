@@ -18,4 +18,4 @@
 
 from .replytomessagefilter import ReplyToMessageFilter
 
-__all__ = ['ReplyToMessageFilter']
+__all__ = ["ReplyToMessageFilter"]

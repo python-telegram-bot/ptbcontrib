@@ -19,67 +19,58 @@
 import datetime as dtm
 import os
 import pickle
+import sys
+import time
+from copy import deepcopy
 from typing import Optional
 
 import pytest
-import sys
-import time
-
-from copy import deepcopy
-from telegram import (
-    Message,
-    User,
-    InlineQuery,
-    Update,
-    ChatMember,
-    Chat,
-    TelegramError,
-)
-from telegram.ext import BasePersistence, CallbackContext, MessageHandler, Filters
+from telegram import Chat, ChatMember, InlineQuery, Message, TelegramError, Update, User
+from telegram.ext import BasePersistence, CallbackContext, Filters, MessageHandler
 
 from ptbcontrib.roles import (
-    Role,
-    Roles,
+    BOT_DATA_KEY,
     ChatAdminsRole,
     ChatCreatorRole,
-    setup_roles,
-    BOT_DATA_KEY,
-    RolesHandler,
+    Role,
+    Roles,
     RolesBotData,
+    RolesHandler,
+    setup_roles,
 )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def update():
     return Update(
         0,
         Message(
-            0, dtm.datetime.utcnow(), Chat(0, 'private'), from_user=User(0, 'TestUser', False)
+            0, dtm.datetime.utcnow(), Chat(0, "private"), from_user=User(0, "TestUser", False)
         ),
     )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def roles(bot):
     return Roles(bot)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def parent_role():
-    return Role(name='parent_role')
+    return Role(name="parent_role")
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def role():
-    return Role(name='role')
+    return Role(name="role")
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def chat_admins_role(bot):
     return ChatAdminsRole(bot, 0.05)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def chat_creator_role(bot):
     return ChatCreatorRole(bot)
 
@@ -129,22 +120,22 @@ class TestRole:
     def test_creation(self, parent_role):
         r = Role(child_roles=[parent_role, parent_role])
         assert r.chat_ids == set()
-        assert str(r) == 'Role({})'
+        assert str(r) == "Role({})"
         assert r.child_roles == {parent_role}
         assert isinstance(r._admin, Role)
-        assert str(r._admin) == f'Role({Role._DEFAULT_ADMIN_NAME})'
+        assert str(r._admin) == f"Role({Role._DEFAULT_ADMIN_NAME})"
 
         r = Role(1)
         assert r.chat_ids == {1}
-        assert str(r) == 'Role({1})'
+        assert str(r) == "Role({1})"
 
         r = Role([1, 2])
         assert r.chat_ids == {1, 2}
-        assert str(r) == 'Role({1, 2})'
+        assert str(r) == "Role({1, 2})"
 
-        r = Role([1, 2], name='role')
+        r = Role([1, 2], name="role")
         assert r.chat_ids == {1, 2}
-        assert str(r) == 'Role(role)'
+        assert str(r) == "Role(role)"
 
     def test_add_member(self, role):
         assert role.chat_ids == set()
@@ -169,7 +160,7 @@ class TestRole:
 
     def test_add_remove_child_role(self, role, parent_role):
         assert role.child_roles == set()
-        parent2 = Role(chat_ids=456, name='pr2')
+        parent2 = Role(chat_ids=456, name="pr2")
         role.add_child_role(parent_role)
         assert role.child_roles == {parent_role}
         role.add_child_role(parent2)
@@ -180,18 +171,18 @@ class TestRole:
         role.remove_child_role(parent2)
         assert role.child_roles == set()
 
-        with pytest.raises(ValueError, match='You must not add a role as its own child!'):
+        with pytest.raises(ValueError, match="You must not add a role as its own child!"):
             role.add_child_role(role)
 
         parent_role.add_child_role(role)
-        with pytest.raises(ValueError, match='You must not add a parent role as a child!'):
+        with pytest.raises(ValueError, match="You must not add a parent role as a child!"):
             role.add_child_role(parent_role)
 
     def test_equals(self, role, parent_role):
-        r = Role(name='test1')
-        r2 = Role(name='test2')
-        r3 = Role(name='test3', chat_ids=[1, 2])
-        r4 = Role(name='test4')
+        r = Role(name="test1")
+        r2 = Role(name="test2")
+        r3 = Role(name="test3", chat_ids=[1, 2])
+        r4 = Role(name="test4")
         assert role.equals(parent_role)
         role.add_child_role(r)
         assert not role.equals(parent_role)
@@ -253,7 +244,7 @@ class TestRole:
         assert hash(parent_role) == hash(parent_role)
 
     def test_deepcopy(self, role, parent_role):
-        child = Role(name='cr', chat_ids=[1, 2, 3])
+        child = Role(name="cr", chat_ids=[1, 2, 3])
         role.add_child_role(child)
         role.add_member(7)
         copied_role = deepcopy(role)
@@ -350,34 +341,34 @@ class TestRole:
     def test_pickle(self, role, parent_role):
         role.add_member([0, 1, 3])
         parent_role.add_member([4, 5, 6])
-        child_role = Role(name='child_role', chat_ids=[7, 8, 9])
+        child_role = Role(name="child_role", chat_ids=[7, 8, 9])
         role.add_child_role(child_role)
         parent_role.add_child_role(child_role)
 
         data = {
-            'role': role,
-            'parent': parent_role,
-            'child': child_role,
+            "role": role,
+            "parent": parent_role,
+            "child": child_role,
         }
-        with open('pickle', 'wb') as file:
+        with open("pickle", "wb") as file:
             pickle.dump(data, file)
-        with open('pickle', 'rb') as file:
+        with open("pickle", "rb") as file:
             data = pickle.load(file)
 
-        assert data['role'].equals(role)
-        assert data['parent'].equals(parent_role)
-        assert data['child'].equals(child_role)
+        assert data["role"].equals(role)
+        assert data["parent"].equals(parent_role)
+        assert data["child"].equals(child_role)
 
-        (child_1,) = data['role'].child_roles
-        (child_2,) = data['parent'].child_roles
+        (child_1,) = data["role"].child_roles
+        (child_2,) = data["parent"].child_roles
         assert child_1 is child_2
 
-        assert data['role'] in Role._admin.child_roles
-        assert data['parent'] in Role._admin.child_roles
-        assert data['child'] in Role._admin.child_roles
-        assert data['child'] <= data['role']
-        assert data['child'] <= data['parent']
-        assert not data['role'] <= data['parent']
+        assert data["role"] in Role._admin.child_roles
+        assert data["parent"] in Role._admin.child_roles
+        assert data["child"] in Role._admin.child_roles
+        assert data["child"] <= data["role"]
+        assert data["child"] <= data["parent"]
+        assert not data["role"] <= data["parent"]
 
 
 class TestChatAdminsRole:
@@ -389,11 +380,11 @@ class TestChatAdminsRole:
     def test_simple(self, chat_admins_role, update, monkeypatch):
         def admins(*args, **kwargs):
             return [
-                ChatMember(User(0, 'TestUser0', False), 'administrator'),
-                ChatMember(User(1, 'TestUser1', False), 'creator'),
+                ChatMember(User(0, "TestUser0", False), "administrator"),
+                ChatMember(User(1, "TestUser1", False), "creator"),
             ]
 
-        monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
+        monkeypatch.setattr(chat_admins_role.bot, "get_chat_administrators", admins)
 
         update.message.from_user.id = 2
         update.message.chat.type = Chat.GROUP
@@ -411,24 +402,24 @@ class TestChatAdminsRole:
 
     def test_no_chat(self, chat_admins_role, update):
         update.message = None
-        update.inline_query = InlineQuery(1, User(0, 'TestUser', False), 'query', 0)
+        update.inline_query = InlineQuery(1, User(0, "TestUser", False), "query", 0)
 
         assert not chat_admins_role(update)
 
     def test_no_user(self, chat_admins_role, update):
         update.message = None
-        update.channel_post = Message(1, dtm.datetime.utcnow(), Chat(0, 'channel'))
+        update.channel_post = Message(1, dtm.datetime.utcnow(), Chat(0, "channel"))
 
         assert not chat_admins_role(update)
 
     def test_always_allow_admins(self, chat_admins_role, update, monkeypatch):
         def admins(*args, **kwargs):
             return [
-                ChatMember(User(0, 'TestUser0', False), 'administrator'),
-                ChatMember(User(1, 'TestUser1', False), 'creator'),
+                ChatMember(User(0, "TestUser0", False), "administrator"),
+                ChatMember(User(1, "TestUser1", False), "creator"),
             ]
 
-        monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
+        monkeypatch.setattr(chat_admins_role.bot, "get_chat_administrators", admins)
         update.message.chat.type = Chat.GROUP
         update.message.from_user.id = 2
         try:
@@ -441,11 +432,11 @@ class TestChatAdminsRole:
     def test_caching(self, chat_admins_role, update, monkeypatch):
         def admins(*args, **kwargs):
             return [
-                ChatMember(User(0, 'TestUser0', False), 'administrator'),
-                ChatMember(User(1, 'TestUser1', False), 'creator'),
+                ChatMember(User(0, "TestUser0", False), "administrator"),
+                ChatMember(User(1, "TestUser1", False), "creator"),
             ]
 
-        monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
+        monkeypatch.setattr(chat_admins_role.bot, "get_chat_administrators", admins)
 
         update.message.from_user.id = 2
         update.message.chat.type = Chat.GROUP
@@ -455,9 +446,9 @@ class TestChatAdminsRole:
         assert chat_admins_role.cache[0][1] == [0, 1]
 
         def admins(*args, **kwargs):
-            raise ValueError('This method should not be called!')
+            raise ValueError("This method should not be called!")
 
-        monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
+        monkeypatch.setattr(chat_admins_role.bot, "get_chat_administrators", admins)
 
         update.message.from_user.id = 1
         assert chat_admins_role(update)
@@ -465,9 +456,9 @@ class TestChatAdminsRole:
         time.sleep(0.05)
 
         def admins(*args, **kwargs):
-            return [ChatMember(User(2, 'TestUser0', False), 'administrator')]
+            return [ChatMember(User(2, "TestUser0", False), "administrator")]
 
-        monkeypatch.setattr(chat_admins_role.bot, 'get_chat_administrators', admins)
+        monkeypatch.setattr(chat_admins_role.bot, "get_chat_administrators", admins)
 
         update.message.from_user.id = 2
         assert chat_admins_role(update)
@@ -476,7 +467,7 @@ class TestChatAdminsRole:
         assert chat_admins_role.cache[0][1] == [2]
 
     def test_no_invert(self, chat_admins_role):
-        with pytest.raises(RuntimeError, match='can not be inverted'):
+        with pytest.raises(RuntimeError, match="can not be inverted"):
             ~chat_admins_role
 
 
@@ -488,12 +479,12 @@ class TestChatCreatorRole:
     def test_simple(self, chat_creator_role, monkeypatch, update):
         def member(*args, **kwargs):
             if args[1] == 0:
-                return ChatMember(User(0, 'TestUser0', False), 'administrator')
+                return ChatMember(User(0, "TestUser0", False), "administrator")
             if args[1] == 1:
-                return ChatMember(User(1, 'TestUser1', False), 'creator')
-            raise TelegramError('User is not a member')
+                return ChatMember(User(1, "TestUser1", False), "creator")
+            raise TelegramError("User is not a member")
 
-        monkeypatch.setattr(chat_creator_role.bot, 'get_chat_member', member)
+        monkeypatch.setattr(chat_creator_role.bot, "get_chat_member", member)
 
         update.message.from_user.id = 0
         update.message.chat.id = -1
@@ -508,13 +499,13 @@ class TestChatCreatorRole:
 
     def test_no_chat(self, chat_creator_role, update):
         update.message = None
-        update.inline_query = InlineQuery(1, User(0, 'TestUser', False), 'query', 0)
+        update.inline_query = InlineQuery(1, User(0, "TestUser", False), "query", 0)
 
         assert not chat_creator_role(update)
 
     def test_no_user(self, chat_creator_role, update):
         update.message = None
-        update.channel_post = Message(1, dtm.datetime.utcnow(), Chat(0, 'channel'))
+        update.channel_post = Message(1, dtm.datetime.utcnow(), Chat(0, "channel"))
 
         assert not chat_creator_role(update)
 
@@ -527,11 +518,11 @@ class TestChatCreatorRole:
     def test_always_allow_admins(self, chat_creator_role, update, monkeypatch):
         def admins(*args, **kwargs):
             return [
-                ChatMember(User(0, 'TestUser0', False), 'administrator'),
-                ChatMember(User(1, 'TestUser1', False), 'creator'),
+                ChatMember(User(0, "TestUser0", False), "administrator"),
+                ChatMember(User(1, "TestUser1", False), "creator"),
             ]
 
-        monkeypatch.setattr(chat_creator_role.bot, 'get_chat_administrators', admins)
+        monkeypatch.setattr(chat_creator_role.bot, "get_chat_administrators", admins)
         update.message.chat.type = Chat.GROUP
         update.message.from_user.id = 2
         try:
@@ -544,12 +535,12 @@ class TestChatCreatorRole:
     def test_caching(self, chat_creator_role, monkeypatch, update):
         def member(*args, **kwargs):
             if args[1] == 0:
-                return ChatMember(User(0, 'TestUser0', False), 'administrator')
+                return ChatMember(User(0, "TestUser0", False), "administrator")
             if args[1] == 1:
-                return ChatMember(User(1, 'TestUser1', False), 'creator')
-            raise TelegramError('User is not a member')
+                return ChatMember(User(1, "TestUser1", False), "creator")
+            raise TelegramError("User is not a member")
 
-        monkeypatch.setattr(chat_creator_role.bot, 'get_chat_member', member)
+        monkeypatch.setattr(chat_creator_role.bot, "get_chat_member", member)
 
         update.message.from_user.id = 1
         update.message.chat.type = Chat.GROUP
@@ -557,9 +548,9 @@ class TestChatCreatorRole:
         assert chat_creator_role.cache == {0: 1}
 
         def member(*args, **kwargs):
-            raise ValueError('This method should not be called!')
+            raise ValueError("This method should not be called!")
 
-        monkeypatch.setattr(chat_creator_role.bot, 'get_chat_member', member)
+        monkeypatch.setattr(chat_creator_role.bot, "get_chat_member", member)
 
         update.message.from_user.id = 1
         assert chat_creator_role(update)
@@ -568,7 +559,7 @@ class TestChatCreatorRole:
         assert not chat_creator_role(update)
 
     def test_no_invert(self, chat_creator_role):
-        with pytest.raises(RuntimeError, match='can not be inverted'):
+        with pytest.raises(RuntimeError, match="can not be inverted"):
             ~chat_creator_role
 
 
@@ -589,7 +580,7 @@ class TestRoles:
         assert roles.bot == 2
         roles.set_bot(bot)
         assert roles.bot is bot
-        with pytest.raises(ValueError, match='already set'):
+        with pytest.raises(ValueError, match="already set"):
             roles.set_bot(bot)
 
     def test_add_kick_admin(self, roles):
@@ -605,57 +596,57 @@ class TestRoles:
 
     @pytest.mark.skipif(sys.version_info < (3, 6), reason="dicts are not ordered in py<=3.5")
     def test_dict_functionality(self, roles):
-        roles.add_role('role0', 0)
-        roles.add_role('role1', 1)
-        roles.add_role('role2', 2)
+        roles.add_role("role0", 0)
+        roles.add_role("role1", 1)
+        roles.add_role("role2", 2)
 
-        assert 'role2' in roles
-        assert 'role3' not in roles
+        assert "role2" in roles
+        assert "role3" not in roles
 
         a = {name for name in roles}
-        assert a == {f'role{k}' for k in range(3)}
+        assert a == {f"role{k}" for k in range(3)}
 
         b = {name: role.chat_ids for name, role in roles.items()}
-        assert b == {f'role{k}': {k} for k in range(3)}
+        assert b == {f"role{k}": {k} for k in range(3)}
 
         c = [name for name in roles.keys()]
-        assert c == [f'role{k}' for k in range(3)]
+        assert c == [f"role{k}" for k in range(3)]
 
         d = [r.chat_ids for r in roles.values()]
         assert d == [{k} for k in range(3)]
 
     def test_add_remove_role(self, roles, parent_role):
-        roles.add_role('role', child_roles=[parent_role])
-        role = roles['role']
+        roles.add_role("role", child_roles=[parent_role])
+        role = roles["role"]
         assert role.chat_ids == set()
         assert role.child_roles == {parent_role}
-        assert str(role) == 'Role(role)'
+        assert str(role) == "Role(role)"
         assert role <= roles.admins
         assert role not in Role._admin.child_roles
 
-        with pytest.raises(ValueError, match='Role name is already taken.'):
-            roles.add_role('role')
+        with pytest.raises(ValueError, match="Role name is already taken."):
+            roles.add_role("role")
 
-        roles.remove_role('role')
-        assert not roles.get('role', None)
+        roles.remove_role("role")
+        assert not roles.get("role", None)
         assert not role <= roles.admins
         assert role in Role._admin.child_roles
 
     def test_handler_admins(self, roles, update):
-        roles.add_role('role', 0)
+        roles.add_role("role", 0)
         roles.add_admin(1)
-        assert roles['role'](update)
+        assert roles["role"](update)
         update.message.from_user.id = 1
         update.message.chat.id = 1
-        assert roles['role'](update)
+        assert roles["role"](update)
         roles.kick_admin(1)
-        assert not roles['role'](update)
+        assert not roles["role"](update)
 
     def test_handler_admins_merged(self, roles, update):
-        roles.add_role('role_1', 0)
-        roles.add_role('role_2', 1)
+        roles.add_role("role_1", 0)
+        roles.add_role("role_2", 1)
         roles.add_admin(2)
-        test_role = roles['role_1'] & ~roles['role_2']
+        test_role = roles["role_1"] & ~roles["role_2"]
         assert test_role(update)
         update.message.from_user.id = 2
         update.message.chat.id = 2
@@ -663,42 +654,42 @@ class TestRoles:
         roles.kick_admin(2)
         assert not test_role(update)
 
-    @pytest.mark.filterwarnings('ignore:BasePersistence')
+    @pytest.mark.filterwarnings("ignore:BasePersistence")
     def test_pickle(self, roles, bot, base_persistence):
         base_persistence.set_bot(bot)
 
-        roles.add_role('role', [1, 2, 3])
-        roles.add_role('parent', [4, 5, 6])
-        roles.add_role('child', [7, 8, 9])
-        roles['role'].add_child_role(roles['child'])
-        roles['parent'].add_child_role(roles['child'])
+        roles.add_role("role", [1, 2, 3])
+        roles.add_role("parent", [4, 5, 6])
+        roles.add_role("child", [7, 8, 9])
+        roles["role"].add_child_role(roles["child"])
+        roles["parent"].add_child_role(roles["child"])
 
         roles.admins.add_member(10)
         roles.chat_admins.cache[42] = 24
         roles.chat_creator.cache[43] = 34
 
-        with open('pickle', 'wb') as file:
+        with open("pickle", "wb") as file:
             data = base_persistence.replace_bot(roles)
             pickle.dump(data, file)
-        with open('pickle', 'rb') as file:
+        with open("pickle", "rb") as file:
             data = pickle.load(file)
             copied_roles = base_persistence.insert_bot(data)
 
-        assert copied_roles['role'].equals(roles['role'])
-        assert copied_roles['parent'].equals(roles['parent'])
-        assert copied_roles['child'].equals(roles['child'])
+        assert copied_roles["role"].equals(roles["role"])
+        assert copied_roles["parent"].equals(roles["parent"])
+        assert copied_roles["child"].equals(roles["child"])
 
-        (child_1,) = roles['role'].child_roles
-        (child_2,) = roles['parent'].child_roles
+        (child_1,) = roles["role"].child_roles
+        (child_2,) = roles["parent"].child_roles
         assert child_1 is child_2
 
-        assert copied_roles['role'] <= copied_roles.admins
-        assert copied_roles['role'] in copied_roles.admins.child_roles
-        assert copied_roles['parent'] in copied_roles.admins.child_roles
-        assert copied_roles['child'] in copied_roles.admins.child_roles
-        assert copied_roles['child'] <= copied_roles['role']
-        assert copied_roles['child'] <= copied_roles['parent']
-        assert not copied_roles['role'] <= copied_roles['parent']
+        assert copied_roles["role"] <= copied_roles.admins
+        assert copied_roles["role"] in copied_roles.admins.child_roles
+        assert copied_roles["parent"] in copied_roles.admins.child_roles
+        assert copied_roles["child"] in copied_roles.admins.child_roles
+        assert copied_roles["child"] <= copied_roles["role"]
+        assert copied_roles["child"] <= copied_roles["parent"]
+        assert not copied_roles["role"] <= copied_roles["parent"]
 
         assert copied_roles.admins.equals(roles.admins)
         assert copied_roles.chat_admins.cache[42] == 24
@@ -707,7 +698,7 @@ class TestRoles:
         assert copied_roles.chat_creator.bot is roles.chat_creator.bot
 
 
-@pytest.fixture(scope='function', autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def clear_bot_data(dp):
     yield
     dp.bot_data = dict()
@@ -725,7 +716,7 @@ class RolesData(RolesBotData):
 
 
 class TestRolesHandler:
-    @pytest.mark.parametrize('roles_bot_data', [True, False])
+    @pytest.mark.parametrize("roles_bot_data", [True, False])
     def test_setup_roles(self, cdp, roles_bot_data):
         if roles_bot_data:
             cdp.bot_data = RolesData()
@@ -745,11 +736,11 @@ class TestRolesHandler:
 
     def test_setup_roles_invalid_bot_data_type(self, cdp):
         cdp.bot_data = 17
-        with pytest.raises(TypeError, match='dict or implement RolesBotData'):
+        with pytest.raises(TypeError, match="dict or implement RolesBotData"):
             setup_roles(cdp)
 
     def test_collect_additional_context_invalid_bot_data(self, cdp, update):
-        cdp.bot_data = 'yet another deathstar'
+        cdp.bot_data = "yet another deathstar"
 
         def callback(_, __):
             pass
@@ -757,23 +748,23 @@ class TestRolesHandler:
         handler = MessageHandler(Filters.all, callback=callback)
         roles_handler = RolesHandler(handler, roles=None)
         context = CallbackContext.from_update(update, cdp)
-        with pytest.raises(TypeError, match='dict or implement RolesBotData'):
+        with pytest.raises(TypeError, match="dict or implement RolesBotData"):
             roles_handler.collect_additional_context(context, cdp, update, True)
 
-    @pytest.mark.parametrize('roles_bot_data', [True, False])
+    @pytest.mark.parametrize("roles_bot_data", [True, False])
     def test_callback_and_context(self, cdp, update, roles_bot_data):
         if roles_bot_data:
             cdp.bot_data = RolesData()
         self.roles = setup_roles(cdp)
         self.roles.admins.add_member(42)
-        self.roles.add_role(name='role', chat_ids=[1])
+        self.roles.add_role(name="role", chat_ids=[1])
         self.test_flag = False
 
         def callback(_, context: CallbackContext):
             self.test_flag = context.roles is self.roles
 
         handler = MessageHandler(Filters.all, callback=callback)
-        roles_handler = RolesHandler(handler, roles=self.roles['role'])
+        roles_handler = RolesHandler(handler, roles=self.roles["role"])
 
         assert not roles_handler.check_update(update)
         update.message.from_user.id = 1
@@ -785,7 +776,7 @@ class TestRolesHandler:
         cdp.process_update(update)
         assert self.test_flag
 
-    @pytest.mark.parametrize('roles_bot_data', [True, False])
+    @pytest.mark.parametrize("roles_bot_data", [True, False])
     def test_handler_error_message(self, cdp, update, roles_bot_data):
         if roles_bot_data:
             cdp.bot_data = RolesData()
@@ -795,7 +786,7 @@ class TestRolesHandler:
         self.test_flag = False
 
         def error_handler(_, context: CallbackContext):
-            self.test_flag = 'You must set a Roles instance' in str(context.error)
+            self.test_flag = "You must set a Roles instance" in str(context.error)
 
         cdp.add_error_handler(error_handler)
         cdp.process_update(update)

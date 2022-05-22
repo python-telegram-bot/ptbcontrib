@@ -22,5 +22,5 @@ that allows for a longer description (e. g. for /help purposes).
 from .longbotcommand import LongBotCommand
 
 __all__ = [
-    'LongBotCommand',
+    "LongBotCommand",
 ]

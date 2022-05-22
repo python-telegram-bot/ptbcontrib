@@ -17,4 +17,4 @@
 """This module contains PTBSQLAlchemyJobStore."""
 from .jobstore import PTBSQLAlchemyJobStore
 
-__all__ = ['PTBSQLAlchemyJobStore']
+__all__ = ["PTBSQLAlchemyJobStore"]
