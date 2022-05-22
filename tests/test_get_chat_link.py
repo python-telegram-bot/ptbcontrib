@@ -16,6 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+import sys
 from unittest.mock import AsyncMock
 
 import pytest
@@ -49,6 +50,10 @@ def bot_chat_dict():
     }
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="AsyncMock is new in py3.8. No need to rewrite the tests just for that.",
+)
 class TestChatToLink:
     async def test_chat_username(self, chat):
         username = "test_username"
