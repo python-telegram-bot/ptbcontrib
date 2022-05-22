@@ -75,6 +75,8 @@ def run_tests(changed: bool, names: List[str]) -> int:
     exit_code = 0
     for name in names:
         try:
+            print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+            print("installing requirements from", str(ptbcontrib_path / name / "requirements.txt"))
             subprocess.check_call(  # nosec
                 [
                     sys.executable,
@@ -85,6 +87,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
                     str(ptbcontrib_path / name / "requirements.txt"),
                 ]
             )
+            print("done. Checking version")
 
             result = subprocess.run(  # nosec
                 [sys.executable, "-m", "telegram"],
@@ -92,6 +95,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
                 text=True,
                 check=True,
             )
+            print("stdout:", result.stdout)
             if (
                 result.stdout
                 and result.stdout.startswith("python-telegram-bot 13")
