@@ -21,6 +21,7 @@ from unittest.mock import Mock
 import pytest
 from telegram import Chat
 from telegram.error import BadRequest
+
 from ptbcontrib.get_chat_link import get_chat_link
 
 from .conftest import make_bot
@@ -42,9 +43,9 @@ def chat(bot_factory):
 @pytest.fixture(scope="function")
 def bot_chat_dict():
     return {
-        'id': 1,
-        'type': 'channel',
-        'title': 'test channel',
+        "id": 1,
+        "type": "channel",
+        "title": "test channel",
     }
 
 
@@ -76,7 +77,7 @@ class TestChatToLink:
         assert link == invite_link
 
     def test_export_chat_invite_link(self, chat, bot_chat_dict):
-        invite_link = 'https://t.me/joinchat/m4Zho4YdtexiMzI0'
+        invite_link = "https://t.me/joinchat/m4Zho4YdtexiMzI0"
         res = invite_link
         chat.bot._post = Mock(side_effect=[bot_chat_dict, res])
 

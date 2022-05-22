@@ -19,32 +19,32 @@
 """This module contains a helper function that allows to send any kind of message by kwargs."""
 import inspect
 from collections import OrderedDict
-from typing import List, Dict, Union, Callable
+from typing import Callable, Dict, List, Union
 
-from telegram import Message, Bot
+from telegram import Bot, Message
 
 UNIQUE_KWARGS = OrderedDict(
     {
-        'send_animation': ['animation'],
-        'send_audio': ['audio'],
-        'send_chat_action': ['action'],
-        'send_contact': ['phone_number', 'contact'],
-        'send_document': ['document'],
-        'send_game': ['game_short_name'],
-        'send_invoice': ['prices'],
+        "send_animation": ["animation"],
+        "send_audio": ["audio"],
+        "send_chat_action": ["action"],
+        "send_contact": ["phone_number", "contact"],
+        "send_document": ["document"],
+        "send_game": ["game_short_name"],
+        "send_invoice": ["prices"],
         # venue must be before location as location has all args of venue, but not vice versa
-        'send_venue': ['address', 'venue'],
-        'send_location': ['latitude', 'location'],
-        'send_media_group': ['media'],
-        'send_message': ['text'],
-        'send_photo': ['photo'],
-        'send_poll': ['question'],
-        'send_sticker': ['sticker'],
-        'send_video': ['video'],
-        'send_video_note': ['video_note'],
-        'send_voice': ['voice'],
+        "send_venue": ["address", "venue"],
+        "send_location": ["latitude", "location"],
+        "send_media_group": ["media"],
+        "send_message": ["text"],
+        "send_photo": ["photo"],
+        "send_poll": ["question"],
+        "send_sticker": ["sticker"],
+        "send_video": ["video"],
+        "send_video_note": ["video_note"],
+        "send_voice": ["voice"],
         # Important to test last, as this only requires chat_id
-        'send_dice': ['chat_id'],
+        "send_dice": ["chat_id"],
     }
 )
 
@@ -111,20 +111,20 @@ def send_by_kwargs(
             selected_method = method_name
             break
     else:
-        raise RuntimeError('Could not find a bot method to call for the passed kwargs.')
+        raise RuntimeError("Could not find a bot method to call for the passed kwargs.")
 
     try:
         method = getattr(bot, selected_method)
         relevant_kwargs = get_relevant_kwargs(method, kwargs)
     except MissingRequiredParam as exc:
         raise KeyError(
-            f'Selected method {method.__name__!r}, but the required parameter '
-            f'{exc.param_name!r} is missing in the provided kwargs.'
+            f"Selected method {method.__name__!r}, but the required parameter "
+            f"{exc.param_name!r} is missing in the provided kwargs."
         ) from exc
 
     try:
         return method(**relevant_kwargs)
     except Exception as exc:
         raise RuntimeError(
-            f'Selected method {method.__name__!r}, but it raised the above exception.'
+            f"Selected method {method.__name__!r}, but it raised the above exception."
         ) from exc

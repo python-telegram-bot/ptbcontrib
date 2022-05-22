@@ -20,12 +20,11 @@
 
 import logging
 from typing import Any
+
 import telegram
 from apscheduler.job import Job as APSJob
-
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from telegram.ext import CallbackContext, Dispatcher
-
 
 logger = logging.getLogger(__name__)
 

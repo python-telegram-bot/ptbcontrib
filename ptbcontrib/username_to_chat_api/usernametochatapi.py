@@ -20,7 +20,7 @@
 This module contains a class that, once initiated, works as a shortcut to the UsernameToChatAPI
 and puts the response in a Chat object, as well as puts the error to the fitting TelegramErrors.
 """
-from telegram import error, Chat, Bot
+from telegram import Bot, Chat, error
 
 try:
     from telegram.vendor.ptb_urllib3 import urllib3
@@ -68,9 +68,9 @@ class UsernameToChatAPI:  # pylint: disable=too-few-public-methods
             a leading @ is not required, but it will work nonetheless.
         """
         response = self._http.request(
-            'GET', self._url, fields={"api_key": self._api_key, "username": username}
+            "GET", self._url, fields={"api_key": self._api_key, "username": username}
         )
-        result = json.loads(response.data.decode('utf-8'))
+        result = json.loads(response.data.decode("utf-8"))
         status_code = response.status
         if status_code == 200:
             return Chat.de_json(result["result"], self._bot)

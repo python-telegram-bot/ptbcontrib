@@ -17,18 +17,17 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import pytest
-
-from telegram.ext import Updater, MessageHandler
-from telegram import Update, Message, Chat, User
-
 from sqlalchemy.orm import scoped_session  # noqa: E402
+from telegram import Chat, Message, Update, User
+from telegram.ext import MessageHandler, Updater
+
 from ptbcontrib.postgres_persistence import PostgresPersistence  # noqa: E402
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def update():
     return Update(
-        1, message=Message(1, None, Chat(1, ''), from_user=User(1, '', False), text='Text')
+        1, message=Message(1, None, Chat(1, ""), from_user=User(1, "", False), text="Text")
     )
 
 
@@ -46,7 +45,7 @@ class TestPostgresPersistence:
     ses_closed = False
     flush_flag = False
 
-    @pytest.fixture(autouse=True, name='reset')
+    @pytest.fixture(autouse=True, name="reset")
     def reset_fixture(self):
         self.reset()
 
@@ -80,9 +79,9 @@ class TestPostgresPersistence:
 
     def test_with_handler(self, bot, update, monkeypatch):
         session = scoped_session("a")
-        monkeypatch.setattr(session, 'execute', self.mocked_execute)
-        monkeypatch.setattr(session, 'commit', self.mock_commit)
-        monkeypatch.setattr(session, 'close', self.mock_ses_close)
+        monkeypatch.setattr(session, "execute", self.mocked_execute)
+        monkeypatch.setattr(session, "commit", self.mock_commit)
+        monkeypatch.setattr(session, "close", self.mock_ses_close)
 
         u = Updater(bot=bot, persistence=PostgresPersistence(session=session))
         dp = u.dispatcher
@@ -94,16 +93,16 @@ class TestPostgresPersistence:
                 pytest.fail()
             if not context.bot_data == {}:
                 pytest.fail()
-            context.user_data['test1'] = 'test2'
-            context.chat_data[3] = 'test4'
-            context.bot_data['test1'] = 'test2'
+            context.user_data["test1"] = "test2"
+            context.chat_data[3] = "test4"
+            context.bot_data["test1"] = "test2"
 
         def second(update, context):
-            if not context.user_data['test1'] == 'test2':
+            if not context.user_data["test1"] == "test2":
                 pytest.fail()
-            if not context.chat_data[3] == 'test4':
+            if not context.chat_data[3] == "test4":
                 pytest.fail()
-            if not context.bot_data['test1'] == 'test2':
+            if not context.bot_data["test1"] == "test2":
                 pytest.fail()
 
         h1 = MessageHandler(None, first)
@@ -122,30 +121,30 @@ class TestPostgresPersistence:
     @pytest.mark.parametrize(["on_flush", "expected"], [(False, True), (True, False)])
     def test_on_flush(self, bot, update, monkeypatch, on_flush, expected):
         session = scoped_session("a")
-        monkeypatch.setattr(session, 'execute', self.mocked_execute)
-        monkeypatch.setattr(session, 'commit', self.mock_commit)
-        monkeypatch.setattr(session, 'close', self.mock_ses_close)
+        monkeypatch.setattr(session, "execute", self.mocked_execute)
+        monkeypatch.setattr(session, "commit", self.mock_commit)
+        monkeypatch.setattr(session, "close", self.mock_ses_close)
 
         persistence = PostgresPersistence(session=session, on_flush=on_flush)
 
         def mocked_update_database():
             self.flush_flag = True
 
-        monkeypatch.setattr(persistence, '_update_database', mocked_update_database)
+        monkeypatch.setattr(persistence, "_update_database", mocked_update_database)
         u = Updater(bot=bot, persistence=persistence)
         dp = u.dispatcher
 
         def first(update, context):
-            context.user_data['test1'] = 'test2'
-            context.chat_data[3] = 'test4'
-            context.bot_data['test1'] = 'test2'
+            context.user_data["test1"] = "test2"
+            context.chat_data[3] = "test4"
+            context.bot_data["test1"] = "test2"
 
         def second(update, context):
-            if not context.user_data['test1'] == 'test2':
+            if not context.user_data["test1"] == "test2":
                 pytest.fail()
-            if not context.chat_data[3] == 'test4':
+            if not context.chat_data[3] == "test4":
                 pytest.fail()
-            if not context.bot_data['test1'] == 'test2':
+            if not context.bot_data["test1"] == "test2":
                 pytest.fail()
 
         h1 = MessageHandler(None, first)
@@ -160,9 +159,9 @@ class TestPostgresPersistence:
 
     def test_load_on_boot(self, monkeypatch):
         session = scoped_session("a")
-        monkeypatch.setattr(session, 'execute', self.mocked_execute)
-        monkeypatch.setattr(session, 'commit', self.mock_commit)
-        monkeypatch.setattr(session, 'close', self.mock_ses_close)
+        monkeypatch.setattr(session, "execute", self.mocked_execute)
+        monkeypatch.setattr(session, "commit", self.mock_commit)
+        monkeypatch.setattr(session, "close", self.mock_ses_close)
 
         PostgresPersistence(session=session)
         assert self.executed.text in {
@@ -174,9 +173,9 @@ class TestPostgresPersistence:
 
     def test_flush(self, bot, update, monkeypatch):
         session = scoped_session("a")
-        monkeypatch.setattr(session, 'execute', self.mocked_execute)
-        monkeypatch.setattr(session, 'commit', self.mock_commit)
-        monkeypatch.setattr(session, 'close', self.mock_ses_close)
+        monkeypatch.setattr(session, "execute", self.mocked_execute)
+        monkeypatch.setattr(session, "commit", self.mock_commit)
+        monkeypatch.setattr(session, "close", self.mock_ses_close)
 
         PostgresPersistence(session=session).flush()
         assert self.executed != ""

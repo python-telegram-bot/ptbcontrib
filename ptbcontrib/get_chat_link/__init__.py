@@ -18,4 +18,4 @@
 
 from .get_chat_link import get_chat_link
 
-__all__ = ['get_chat_link']
+__all__ = ["get_chat_link"]

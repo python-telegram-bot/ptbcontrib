@@ -17,15 +17,15 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains the RolesHandler class."""
-from typing import Any, Union, Optional
 from abc import ABC, abstractmethod
+from typing import Any, Optional, Union
 
 from telegram import Update
-from telegram.ext import Handler, CallbackContext, Dispatcher
+from telegram.ext import CallbackContext, Dispatcher, Handler
 
-from .roles import Role, Roles, InvertedRole
+from .roles import InvertedRole, Role, Roles
 
-BOT_DATA_KEY: str = 'ptbcontrib_roles_bot_data_key'
+BOT_DATA_KEY: str = "ptbcontrib_roles_bot_data_key"
 """:obj:`str`: The key used to store roles in ``bot_data``."""
 
 
@@ -44,7 +44,6 @@ class RolesBotData(ABC):
         Returns:
             The preexisting :class: 'Roles' instance, if there is one
         """
-        ...
 
     @abstractmethod
     def set_roles(self, roles: Roles) -> None:
@@ -55,7 +54,6 @@ class RolesBotData(ABC):
         Args:
             roles (:class: 'Roles'): The set of roles
         """
-        ...
 
 
 def setup_roles(dispatcher: Dispatcher) -> Roles:
@@ -85,7 +83,7 @@ def setup_roles(dispatcher: Dispatcher) -> Roles:
     if isinstance(dispatcher.bot_data, dict):
         return dispatcher.bot_data.setdefault(BOT_DATA_KEY, Roles(dispatcher.bot))
 
-    raise TypeError('bot_data must either be a dict or implement RolesBotData!')
+    raise TypeError("bot_data must either be a dict or implement RolesBotData!")
 
 
 class RolesHandler(Handler):
@@ -112,6 +110,7 @@ class RolesHandler(Handler):
         super().__init__(self.handler.callback)
 
     def check_update(self, update: Update) -> bool:
+        """Checks if the update should be handled."""
         if self.roles(update):
             return self.handler.check_update(update)
         return False
@@ -123,12 +122,13 @@ class RolesHandler(Handler):
         dispatcher: Dispatcher,
         check_result: Any,
     ) -> None:
+        """Makes the roles accessible via ``context.roles``."""
         self.handler.collect_additional_context(context, update, dispatcher, check_result)
 
         if isinstance(context.bot_data, dict):
             if BOT_DATA_KEY not in context.bot_data:
                 raise RuntimeError(
-                    'You must set a Roles instance before you can use RolesHandlers.'
+                    "You must set a Roles instance before you can use RolesHandlers."
                 )
             context.roles = context.bot_data[BOT_DATA_KEY]
             return
@@ -137,9 +137,9 @@ class RolesHandler(Handler):
             roles = dispatcher.bot_data.get_roles()
             if roles is None:
                 raise RuntimeError(
-                    'You must set a Roles instance before you can use RolesHandlers.'
+                    "You must set a Roles instance before you can use RolesHandlers."
                 )
             context.roles = roles
             return
 
-        raise TypeError('bot_data must either be a dict or implement RolesBotData!')
+        raise TypeError("bot_data must either be a dict or implement RolesBotData!")

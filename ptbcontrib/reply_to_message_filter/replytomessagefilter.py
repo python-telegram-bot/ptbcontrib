@@ -40,6 +40,7 @@ class ReplyToMessageFilter(UpdateFilter):
         self.data_filter = self.filters.data_filter
 
     def filter(self, update: Update) -> Optional[Union[bool, Dict]]:
+        """See :meth:`telegram.ext.BaseFilter.filter`."""
         if not update.effective_message.reply_to_message:
             return False
 

@@ -16,18 +16,18 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+import datetime as dtm
 import logging
 import os
 import platform
-import datetime as dtm
-import pytest
 
-from telegram.ext import JobQueue, CallbackContext
+import pytest
+from telegram.ext import CallbackContext, JobQueue
 
 from ptbcontrib.ptb_sqlalchemy_jobstore import PTBSQLAlchemyJobStore  # noqa: E402
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def jq(cdp):
     jq = JobQueue()
     jq.set_dispatcher(cdp)
@@ -38,7 +38,7 @@ def jq(cdp):
     jq.stop()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def jobstore(jq):
     return jq.scheduler._jobstores["default"]
 
@@ -51,7 +51,7 @@ def dummy_job(ctx):
 
 
 @pytest.mark.skipif(
-    os.getenv('GITHUB_ACTIONS', False) and platform.system() in ['Windows', 'Darwin'],
+    os.getenv("GITHUB_ACTIONS", False) and platform.system() in ["Windows", "Darwin"],
     reason="On Windows & MacOS precise timings are not accurate.",
 )
 class TestPTBJobstore:

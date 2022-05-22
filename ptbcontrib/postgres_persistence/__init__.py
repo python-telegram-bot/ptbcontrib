@@ -18,4 +18,4 @@
 
 from .postgrespersistence import PostgresPersistence
 
-__all__ = ['PostgresPersistence']
+__all__ = ["PostgresPersistence"]

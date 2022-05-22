@@ -21,5 +21,5 @@ This module contains a wrapper for the usernameToChatAPI.
 from .usernametochatapi import UsernameToChatAPI
 
 __all__ = [
-    'UsernameToChatAPI',
+    "UsernameToChatAPI",
 ]
