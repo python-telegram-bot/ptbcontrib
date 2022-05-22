@@ -1,6 +1,4 @@
 import pytest
-
-
 from httpx import AsyncClient, Response
 from telegram import Chat, error
 
