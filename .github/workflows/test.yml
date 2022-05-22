@@ -50,8 +50,16 @@ jobs:
             python run_tests.py
           fi
           exit_code=$?
-          pytest -k test_meta
-          meta_exit=$?
+
+#          run build-tests only on <3.10 for now as long as there are contributions that require
+#          ptb <v20
+          if [[ ${{ matrix.python-version }} == "3.10" ]]; then
+            meta_exit=0
+          else
+            pytest -k test_meta
+            meta_exit=$?
+          fi
+
           global_exit=$(( exit_code > meta_exit ? exit_code : meta_exit ))
           exit ${global_exit}
         env:
