@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-from unittest.mock import Mock
+from unittest.mock import AsyncMock
 
 import pytest
 from telegram import Chat
@@ -50,52 +50,57 @@ def bot_chat_dict():
 
 
 class TestChatToLink:
-    def test_chat_username(self, chat):
+    async def test_chat_username(self, chat):
         username = "test_username"
         chat.username = username
 
-        link = get_chat_link(chat)
+        link = await get_chat_link(chat)
 
         assert link == f"https://t.me/{username}"
 
-    def test_chat_invite_link(self, chat):
+    async def test_chat_invite_link(self, chat):
         invite_link = "https://t.me/joinchat/RQ4-ELmRIl82ZDZk"
         chat.invite_link = invite_link
 
-        link = get_chat_link(chat)
+        link = await get_chat_link(chat)
 
         assert link == invite_link
 
-    def test_bot_chat_invite_link(self, chat, bot_chat_dict):
+    async def test_bot_chat_invite_link(self, chat, bot_chat_dict, monkeypatch):
         invite_link = "https://t.me/joinchat/RQ4-ELmRIl82ZDZk"
         res = bot_chat_dict
         res["invite_link"] = invite_link
-        chat.bot._post = Mock(side_effect=[bot_chat_dict])
 
-        link = get_chat_link(chat)
+        async def post(*args, **kwargs):
+            return bot_chat_dict
+
+        monkeypatch.setattr(chat.get_bot().request, "post", post)
+
+        link = await get_chat_link(chat)
 
         assert link == invite_link
 
-    def test_export_chat_invite_link(self, chat, bot_chat_dict):
+    async def test_export_chat_invite_link(self, chat, bot_chat_dict, monkeypatch):
         invite_link = "https://t.me/joinchat/m4Zho4YdtexiMzI0"
-        res = invite_link
-        chat.bot._post = Mock(side_effect=[bot_chat_dict, res])
+        chat.get_bot().request.post = AsyncMock(side_effect=[bot_chat_dict, invite_link])
 
-        link = get_chat_link(chat)
+        link = await get_chat_link(chat)
 
         assert link == invite_link
 
-    def test_bot_permission_error(self, chat, bot_chat_dict):
-        chat.bot._post = Mock(
+    async def test_bot_permission_error(self, chat, bot_chat_dict):
+        chat.get_bot().request.post = AsyncMock(
             side_effect=[bot_chat_dict, BadRequest("Not enough rights to manage chat invite link")]
         )
 
-        link = get_chat_link(chat)
+        link = await get_chat_link(chat)
 
         assert link is None
 
-    def test_bot_other_error(self, chat, bot_chat_dict):
-        chat.bot._post = Mock(side_effect=[bot_chat_dict, BadRequest("Some other error")])
+    async def test_bot_other_error(self, chat, bot_chat_dict):
+        chat.get_bot().request.post = AsyncMock(
+            side_effect=[bot_chat_dict, BadRequest("Some other error")]
+        )
 
         with pytest.raises(BadRequest):
-            get_chat_link(chat)
+            await get_chat_link(chat)

@@ -23,7 +23,7 @@ from telegram import Chat
 from telegram.error import BadRequest
 
 
-def get_chat_link(chat: Chat) -> Optional[str]:
+async def get_chat_link(chat: Chat) -> Optional[str]:
     """
     Gets a link for the chat in the following order if the link is valid:
      1. Chat's link (`chat.link`).
@@ -45,19 +45,23 @@ def get_chat_link(chat: Chat) -> Optional[str]:
 
     Returns:
         :obj:`Optional[str]`: Chat link as a URL if there is any. Otherwise None.
+
+    Raises:
+        RuntimeError: If :meth:`Chat.get_bot` raises a :exc:`RuntimeError`, i.e. there is no
+            bot associated with this chat.
     """
-    bot = chat.bot
+    bot = chat.get_bot()
     if chat.link:
         return chat.link
     if chat.invite_link:
         return chat.invite_link
 
-    bot_chat = bot.get_chat(chat.id)
+    bot_chat = await bot.get_chat(chat.id)
     if bot_chat.invite_link:
         return bot_chat.invite_link
 
     try:
-        return chat.export_invite_link()
+        return await chat.export_invite_link()
     except BadRequest as exc:
         if "not enough rights" in exc.message.lower():
             return None
