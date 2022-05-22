@@ -17,13 +17,12 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains the class Role, which allows to restrict access to handlers."""
-import time
 from collections.abc import Mapping
 from threading import Event, Lock
-from typing import Any, ClassVar, Dict, FrozenSet, Iterator, List, NoReturn, Set, Tuple, Union
+from typing import Any, ClassVar, Dict, FrozenSet, Iterator, List, Set, Tuple, Union
 
-from telegram import Bot, Chat, ChatMember, TelegramError, Update
-from telegram.ext import UpdateFilter
+from telegram import Bot, Update
+from telegram.ext.filters import UpdateFilter
 
 _REPLACED_LOCK: str = "ptbcontrib_roles_replaced_lock"
 
@@ -119,6 +118,7 @@ class Role(UpdateFilter):
         child_roles: Union["Role", List["Role"], Tuple["Role", ...]] = None,
         name: str = None,
     ) -> None:
+        super().__init__(name=None, data_filter=False)
         self._name = name
         self._inverted = False
         self.__lock = Lock()
@@ -342,6 +342,10 @@ class Role(UpdateFilter):
             return f"Role({set(self.chat_ids)})"
         return "Role({})"
 
+    @name.setter
+    def name(self, name: str) -> None:
+        self._name = name
+
     def __getstate__(self) -> Dict[str, Any]:
         """
         Gets called, when object is being pickled. Sets all variables ending on ``_lock`` to
@@ -380,117 +384,12 @@ class InvertedRole(UpdateFilter):
     """
 
     def __init__(self, role: Role):
+        super().__init__(name=f"<inverted {role}>", data_filter=False)
         self.role = role
 
     def filter(self, update: Update) -> bool:
         """Checks if the update should be handled."""
         return self.role.filter(update, inverted=True)
-
-    def __repr__(self) -> str:
-        return f"<inverted {self.role}>"
-
-
-class ChatAdminsRole(Role):  # pylint: disable=R0901
-    """A :class:`telegram.ext.Role` that allows only the administrators of a chat. Private chats
-    are always allowed. To minimize the number of API calls, for each chat the admins will be
-    cached.
-
-    Note:
-        Instance of this class can't be inverted, as that would make little sense.
-
-    Attributes:
-        timeout (:obj:`int`): The caching timeout in seconds. For each chat, the admins will be
-            cached and refreshed only after this timeout.
-
-    Args:
-        bot (:class:`telegram.Bot`): A bot to use for getting the administrators of a chat.
-        timeout (:obj:`int`, optional): The caching timeout in seconds. For each chat, the admins
-            will be cached and refreshed only after this timeout. Defaults to ``1800`` (half an
-            hour).
-    """
-
-    def __init__(self, bot: Bot, timeout: float = 1800):
-        super().__init__(name="chat_admins")
-        self.bot = bot
-        self.cache: Dict[int, Tuple[float, List[int]]] = {}
-        self.timeout = timeout
-
-    def __invert__(self) -> NoReturn:
-        raise RuntimeError("Instances of ChatAdminsRole can not be inverted")
-
-    def filter(self, update: Update, target: Role = None, inverted: bool = False) -> bool:
-        # Always allow admins
-        if self is not self._admin and self._admin.filter(update):
-            return True
-
-        user = update.effective_user
-        chat = update.effective_chat
-
-        if user and chat:
-            # Always true in private chats
-            if chat.type == Chat.PRIVATE:
-                return True
-
-            # Check for cached info first
-            if (
-                self.cache.get(chat.id, None)
-                and (time.time() - self.cache[chat.id][0]) < self.timeout
-            ):
-                return user.id in self.cache[chat.id][1]
-
-            admins = [m.user.id for m in self.bot.get_chat_administrators(chat.id)]
-            self.cache[chat.id] = (time.time(), admins)
-            return user.id in admins
-        return False
-
-
-class ChatCreatorRole(Role):  # pylint: disable=R0901
-    """A :class:`telegram.ext.Role` that allows only the creator of a chat. Private chats are
-    always allowed. To minimize the number of API calls, for each chat the creator will be saved.
-
-    Note:
-        Instance of this class can't be inverted, as that would make little sense.
-
-    Args:
-        bot (:class:`telegram.Bot`): A bot to use for getting the creator of a chat.
-    """
-
-    def __init__(self, bot: Bot) -> None:
-        super().__init__(name="chat_creator")
-        self.bot = bot
-        self.cache: Dict[int, int] = {}
-
-    def __invert__(self) -> NoReturn:
-        raise RuntimeError("Instances of ChatCreatorRole can not be inverted")
-
-    def filter(  # pylint: disable=R0911
-        self, update: Update, target: Role = None, inverted: bool = False
-    ) -> bool:
-        # Always allow admins
-        if self is not self._admin and self._admin.filter(update):
-            return True
-
-        user = update.effective_user
-        chat = update.effective_chat
-
-        if user and chat:
-            # Always true in private chats
-            if chat.type == Chat.PRIVATE:
-                return True
-
-            # Check for cached info first
-            if self.cache.get(chat.id, None):
-                return user.id == self.cache[chat.id]
-            try:
-                member = self.bot.get_chat_member(chat.id, user.id)
-                if member.status == ChatMember.CREATOR:
-                    self.cache[chat.id] = user.id
-                    return True
-                return False
-            except TelegramError:
-                # user is not a chat member or bot has no access
-                return False
-        return False
 
 
 class Roles(Mapping):
@@ -507,12 +406,6 @@ class Roles(Mapping):
     Attributes:
         admins (:class:`telegram.ext.Role`): A role reserved for administrators of the bot. All
             roles added to this instance will be child roles of :attr:`ADMINS`.
-        chat_admins (:class:`telegram.ext.roles.ChatAdminsRole`): Use this role to restrict access
-            to admins of a chat. Handlers with this role wont handle updates that don't have an
-            ``effective_chat``. Admins are cached for each chat.
-        chat_creator (:class:`telegram.ext.roles.ChatCreatorRole`): Use this role to restrict
-            access to the creator of a chat. Handlers with this role wont handle updates that don't
-            have an ``effective_chat``.
 
     Args:
         bot (:class:`telegram.Bot`): A bot associated with this instance.
@@ -525,11 +418,6 @@ class Roles(Mapping):
         self.bot = bot
 
         self.admins = Role(name="admins")
-        self.chat_admins = ChatAdminsRole(bot=self.bot)
-        self.chat_creator = ChatCreatorRole(bot=self.bot)
-
-        self.chat_admins._set_custom_admin(self.admins)
-        self.chat_creator._set_custom_admin(self.admins)
 
     def set_bot(self, bot: Bot) -> None:
         """If for some reason you can't pass the bot on initialization, you can set it with this

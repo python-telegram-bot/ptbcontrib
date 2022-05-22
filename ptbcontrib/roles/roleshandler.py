@@ -18,10 +18,10 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains the RolesHandler class."""
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Union
+from typing import Any, Optional, TypeVar, Union
 
 from telegram import Update
-from telegram.ext import CallbackContext, Dispatcher, Handler
+from telegram.ext import Application, CallbackContext, Handler
 
 from .roles import InvertedRole, Role, Roles
 
@@ -56,37 +56,40 @@ class RolesBotData(ABC):
         """
 
 
-def setup_roles(dispatcher: Dispatcher) -> Roles:
+def setup_roles(application: Application) -> Roles:
     """
-    Checks if :attr:`dispatcher.bot_data` stores an instance
+    Checks if :attr:`application.bot_data` stores an instance
     of the class :class:`ptbcontrib.roles.Roles` and creates a new one, if not.
-    If :attr:`dispatcher.bot_data` is a dict, the ``Roles`` object will be saved  under the key
-    :attr:`BOT_DATA_KEY`. Otherwise, :attr:`dispatcher.bot_data` must be an instance of
+    If :attr:`application.bot_data` is a dict, the ``Roles`` object will be saved  under the key
+    :attr:`BOT_DATA_KEY`. Otherwise, :attr:`application.bot_data` must be an instance of
     :class:`RolesBotData` and the corresponding methods will be used to retrieve and save the
     ``Roles`` object.
 
     Args:
-        dispatcher (:class:`telegram.ext.Dispatcher`): The dispatcher
+        application (:class:`telegram.ext.Application`): The application
 
     Returns:
         The :class:`ptbcontrib.roles.Roles` instance to be used.
     """
-    if isinstance(dispatcher.bot_data, RolesBotData):
-        roles = dispatcher.bot_data.get_roles()
+    if isinstance(application.bot_data, RolesBotData):
+        roles = application.bot_data.get_roles()
         if roles is None:
-            roles = Roles(dispatcher.bot)
-            dispatcher.bot_data.set_roles(roles)
+            roles = Roles(application.bot)
+            application.bot_data.set_roles(roles)
             return roles
 
         return roles
 
-    if isinstance(dispatcher.bot_data, dict):
-        return dispatcher.bot_data.setdefault(BOT_DATA_KEY, Roles(dispatcher.bot))
+    if isinstance(application.bot_data, dict):
+        return application.bot_data.setdefault(BOT_DATA_KEY, Roles(application.bot))
 
     raise TypeError("bot_data must either be a dict or implement RolesBotData!")
 
 
-class RolesHandler(Handler):
+_CCT = TypeVar("_CCT", bound=CallbackContext)
+
+
+class RolesHandler(Handler[Update, _CCT]):
     """
     A handler that acts as wrapper for existing handler classes allowing to add roles for
     user access management. You must call :meth:`setup_roles` before this handler can work.
@@ -104,26 +107,28 @@ class RolesHandler(Handler):
             with bitwise operations.
     """
 
-    def __init__(self, handler: Handler, roles: Role) -> None:
+    def __init__(self, handler: Handler[Update, _CCT], roles: Role) -> None:
         self.handler = handler
         self.roles: Union[Role, InvertedRole] = roles
         super().__init__(self.handler.callback)
 
-    def check_update(self, update: Update) -> bool:
+    def check_update(self, update: object) -> Any:
         """Checks if the update should be handled."""
-        if self.roles(update):
+        if not isinstance(update, Update):
+            return False
+        if self.roles.check_update(update):
             return self.handler.check_update(update)
         return False
 
     def collect_additional_context(
         self,
-        context: CallbackContext,
+        context: _CCT,
         update: Update,
-        dispatcher: Dispatcher,
+        application: Application,
         check_result: Any,
     ) -> None:
         """Makes the roles accessible via ``context.roles``."""
-        self.handler.collect_additional_context(context, update, dispatcher, check_result)
+        self.handler.collect_additional_context(context, update, application, check_result)
 
         if isinstance(context.bot_data, dict):
             if BOT_DATA_KEY not in context.bot_data:
@@ -134,7 +139,7 @@ class RolesHandler(Handler):
             return
 
         if isinstance(context.bot_data, RolesBotData):
-            roles = dispatcher.bot_data.get_roles()
+            roles = application.bot_data.get_roles()
             if roles is None:
                 raise RuntimeError(
                     "You must set a Roles instance before you can use RolesHandlers."
