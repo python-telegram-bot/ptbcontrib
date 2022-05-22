@@ -86,7 +86,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
                 ]
             )
 
-            result = subprocess.run(
+            result = subprocess.run(  # nosec
                 [sys.executable, "-m", "telegram"],
                 capture_output=True,
                 text=True,

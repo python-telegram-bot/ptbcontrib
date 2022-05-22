@@ -259,16 +259,16 @@ else:
             yield _bot
 
     @pytest.fixture(scope="function")
-    async def default_bot(request, bot_info):
+    async def default_bot(request):
         param = request.param if hasattr(request, "param") else {}
 
-        default_bot = make_bot(bot_info, defaults=Defaults(**param))
+        default_bot = make_bot(defaults=Defaults(**param))
         async with default_bot:
             yield default_bot
 
     @pytest.fixture(scope="function")
-    async def tz_bot(timezone, bot_info):
-        default_bot = make_bot(bot_info, defaults=Defaults(tzinfo=timezone))
+    async def tz_bot(timezone):
+        default_bot = make_bot(defaults=Defaults(tzinfo=timezone))
         async with default_bot:
             yield default_bot
 
