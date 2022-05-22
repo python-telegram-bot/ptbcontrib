@@ -62,9 +62,9 @@ class UsernameToChatAPI:
             return Chat.de_json(result["result"], self._bot)
         message = result["description"]
         if status_code == 401:
-            raise error.Unauthorized(message)
-        if status_code == 400:
             raise error.Forbidden(message)
+        if status_code == 400:
+            raise error.BadRequest(message)
         if status_code == 429:
             raise error.RetryAfter(result["retry_after"])
         # this can not happen with the API right now, but we don't want to swallow future
