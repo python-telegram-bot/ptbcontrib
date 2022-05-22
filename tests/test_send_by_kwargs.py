@@ -20,12 +20,12 @@ import inspect
 import random
 
 import pytest
-from telegram import TelegramError
+from telegram.error import TelegramError
 
 from ptbcontrib.send_by_kwargs import send_by_kwargs
-from ptbcontrib.send_by_kwargs.send_by_kwargs import CACHED_SIGNATURES, UNIQUE_KWARGS
+from ptbcontrib.send_by_kwargs.send_by_kwargs import _CACHED_SIGNATURES, _UNIQUE_KWARGS
 
-temp = list(UNIQUE_KWARGS.items())
+temp = list(_UNIQUE_KWARGS.items())
 random.shuffle(temp)
 UNIQUE_KWARGS_SHUFFLED = {key: value for key, value in temp}
 
@@ -42,7 +42,7 @@ class TestSendByKwargs:
         argvalues=list(UNIQUE_KWARGS_SHUFFLED.items()),
         ids=list(UNIQUE_KWARGS_SHUFFLED),
     )
-    def test_correct_selection(self, method, args, bot):
+    async def test_correct_selection(self, method, args, bot):
         if method == "send_dice":
             pytest.skip("send_dice only has one required parameter anyway")
 
@@ -51,18 +51,24 @@ class TestSendByKwargs:
         with pytest.raises(
             KeyError, match=f"Selected method '{method}', but the required parameter"
         ):
-            send_by_kwargs(bot, kwargs)
+            await send_by_kwargs(bot, kwargs)
 
         with pytest.raises(
             KeyError, match=f"Selected method '{method}', but the required parameter"
         ):
-            send_by_kwargs(bot, **kwargs)
+            await send_by_kwargs(bot, **kwargs)
+
+    async def test_correct_selection_none(self, bot):
+        """Makes sure that send_photo is selected even if a key `document` is present if the
+        value is None"""
+        with pytest.raises(KeyError, match="Selected method 'send_photo'"):
+            await send_by_kwargs(bot, document=None, photo="photo")
 
     @pytest.mark.parametrize(
         argnames="method",
         argvalues=list(UNIQUE_KWARGS_SHUFFLED),
     )
-    def test_kwargs_passing(self, method, bot, monkeypatch):
+    async def test_kwargs_passing(self, method, bot, monkeypatch):
         """
         This essentially makes sure that get_relevant_kwargs doesn't pass kwargs that are not
         accepted by the selected method.
@@ -73,18 +79,18 @@ class TestSendByKwargs:
         kwargs = expected_kwargs.copy()
         kwargs["dummy"] = "this_should_not_be_passed"
 
-        def make_assertion(**_kwargs):
+        async def make_assertion(**_kwargs):
             self.test_flag = _kwargs == expected_kwargs
 
         # we're a bit tricky here, because otherwise monkeypatch would fiddle with the signature
-        CACHED_SIGNATURES["make_assertion"] = signature
+        _CACHED_SIGNATURES["make_assertion"] = signature
 
         monkeypatch.setattr(bot, method, make_assertion)
-        send_by_kwargs(bot, kwargs)
+        await send_by_kwargs(bot, kwargs)
         assert self.test_flag
 
         self.test_flag = False
-        send_by_kwargs(bot, **kwargs)
+        await send_by_kwargs(bot, **kwargs)
         assert self.test_flag
 
     @pytest.mark.parametrize(
@@ -92,16 +98,23 @@ class TestSendByKwargs:
         argvalues=list(UNIQUE_KWARGS_SHUFFLED),
     )
     @pytest.mark.parametrize(
-        argnames="timeout", argvalues=[None, 5], ids=["default_timeout", "custom_timeout"]
+        argnames="parse_mode",
+        argvalues=[None, "HTML"],
+        ids=["default_parse_mode", "custom_parse_mode"],
     )
-    def test_defaults_handling(self, method, timeout, bot, monkeypatch):
-        def make_assertion(**kwargs):
-            if timeout is None:
-                self.test_flag = "timeout" not in kwargs
+    async def test_defaults_handling(self, method, parse_mode, bot, monkeypatch):
+        """We only test with parse_mode - should suffice"""
+
+        async def make_assertion(**kwargs):
+            if parse_mode is None:
+                self.test_flag = "parse_mode" not in kwargs
             else:
-                self.test_flag = kwargs.get("timeout", None) == 5
+                self.test_flag = kwargs.get("parse_mode", None) == "HTML"
 
         signature = inspect.signature(getattr(bot, method))
+        if "parse_mode" not in signature.parameters.keys():
+            return
+
         kwargs = {
             name: True
             for name, param in signature.parameters.items()
@@ -111,32 +124,32 @@ class TestSendByKwargs:
             # directly
             or name in ["latitude", "longitude", "address", "phone_number", "first_name"]
         }
-        if timeout is not None:
-            kwargs["timeout"] = 5
+        if parse_mode is not None:
+            kwargs["parse_mode"] = "HTML"
 
         # we're a bit tricky here, because otherwise monkeypatch would fiddle with the signature
-        CACHED_SIGNATURES["make_assertion"] = signature
+        _CACHED_SIGNATURES["make_assertion"] = signature
 
         monkeypatch.setattr(bot, method, make_assertion)
-        send_by_kwargs(bot, kwargs)
+        await send_by_kwargs(bot, kwargs)
         assert self.test_flag
 
         self.test_flag = False
-        send_by_kwargs(bot, **kwargs)
+        await send_by_kwargs(bot, **kwargs)
         assert self.test_flag
 
-    def test_fallback_behavior(self, monkeypatch, bot):
-        def make_assertion(**kwargs):
+    async def test_fallback_behavior(self, monkeypatch, bot):
+        async def make_assertion(**kwargs):
             self.test_flag = True
 
         signature = inspect.signature(bot.send_dice)
-        CACHED_SIGNATURES["make_assertion"] = signature
+        _CACHED_SIGNATURES["make_assertion"] = signature
         monkeypatch.setattr(bot, "send_dice", make_assertion)
-        send_by_kwargs(bot, {"chat_id": 1})
+        await send_by_kwargs(bot, {"chat_id": 1})
         assert self.test_flag
 
         with pytest.raises(RuntimeError, match="Could not find a bot method"):
-            send_by_kwargs(bot, {})
+            await send_by_kwargs(bot, {})
 
     @pytest.mark.parametrize(
         "kwargs,_kwargs",
@@ -150,24 +163,24 @@ class TestSendByKwargs:
             ],
         ],
     )
-    def test_kwarg_mixing(self, bot, monkeypatch, kwargs, _kwargs):
+    async def test_kwarg_mixing(self, bot, monkeypatch, kwargs, _kwargs):
         expected_kwargs = {"chat_id": 123, "text": "Hello there"}
 
-        def make_assertion(**kw):
+        async def make_assertion(**kw):
             self.test_flag = kw == expected_kwargs
 
         signature = inspect.signature(bot.send_message)
-        CACHED_SIGNATURES["make_assertion"] = signature
+        _CACHED_SIGNATURES["make_assertion"] = signature
         monkeypatch.setattr(bot, "send_message", make_assertion)
-        send_by_kwargs(bot, kwargs, **_kwargs)
+        await send_by_kwargs(bot, kwargs, **_kwargs)
         assert self.test_flag
 
-    def test_method_raises_exception(self, bot, monkeypatch):
-        def mock(**_kw):
-            raise TelegramError()
+    async def test_method_raises_exception(self, bot, monkeypatch):
+        async def mock(**_kw):
+            raise TelegramError("Error")
 
         signature = inspect.signature(bot.send_message)
-        CACHED_SIGNATURES["mock"] = signature
+        _CACHED_SIGNATURES["mock"] = signature
         monkeypatch.setattr(bot, "send_message", mock)
         with pytest.raises(RuntimeError, match="Selected method 'mock', but it raised"):
-            send_by_kwargs(bot, chat_id=123, text="Hi")
+            await send_by_kwargs(bot, chat_id=123, text="Hi")
