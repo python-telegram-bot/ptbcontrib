@@ -35,14 +35,14 @@ class UsernameToChatAPI:
     """
 
     def __init__(
-        self, api_url: str, api_key: str, bot: Bot, initialized_httpx_client: AsyncClient = None
+        self, api_url: str, api_key: str, bot: Bot, httpx_client: AsyncClient = None
     ) -> None:
         if api_url.endswith("/"):
             api_url = api_url[:-1]
         self._url = api_url + "/resolveUsername"
         self._api_key = api_key
         self._bot = bot
-        if initialized_httpx_client:
+        if httpx_client:
             self._client = initialized_httpx_client
         else:
             self._client = AsyncClient()
