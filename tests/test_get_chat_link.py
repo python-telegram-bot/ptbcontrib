@@ -16,9 +16,6 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-import sys
-from unittest.mock import AsyncMock
-
 import pytest
 from telegram import Chat
 from telegram.error import BadRequest
@@ -50,10 +47,6 @@ def bot_chat_dict():
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 8),
-    reason="AsyncMock is new in py3.8. No need to rewrite the tests just for that.",
-)
 class TestChatToLink:
     async def test_chat_username(self, chat):
         username = "test_username"
@@ -87,25 +80,45 @@ class TestChatToLink:
 
     async def test_export_chat_invite_link(self, chat, bot_chat_dict, monkeypatch):
         invite_link = "https://t.me/joinchat/m4Zho4YdtexiMzI0"
-        chat.get_bot().request.post = AsyncMock(side_effect=[bot_chat_dict, invite_link])
+        call = [0]
+
+        async def post(*args, **kwargs):
+            if call[0] == 0:
+                call[0] += 1
+                return bot_chat_dict
+            return invite_link
+
+        monkeypatch.setattr(chat.get_bot().request, "post", post)
 
         link = await get_chat_link(chat)
 
         assert link == invite_link
 
-    async def test_bot_permission_error(self, chat, bot_chat_dict):
-        chat.get_bot().request.post = AsyncMock(
-            side_effect=[bot_chat_dict, BadRequest("Not enough rights to manage chat invite link")]
-        )
+    async def test_bot_permission_error(self, chat, bot_chat_dict, monkeypatch):
+        call = [0]
+
+        async def post(*args, **kwargs):
+            if call[0] == 0:
+                call[0] += 1
+                return bot_chat_dict
+            raise BadRequest("Not enough rights to manage chat invite link")
+
+        monkeypatch.setattr(chat.get_bot().request, "post", post)
 
         link = await get_chat_link(chat)
 
         assert link is None
 
-    async def test_bot_other_error(self, chat, bot_chat_dict):
-        chat.get_bot().request.post = AsyncMock(
-            side_effect=[bot_chat_dict, BadRequest("Some other error")]
-        )
+    async def test_bot_other_error(self, chat, bot_chat_dict, monkeypatch):
+        call = [0]
+
+        async def post(*args, **kwargs):
+            if call[0] == 0:
+                call[0] += 1
+                return bot_chat_dict
+            raise BadRequest("Some other error")
+
+        monkeypatch.setattr(chat.get_bot().request, "post", post)
 
         with pytest.raises(BadRequest):
             await get_chat_link(chat)
