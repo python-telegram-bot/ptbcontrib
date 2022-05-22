@@ -51,8 +51,8 @@ jobs:
           fi
           exit_code=$?
 
-#          run build-tests only on <3.10 for now as long as there are contributions that require
-#          ptb <v20
+          # run build-tests only on <3.10 for now as long as there are contributions that require
+          # ptb <v20
           if [[ ${{ matrix.python-version }} == 3.10 ]]; then
             meta_exit=0
           else
