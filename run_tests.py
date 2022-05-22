@@ -86,11 +86,19 @@ def run_tests(changed: bool, names: List[str]) -> int:
                 ]
             )
 
-            from telegram import __version__  # pylint: disable=import-outside-toplevel
-
-            if __version__.startswith("13") and sys.version_info >= (3, 10):
+            result = subprocess.run(
+                [sys.executable, "-m", "telegram"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            if (
+                result.stdout
+                and result.stdout.startswith("python-telegram-bot 13")
+                and sys.version_info >= (3, 10)
+            ):
                 print(
-                    f"Ignoring contribution {name}, as PTB version {__version__} is not "
+                    f"Ignoring contribution {name}, as this PTB version is not "
                     f"supported on Python {sys.version}. "
                 )
                 continue

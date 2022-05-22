@@ -65,13 +65,13 @@ Because this library is subject to more frequent changes than PTB, it is *not* a
 
 .. code:: shell
 
-    $ pip install git+https://github.com/python-telegram-bot/ptbcontrib.git
+    $ pip install git+https://github.com/python-telegram-bot/ptbcontrib.git@main
 
 If you want to use an extension that has some special requirements, you can install them on the fly as e.g.
 
 .. code:: shell
 
-    $ pip install "ptbcontrib[extension1,extension2] @ git+https://github.com/python-telegram-bot/ptbcontrib.git"
+    $ pip install "ptbcontrib[extension1,extension2] @ git+https://github.com/python-telegram-bot/ptbcontrib.git@main"
 
 Or you can install from source with:
 

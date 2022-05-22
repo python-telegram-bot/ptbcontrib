@@ -24,8 +24,13 @@ from time import sleep
 
 import pytest
 import pytz
-from telegram import Bot, User
-from telegram.ext import Defaults, Dispatcher, JobQueue, Updater
+from telegram import Bot, User, __version__
+from telegram.ext import Defaults, JobQueue, Updater
+
+v13 = __version__.startswith("1")
+
+if v13:
+    from telegram.ext import Dispatcher
 
 GITHUB_ACTION = os.getenv("GITHUB_ACTION", False)
 
@@ -97,84 +102,87 @@ def tz_bot(timezone):
         return default_bot
 
 
-def create_dp(bot):
-    # Dispatcher is heavy to init (due to many threads and such) so we have a single session
-    # scoped one here, but before each test, reset it (dp fixture below)
-    dispatcher = Dispatcher(bot, Queue(), job_queue=JobQueue(), workers=2, use_context=True)
-    dispatcher.job_queue.set_dispatcher(dispatcher)
+if v13:
 
-    # we mock bot.{get_me, get_my_commands} b/c those are used in the @info decorator
-    def get_me(*args, **kwargs):
-        user = User(1, "TestBot", True)
-        dispatcher.bot._bot = user
-        return user
+    def create_dp(bot):
+        # Dispatcher is heavy to init (due to many threads and such) so we have a single session
+        # scoped one here, but before each test, reset it (dp fixture below)
+        dispatcher = Dispatcher(bot, Queue(), job_queue=JobQueue(), workers=2, use_context=True)
+        dispatcher.job_queue.set_dispatcher(dispatcher)
 
-    def get_my_commands(*args, **kwargs):
-        return []
+        # we mock bot.{get_me, get_my_commands} b/c those are used in the @info decorator
+        def get_me(*args, **kwargs):
+            user = User(1, "TestBot", True)
+            dispatcher.bot._bot = user
+            return user
 
-    orig_get_me = dispatcher.bot.get_me
-    orig_get_my_commands = dispatcher.bot.get_my_commands
-    dispatcher.bot.get_me = get_me
-    dispatcher.bot.get_my_commands = get_my_commands
+        def get_my_commands(*args, **kwargs):
+            return []
 
-    thr = Thread(target=dispatcher.start)
-    thr.start()
-    sleep(2)
-    yield dispatcher
+        orig_get_me = dispatcher.bot.get_me
+        orig_get_my_commands = dispatcher.bot.get_my_commands
+        dispatcher.bot.get_me = get_me
+        dispatcher.bot.get_my_commands = get_my_commands
 
-    dispatcher.bot.get_me = orig_get_me
-    dispatcher.bot.get_my_commands = orig_get_my_commands
+        thr = Thread(target=dispatcher.start)
+        thr.start()
+        sleep(2)
+        yield dispatcher
 
-    sleep(1)
-    if dispatcher.running:
-        dispatcher.stop()
-    thr.join()
+        dispatcher.bot.get_me = orig_get_me
+        dispatcher.bot.get_my_commands = orig_get_my_commands
 
+        sleep(1)
+        if dispatcher.running:
+            dispatcher.stop()
+        thr.join()
 
-@pytest.fixture(scope="session")
-def _dp(bot):
-    yield from create_dp(bot)
+    @pytest.fixture(scope="session")
+    def _dp(bot):
+        yield from create_dp(bot)
 
+    @pytest.fixture(scope="function")
+    def dp(_dp):
+        # Reset the dispatcher first
+        while not _dp.update_queue.empty():
+            _dp.update_queue.get(False)
+        _dp.chat_data = defaultdict(dict)
+        _dp.user_data = defaultdict(dict)
+        _dp.bot_data = {}
+        _dp.persistence = None
+        _dp.handlers = {}
+        _dp.groups = []
+        _dp.error_handlers = {}
+        # For some reason if we setattr with the name mangled, then some tests(like async)
+        # run forever,
+        # due to threads not acquiring, (blocking). This adds these attributes to the __dict__.
+        object.__setattr__(_dp, "__stop_event", Event())
+        object.__setattr__(_dp, "__exception_event", Event())
+        object.__setattr__(_dp, "__async_queue", Queue())
+        object.__setattr__(_dp, "__async_threads", set())
+        _dp.persistence = None
+        _dp.use_context = False
+        if _dp._Dispatcher__singleton_semaphore.acquire(blocking=0):
+            Dispatcher._set_singleton(_dp)
+        yield _dp
+        Dispatcher._Dispatcher__singleton_semaphore.release()
 
-@pytest.fixture(scope="function")
-def dp(_dp):
-    # Reset the dispatcher first
-    while not _dp.update_queue.empty():
-        _dp.update_queue.get(False)
-    _dp.chat_data = defaultdict(dict)
-    _dp.user_data = defaultdict(dict)
-    _dp.bot_data = {}
-    _dp.persistence = None
-    _dp.handlers = {}
-    _dp.groups = []
-    _dp.error_handlers = {}
-    # For some reason if we setattr with the name mangled, then some tests(like async) run forever,
-    # due to threads not acquiring, (blocking). This adds these attributes to the __dict__.
-    object.__setattr__(_dp, "__stop_event", Event())
-    object.__setattr__(_dp, "__exception_event", Event())
-    object.__setattr__(_dp, "__async_queue", Queue())
-    object.__setattr__(_dp, "__async_threads", set())
-    _dp.persistence = None
-    _dp.use_context = False
-    if _dp._Dispatcher__singleton_semaphore.acquire(blocking=0):
-        Dispatcher._set_singleton(_dp)
-    yield _dp
-    Dispatcher._Dispatcher__singleton_semaphore.release()
+    @pytest.fixture(scope="function")
+    def cdp(dp):
+        dp.use_context = True
+        yield dp
+        dp.use_context = False
 
+    @pytest.fixture(scope="function")
+    def updater(bot):
+        up = Updater(bot=bot, workers=2, use_context=False)
+        yield up
+        if up.running:
+            up.stop()
 
-@pytest.fixture(scope="function")
-def cdp(dp):
-    dp.use_context = True
-    yield dp
-    dp.use_context = False
-
-
-@pytest.fixture(scope="function")
-def updater(bot):
-    up = Updater(bot=bot, workers=2, use_context=False)
-    yield up
-    if up.running:
-        up.stop()
+else:
+    pass
+    # Here be test setup for v20
 
 
 def pytest_configure(config):
