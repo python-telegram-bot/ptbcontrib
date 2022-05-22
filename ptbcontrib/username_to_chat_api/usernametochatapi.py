@@ -20,9 +20,9 @@
 This module contains a class that, once initiated, works as a shortcut to the UsernameToChatAPI
 and puts the response in a Chat object, as well as puts the error to the fitting TelegramErrors.
 """
-from telegram import error, Chat, Bot
-
 from httpx import AsyncClient
+
+from telegram import error, Chat, Bot
 
 
 class UsernameToChatAPI:
@@ -34,6 +34,7 @@ class UsernameToChatAPI:
         initialized_httpx_client (:class:`httpx.AsyncClient`, optional):
          Initialized httpx AsyncClient. Will be created otherwise
     """
+
     def __init__(
         self, api_url: str, api_key: str, bot: Bot, initialized_httpx_client: AsyncClient = None
     ) -> None:
@@ -55,7 +56,9 @@ class UsernameToChatAPI:
             username (:obj:`str`): The username to get the :obj:`telegram.Chat` for. Passing
             a leading @ is not required, but it will work nonetheless.
         """
-        response = await self._client.get(self._url, params={"api_key": self._api_key, "username": username})
+        response = await self._client.get(
+            self._url, params={"api_key": self._api_key, "username": username}
+        )
         result = response.json()
         status_code = response.status_code
         if status_code == 200:
