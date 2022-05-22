@@ -38,6 +38,31 @@ PRIVATE_KEY = b"-----BEGIN RSA PRIVATE KEY-----\r\nMIIEowIBAAKCAQEA0AvEbNaOnfIL3
 TOKEN = "1281106207:AAHXR4nqP-ZYsPLnrHooton3zUGGnsoNjZ8"
 
 
+# This is here instead of in setup.cfg due to https://github.com/pytest-dev/pytest/issues/8343
+def pytest_runtestloop(session):
+    # v13.x
+    try:
+        from telegram.utils.deprecate import TelegramDeprecationWarning  # noqa: F401
+
+        session.add_marker(
+            pytest.mark.filterwarnings(
+                "ignore::telegram.utils.deprecate.TelegramDeprecationWarning"
+            )
+        )
+    except ImportError:
+        pass
+
+    # v20.x
+    try:
+        from telegram.warnings import PTBDeprecationWarning  # noqa: F401
+
+        session.add_marker(
+            pytest.mark.filterwarnings("ignore::telegram.warnings.PTBDeprecationWarning")
+        )
+    except ImportError:
+        pass
+
+
 @pytest.fixture(scope="session")
 def bot():
     return make_bot()

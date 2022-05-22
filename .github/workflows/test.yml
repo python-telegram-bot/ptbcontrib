@@ -50,7 +50,10 @@ jobs:
             python run_tests.py
           fi
           exit_code=$?
-          exit ${exit_code}
+          pytest -k test_meta
+          meta_exit=$?
+          global_exit=$(( exit_code > meta_exit ? exit_code : meta_exit ))
+          exit ${global_exit}
         env:
           JOB_INDEX: ${{ strategy.job-index }}
           TEST_BUILD: "true"
