@@ -38,8 +38,6 @@ logging.basicConfig(
 
 
 class CustomContext(CallbackContext):
-    def __init__(self, application: Application):
-        super().__init__(application=application)
 
     @property
     def wrapper(self) -> UsernameToChatAPI:
