@@ -21,7 +21,7 @@
 
 import json
 from logging import getLogger
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -82,7 +82,7 @@ class PostgresPersistence(DictPersistence):
             chat_data_json = data.get("chat_data", "")
             user_data_json = data.get("user_data", "")
             bot_data_json = data.get("bot_data", "")
-            conversations_json = data.get("conversations", "")
+            conversations_json = data.get("conversations", "{}")
             callback_data_json = data.get("callback_data_json", "")
 
             self.logger.info("Database loaded successfully!")
@@ -116,10 +116,6 @@ class PostgresPersistence(DictPersistence):
             data json NOT NULL);"""
         self._session.execute(text(create_table_qry))
         self._session.commit()
-
-    @staticmethod
-    def _key_mapper(iterable: Dict, func: Callable) -> Dict:
-        return {func(k): v for k, v in iterable.items()}
 
     def _dump_into_json(self) -> Any:
         """Dumps data into json format for inserting in db."""
