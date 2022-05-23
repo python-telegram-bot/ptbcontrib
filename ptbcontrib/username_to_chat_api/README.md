@@ -40,10 +40,10 @@ logging.basicConfig(
 class CustomContext(CallbackContext):
     def __init__(self, application: Application):
         super().__init__(application=application)
-        if "wrapper" not in application.bot_data:
-            wrapper: UsernameToChatAPI = UsernameToChatAPI("https://localhost:1234/", 
-                                                           "RationalGymsGripOverseas", application.bot)
-            application.bot_data["wrapper"] = wrapper
+
+    @property
+    def wrapper(self) -> UsernameToChatAPI:
+        return self.bot_data["wrapper"]
 
     async def resolve_username(self, username: str) -> Chat:
         return await self.application.bot_data["wrapper"].resolve(username)
@@ -56,7 +56,10 @@ async def start(update: Update, context: CustomContext):
 if __name__ == '__main__':
     context_types = ContextTypes(context=CustomContext)
     application = ApplicationBuilder().token('TOKEN').context_types(context_types).build()
-
+    
+    wrapper = UsernameToChatAPI("https://localhost:1234/", "RationalGymsGripOverseas", application.bot)
+    application.bot_data["wrapper"] = wrapper
+    
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
 

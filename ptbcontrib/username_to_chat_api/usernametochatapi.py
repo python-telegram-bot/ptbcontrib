@@ -73,5 +73,9 @@ class UsernameToChatAPI:
         # errors
         raise error.TelegramError(result["description"])
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
+        """
+        This closes the underlying :class:`httpx.AsyncClient`.
+
+        """
         await self._client.aclose()
