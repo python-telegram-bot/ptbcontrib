@@ -43,7 +43,7 @@ class UsernameToChatAPI:
         self._api_key = api_key
         self._bot = bot
         if httpx_client:
-            self._client = initialized_httpx_client
+            self._client = httpx_client
         else:
             self._client = AsyncClient()
 
@@ -72,3 +72,6 @@ class UsernameToChatAPI:
         # this can not happen with the API right now, but we don't want to swallow future
         # errors
         raise error.TelegramError(result["description"])
+
+    async def shutdown(self):
+        await self._client.aclose()

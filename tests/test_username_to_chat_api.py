@@ -95,3 +95,14 @@ class TestUsernameToChatAPI:
             except error.RetryAfter as e:
                 # specific check that the flood wait time out is provided
                 assert e.retry_after == 12
+
+    async def test_shutdown(self, bot):
+        # not much to test here, just making sure no errors are raised
+
+        wrapper = UsernameToChatAPI("URL", "key", bot)
+        await wrapper.shutdown()
+
+        test_client = AsyncClient()
+        wrapper = UsernameToChatAPI("URL", "key", bot, test_client)
+        await test_client.aclose()
+        await wrapper.shutdown()

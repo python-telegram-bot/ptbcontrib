@@ -21,9 +21,11 @@ except error.RetryAfter as e:
     chat = asyncio.run(wrapper.resolve("poolitzer"))
 ```
 
-But there is more: This implements itself even nicer into a PTB application with a custom context:
+But there is more: This implements itself even nicer into a PTB application with a custom context 
+(this uses bot_data and wrapper in there to store the wrapper, so don't override this):
 ```python
 import logging
+import asyncio
 
 from telegram import Update, Chat
 from telegram.ext import ApplicationBuilder, CallbackContext, CommandHandler, ContextTypes, Application
@@ -38,10 +40,13 @@ logging.basicConfig(
 class CustomContext(CallbackContext):
     def __init__(self, application: Application):
         super().__init__(application=application)
-        self._wrapper: UsernameToChatAPI = UsernameToChatAPI("https://localhost:1234/", "RationalGymsGripOverseas", application.bot)
+        if "wrapper" not in application.bot_data:
+            wrapper: UsernameToChatAPI = UsernameToChatAPI("https://localhost:1234/", 
+                                                           "RationalGymsGripOverseas", application.bot)
+            application.bot_data["wrapper"] = wrapper
 
     async def resolve_username(self, username: str) -> Chat:
-        return await self._wrapper.resolve(username)
+        return await self.application.bot_data["wrapper"].resolve(username)
 
 
 async def start(update: Update, context: CustomContext):
@@ -56,6 +61,8 @@ if __name__ == '__main__':
     application.add_handler(start_handler)
 
     application.run_polling()
+    # shutting down the Username API AsyncClient. Very much optional but why not.
+    asyncio.run(application.bot_data["wrapper"].shutdown())
 ```
 ## Requirements
 
