@@ -1,7 +1,7 @@
 # Persistence class with PostgreSQL database as backend
 
 ## Notes
-Data must needs to be JSON serialisable since `PostgresPersistence` is a
+Data must be JSON serializable since `PostgresPersistence` is a
 subclass of PTB's `DictPersistence` which encodes and saves data in JSON format.
 
 ## How to use
@@ -15,7 +15,7 @@ from ptbcontrib.postgres_persistence import PostgresPersistence
 # Your Postgresql database URL
 DB_URI = "postgresql://username:pw@hostname:port/db_name"
 
-updater = Updater(..., persistence=PostgresPersistence(url=DB_URI))
+application = Application.builder().token(...).persistence(PostgresPersistence(url=DB_URI)).build()
 ```
 
 **Using with existing SQLAlchemy scoped session**
@@ -34,15 +34,14 @@ def start_session() -> scoped_session:
     engine = create_engine(DB_URI, client_encoding="utf8")
     return scoped_session(sessionmaker(bind=engine, autoflush=False))
 
-updater = Updater(..., persistence=PostgresPersistence(session=start_session()))
+application = Application.builder().token(...).persistence(PostgresPersistence(session=start_session())).build()
 ```
 
 
 ## Requirements
 
-*   `20>python-telegram-bot>=12.0`
+*   `python-telegram-bot==20.0a0`
 *   `SQLAlchemy`
-*   `ujson` (Optional)
 
 ## Authors
 
