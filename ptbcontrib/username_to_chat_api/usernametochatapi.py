@@ -20,63 +20,51 @@
 This module contains a class that, once initiated, works as a shortcut to the UsernameToChatAPI
 and puts the response in a Chat object, as well as puts the error to the fitting TelegramErrors.
 """
+from httpx import AsyncClient
 from telegram import Bot, Chat, error
 
-try:
-    from telegram.vendor.ptb_urllib3 import urllib3
-except ImportError:  # pragma: no cover
-    import urllib3
 
-try:
-    import ujson as json
-except ImportError:  # pragma: no cover
-    import json  # type: ignore[no-redef]
-
-
-class UsernameToChatAPI:  # pylint: disable=too-few-public-methods
+class UsernameToChatAPI:
     """
-    This class stores the URL and api key for a UsernameToChatAPI instance, and then provides a
-    method to get the Chat object for an username.
-
-     Args:
-         api_url (:obj:`str`): The base URL (speak: domain) to the API.
-         api_key (:obj:`str`): The key, necessary to access the API.
-         bot (:obj:`telegram.Bot`): An initiated bot object, to create the Chat object.
-         pool_manager (:obj:`urllib3.PoolManager`, optional): Pre initialized
-             :obj:`urllib3.PoolManager`.
+    Args:
+        api_url (:obj:`str`): URL to the API instance.
+        api_key (:obj:`str`): Key for the API.
+        bot (:class:`telegram.Bot`): Bot instance, used to create the Chat object.
+        initialized_httpx_client (:class:`httpx.AsyncClient`, optional):
+         Initialized httpx AsyncClient. Will be created otherwise
     """
 
     def __init__(
-        self, api_url: str, api_key: str, bot: Bot, pool_manager: urllib3.PoolManager = None
+        self, api_url: str, api_key: str, bot: Bot, httpx_client: AsyncClient = None
     ) -> None:
         if api_url.endswith("/"):
             api_url = api_url[:-1]
         self._url = api_url + "/resolveUsername"
         self._api_key = api_key
         self._bot = bot
-        if pool_manager:
-            self._http = pool_manager
+        if httpx_client:
+            self._client = httpx_client
         else:
-            self._http = urllib3.PoolManager()
+            self._client = AsyncClient()
 
-    def resolve(self, username: str) -> Chat:
+    async def resolve(self, username: str) -> Chat:
         """
-        Returns the Chat object for an username.
+        Returns the Chat object for a username.
 
         Args:
             username (:obj:`str`): The username to get the :obj:`telegram.Chat` for. Passing
             a leading @ is not required, but it will work nonetheless.
         """
-        response = self._http.request(
-            "GET", self._url, fields={"api_key": self._api_key, "username": username}
+        response = await self._client.get(
+            self._url, params={"api_key": self._api_key, "username": username}
         )
-        result = json.loads(response.data.decode("utf-8"))
-        status_code = response.status
+        result = response.json()
+        status_code = response.status_code
         if status_code == 200:
             return Chat.de_json(result["result"], self._bot)
         message = result["description"]
         if status_code == 401:
-            raise error.Unauthorized(message)
+            raise error.Forbidden(message)
         if status_code == 400:
             raise error.BadRequest(message)
         if status_code == 429:
@@ -84,3 +72,10 @@ class UsernameToChatAPI:  # pylint: disable=too-few-public-methods
         # this can not happen with the API right now, but we don't want to swallow future
         # errors
         raise error.TelegramError(result["description"])
+
+    async def shutdown(self) -> None:
+        """
+        This closes the underlying :class:`httpx.AsyncClient`.
+
+        """
+        await self._client.aclose()
