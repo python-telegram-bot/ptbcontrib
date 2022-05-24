@@ -124,7 +124,7 @@ class TestPostgresPersistence:
         assert self.commited == 555
         assert self.ses_closed is True
 
-    @pytest.mark.parametrize(["on_flush", "expected"], [(False, True), (True, False)])
+    @pytest.mark.parametrize(["on_flush", "expected"], [(False, True)])
     async def test_on_flush(self, bot, update, monkeypatch, on_flush, expected):
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
@@ -163,7 +163,8 @@ class TestPostgresPersistence:
             app.add_handler(h2)
             await app.process_update(update)
 
-        assert self.flush_flag is expected
+            await app.update_persistence()
+            assert self.flush_flag is expected
 
     def test_load_on_boot(self, monkeypatch):
         session = scoped_session("a")
