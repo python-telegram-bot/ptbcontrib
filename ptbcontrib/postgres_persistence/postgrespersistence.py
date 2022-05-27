@@ -64,7 +64,7 @@ class PostgresPersistence(DictPersistence):
     ) -> None:
 
         if url:
-            if not url.startswith("postgresql://"):
+            if not url.startswith("postgresql://") and not url.startswith("postgres://"):
                 raise TypeError(f"{url} isn't a valid PostgreSQL database URL.")
             engine = create_engine(url, client_encoding="utf8")
             self._session = scoped_session(sessionmaker(bind=engine, autoflush=False))
