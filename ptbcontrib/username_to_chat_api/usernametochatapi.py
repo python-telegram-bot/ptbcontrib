@@ -20,6 +20,8 @@
 This module contains a class that, once initiated, works as a shortcut to the UsernameToChatAPI
 and puts the response in a Chat object, as well as puts the error to the fitting TelegramErrors.
 """
+from http import HTTPStatus
+
 from httpx import AsyncClient
 from telegram import Bot, Chat, error
 
@@ -60,14 +62,14 @@ class UsernameToChatAPI:
         )
         result = response.json()
         status_code = response.status_code
-        if status_code == 200:
+        if status_code == HTTPStatus.OK:
             return Chat.de_json(result["result"], self._bot)
         message = result["description"]
-        if status_code == 401:
+        if status_code == HTTPStatus.UNAUTHORIZED:
             raise error.Forbidden(message)
-        if status_code == 400:
+        if status_code == HTTPStatus.BAD_REQUEST:
             raise error.BadRequest(message)
-        if status_code == 429:
+        if status_code == HTTPStatus.TOO_MANY_REQUESTS:
             raise error.RetryAfter(result["retry_after"])
         # this can not happen with the API right now, but we don't want to swallow future
         # errors

@@ -44,7 +44,7 @@ class CustomContext(CallbackContext):
         return self.bot_data["wrapper"]
 
     async def resolve_username(self, username: str) -> Chat:
-        return await self.application.bot_data["wrapper"].resolve(username)
+        return await self.wrapper.resolve(username)
 
 
 async def start(update: Update, context: CustomContext):

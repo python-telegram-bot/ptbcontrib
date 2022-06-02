@@ -73,7 +73,6 @@ class PostgresPersistence(DictPersistence):
 
         self.on_flush = on_flush
         self.__init_database()
-        # self.__load_database()
         try:
             self.logger.info("Loading database....")
             data_ = self._session.execute(text("SELECT data FROM persistence")).first()
@@ -204,4 +203,5 @@ class PostgresPersistence(DictPersistence):
         persistence a chance to finish up saving or close a database connection gracefully.
         """
         self._update_database()
-        self.logger.info("Closing database...")
+        if not self.on_flush:
+            self.logger.info("Closing database...")

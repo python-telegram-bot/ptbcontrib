@@ -47,8 +47,8 @@ async def get_chat_link(chat: Chat) -> Optional[str]:
         :obj:`Optional[str]`: Chat link as a URL if there is any. Otherwise None.
 
     Raises:
-        RuntimeError: If :meth:`Chat.get_bot` raises a :exc:`RuntimeError`, i.e. there is no
-            bot associated with this chat.
+        RuntimeError: If there is no bot associated with the ``chat``, :meth:`Chat.get_bot` raises
+            a :exc:`RuntimeError`.
     """
     bot = chat.get_bot()
     if chat.link:
