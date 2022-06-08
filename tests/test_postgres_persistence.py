@@ -19,9 +19,10 @@
 import pytest
 from sqlalchemy.orm import scoped_session  # noqa: E402
 from telegram import Chat, Message, Update, User
-from telegram.ext import MessageHandler, Updater
+from telegram.ext import Application, MessageHandler
 
 from ptbcontrib.postgres_persistence import PostgresPersistence  # noqa: E402
+from tests.conftest import DictExtBot
 
 
 @pytest.fixture(scope="function")
@@ -77,16 +78,20 @@ class TestPostgresPersistence:
         with pytest.raises(TypeError, match="isn't a valid PostgreSQL"):
             PostgresPersistence(url="sqlite:///owo.db")
 
-    def test_with_handler(self, bot, update, monkeypatch):
+    async def test_with_handler(self, bot, update, monkeypatch):
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
         monkeypatch.setattr(session, "close", self.mock_ses_close)
 
-        u = Updater(bot=bot, persistence=PostgresPersistence(session=session))
-        dp = u.dispatcher
+        app = (
+            Application.builder()
+            .bot(DictExtBot(bot.token))
+            .persistence(PostgresPersistence(session=session))
+            .build()
+        )
 
-        def first(update, context):
+        async def first(update, context):
             if not context.user_data == {}:
                 pytest.fail()
             if not context.chat_data == {}:
@@ -97,7 +102,7 @@ class TestPostgresPersistence:
             context.chat_data[3] = "test4"
             context.bot_data["test1"] = "test2"
 
-        def second(update, context):
+        async def second(update, context):
             if not context.user_data["test1"] == "test2":
                 pytest.fail()
             if not context.chat_data[3] == "test4":
@@ -107,19 +112,20 @@ class TestPostgresPersistence:
 
         h1 = MessageHandler(None, first)
         h2 = MessageHandler(None, second)
-        dp.add_handler(h1)
-        dp.process_update(update)
+        app.add_handler(h1)
 
-        dp.remove_handler(h1)
-        dp.add_handler(h2)
-        dp.process_update(update)
+        async with app:
+            await app.process_update(update)
+            app.remove_handler(h1)
+            app.add_handler(h2)
+            await app.process_update(update)
 
         assert self.executed != ""
         assert self.commited == 555
         assert self.ses_closed is True
 
-    @pytest.mark.parametrize(["on_flush", "expected"], [(False, True), (True, False)])
-    def test_on_flush(self, bot, update, monkeypatch, on_flush, expected):
+    @pytest.mark.parametrize(["on_flush", "expected"], [(False, True)])
+    async def test_on_flush(self, bot, update, monkeypatch, on_flush, expected):
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
@@ -131,15 +137,14 @@ class TestPostgresPersistence:
             self.flush_flag = True
 
         monkeypatch.setattr(persistence, "_update_database", mocked_update_database)
-        u = Updater(bot=bot, persistence=persistence)
-        dp = u.dispatcher
+        app = Application.builder().bot(DictExtBot(bot.token)).persistence(persistence).build()
 
-        def first(update, context):
+        async def first(update, context):
             context.user_data["test1"] = "test2"
             context.chat_data[3] = "test4"
             context.bot_data["test1"] = "test2"
 
-        def second(update, context):
+        async def second(update, context):
             if not context.user_data["test1"] == "test2":
                 pytest.fail()
             if not context.chat_data[3] == "test4":
@@ -149,13 +154,17 @@ class TestPostgresPersistence:
 
         h1 = MessageHandler(None, first)
         h2 = MessageHandler(None, second)
-        dp.add_handler(h1)
-        dp.process_update(update)
 
-        dp.remove_handler(h1)
-        dp.add_handler(h2)
-        dp.process_update(update)
-        assert self.flush_flag is expected
+        async with app:
+            app.add_handler(h1)
+            await app.process_update(update)
+
+            app.remove_handler(h1)
+            app.add_handler(h2)
+            await app.process_update(update)
+
+            await app.update_persistence()
+            assert self.flush_flag is expected
 
     def test_load_on_boot(self, monkeypatch):
         session = scoped_session("a")
@@ -171,12 +180,12 @@ class TestPostgresPersistence:
         assert self.commited == 555
         assert self.ses_closed is True
 
-    def test_flush(self, bot, update, monkeypatch):
+    async def test_flush(self, bot, update, monkeypatch):
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
         monkeypatch.setattr(session, "close", self.mock_ses_close)
 
-        PostgresPersistence(session=session).flush()
+        await PostgresPersistence(session=session).flush()
         assert self.executed != ""
         assert self.commited == 555

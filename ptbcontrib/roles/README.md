@@ -69,7 +69,7 @@ Unfortunately `RolesHandler(my_conversation_handler, roles=roles)` does *not* wo
 
 ## Requirements
 
-*   `20>python-telegram-bot>=13.1`
+*   `python-telegram-bot==20.0a0`
 
 ## Authors
 

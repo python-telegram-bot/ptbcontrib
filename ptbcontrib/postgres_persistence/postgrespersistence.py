@@ -19,32 +19,20 @@
 """This module contains PostgresqlPersistence class"""
 
 
-from collections import defaultdict
+import json
 from logging import getLogger
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.sql import text
 from telegram.ext import DictPersistence
-from telegram.utils.helpers import decode_conversations_from_json, encode_conversations_to_json
 
-try:
-    import ujson as json
-except ImportError:
-    import json  # type: ignore[no-redef]
+CDCData = Tuple[List[Tuple[str, float, Dict[str, Any]]], Dict[str, str]]
 
 
 class PostgresPersistence(DictPersistence):
     """Using Postgresql database to make user/chat/bot data persistent across reboots.
-
-    Attributes:
-        store_user_data (:obj:`bool`): Whether user_data should be saved by this
-            persistence class.
-        store_chat_data (:obj:`bool`): Whether chat_data should be saved by this
-            persistence class.
-        store_bot_data (:obj:`bool`): Whether bot_data should be saved by this
-            persistence class.
 
     Args:
         url (:obj:`str`, Optional) the postgresql database url.
@@ -53,6 +41,10 @@ class PostgresPersistence(DictPersistence):
             will only update bot/chat/user data when :meth:flush is called.
         **kwargs (:obj:`dict`): Arbitrary keyword Arguments to be passed to
             the DictPersistence constructor.
+
+    Attributes:
+        store_data (:class:`PersistenceInput`): Specifies which kinds of data will be saved by this
+            persistence instance.
     """
 
     def __init__(
@@ -78,11 +70,40 @@ class PostgresPersistence(DictPersistence):
             raise TypeError("You must need to provide either url or session.")
 
         self.logger = getLogger(__name__)
-        super().__init__(**kwargs)
 
         self.on_flush = on_flush
         self.__init_database()
-        self.__load_database()
+        try:
+            self.logger.info("Loading database....")
+            data_ = self._session.execute(text("SELECT data FROM persistence")).first()
+            data = data_[0] if data_ is not None else {}
+
+            chat_data_json = data.get("chat_data", "")
+            user_data_json = data.get("user_data", "")
+            bot_data_json = data.get("bot_data", "")
+            conversations_json = data.get("conversations", "{}")
+            callback_data_json = data.get("callback_data_json", "")
+
+            self.logger.info("Database loaded successfully!")
+
+            # if it is a fresh setup we'll add some placeholder data so we
+            # can perform `UPDATE` operations on it, cause SQL only allows
+            # `UPDATE` operations if column have some data already present inside it.
+            if not data:
+                insert_qry = "INSERT INTO persistence (data) VALUES (:jsondata)"
+                self._session.execute(text(insert_qry), {"jsondata": "{}"})
+                self._session.commit()
+
+            super().__init__(
+                **kwargs,
+                chat_data_json=chat_data_json,
+                user_data_json=user_data_json,
+                bot_data_json=bot_data_json,
+                callback_data_json=callback_data_json,
+                conversations_json=conversations_json,
+            )
+        finally:
+            self._session.close()
 
     def __init_database(self) -> None:
         """
@@ -95,40 +116,15 @@ class PostgresPersistence(DictPersistence):
         self._session.execute(text(create_table_qry))
         self._session.commit()
 
-    def __load_database(self) -> None:
-        try:
-            data_ = self._session.execute(text("SELECT data FROM persistence")).first()
-            data = data_[0] if data_ is not None else {}
-
-            self.logger.info("Loading database....")
-            self._chat_data = defaultdict(dict, self._key_mapper(data.get("chat_data", {}), int))
-            self._user_data = defaultdict(dict, self._key_mapper(data.get("user_data", {}), int))
-            self._bot_data = data.get("bot_data", {})
-            self._conversations = decode_conversations_from_json(data.get("conversations", "{}"))
-            self.logger.info("Database loaded successfully!")
-
-            # if it is a fresh setup we'll add some placeholder data so we
-            # can perform `UPDATE` opearations on it, cause SQL only allows
-            # `UPDATE` operations if column have some data already present inside it.
-            if not data:
-                insert_qry = "INSERT INTO persistence (data) VALUES (:jsondata)"
-                self._session.execute(text(insert_qry), {"jsondata": "{}"})
-                self._session.commit()
-        finally:
-            self._session.close()
-
-    @staticmethod
-    def _key_mapper(iterable: Dict, func: Callable) -> Dict:
-        return {func(k): v for k, v in iterable.items()}
-
     def _dump_into_json(self) -> Any:
         """Dumps data into json format for inserting in db."""
 
         to_dump = {
-            "chat_data": self._chat_data,
-            "user_data": self._user_data,
-            "bot_data": self.bot_data,
-            "conversations": encode_conversations_to_json(self._conversations),
+            "chat_data": self.chat_data_json,
+            "user_data": self.user_data_json,
+            "bot_data": self.bot_data_json,
+            "conversations": self.conversations_json,
+            "callback_data": self.callback_data_json,
         }
         self.logger.debug("Dumping %s", to_dump)
         return json.dumps(to_dump)
@@ -147,51 +143,65 @@ class PostgresPersistence(DictPersistence):
                 exc_info=excp,
             )
 
-    def update_conversation(
+    async def update_conversation(
         self, name: str, key: Tuple[int, ...], new_state: Optional[object]
     ) -> None:
         """Will update the conversations for the given handler.
+
         Args:
             name (:obj:`str`): The handler's name.
             key (:obj:`tuple`): The key the state is changed for.
             new_state (:obj:`tuple` | :obj:`any`): The new state for the given key.
         """
-        super().update_conversation(name, key, new_state)
+        await super().update_conversation(name, key, new_state)
         if not self.on_flush:
-            self._update_database()
+            await self.flush()
 
-    def update_user_data(self, user_id: int, data: Dict) -> None:
+    async def update_user_data(self, user_id: int, data: Dict) -> None:
         """Will update the user_data (if changed).
         Args:
             user_id (:obj:`int`): The user the data might have been changed for.
             data (:obj:`dict`): The :attr:`telegram.ext.Dispatcher.user_data` ``[user_id]``.
         """
-        super().update_user_data(user_id, data)
+        await super().update_user_data(user_id, data)
         if not self.on_flush:
-            self._update_database()
+            await self.flush()
 
-    def update_chat_data(self, chat_id: int, data: Dict) -> None:
+    async def update_chat_data(self, chat_id: int, data: Dict) -> None:
         """Will update the chat_data (if changed).
         Args:
             chat_id (:obj:`int`): The chat the data might have been changed for.
             data (:obj:`dict`): The :attr:`telegram.ext.Dispatcher.chat_data` ``[chat_id]``.
         """
-        super().update_chat_data(chat_id, data)
+        await super().update_chat_data(chat_id, data)
         if not self.on_flush:
-            self._update_database()
+            await self.flush()
 
-    def update_bot_data(self, data: Dict) -> None:
+    async def update_bot_data(self, data: Dict) -> None:
         """Will update the bot_data (if changed).
         Args:
             data (:obj:`dict`): The :attr:`telegram.ext.Dispatcher.bot_data`.
         """
-        super().update_bot_data(data)
+        await super().update_bot_data(data)
         if not self.on_flush:
-            self._update_database()
+            await self.flush()
 
-    def flush(self) -> None:
+    async def update_callback_data(self, data: CDCData) -> None:
+        """Will update the callback_data (if changed).
+
+        Args:
+            data (Tuple[List[Tuple[:obj:`str`, :obj:`float`, Dict[:obj:`str`, :class:`object`]]], \
+                Dict[:obj:`str`, :obj:`str`]]): The relevant data to restore
+                :class:`telegram.ext.CallbackDataCache`.
+        """
+        await super().update_callback_data(data)
+        if not self.on_flush:
+            await self.flush()
+
+    async def flush(self) -> None:
         """Will be called by :class:`telegram.ext.Updater` upon receiving a stop signal. Gives the
         persistence a chance to finish up saving or close a database connection gracefully.
         """
         self._update_database()
-        self.logger.info("Closing database...")
+        if not self.on_flush:
+            self.logger.info("Closing database...")
