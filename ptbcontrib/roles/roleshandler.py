@@ -21,7 +21,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional, TypeVar, Union
 
 from telegram import Update
-from telegram.ext import Application, CallbackContext, Handler
+from telegram.ext import Application, BaseHandler, CallbackContext
 
 from .roles import InvertedRole, Role, Roles
 
@@ -89,7 +89,7 @@ def setup_roles(application: Application) -> Roles:
 _CCT = TypeVar("_CCT", bound=CallbackContext)
 
 
-class RolesHandler(Handler[Update, _CCT]):
+class RolesHandler(BaseHandler[Update, _CCT]):
     """
     A handler that acts as wrapper for existing handler classes allowing to add roles for
     user access management. You must call :meth:`setup_roles` before this handler can work.
@@ -102,12 +102,12 @@ class RolesHandler(Handler[Update, _CCT]):
         that handle such updates, e.g. :class:`telegram.ext.StringCommandHandler`.
 
     Args:
-        handler (:class:`telegram.ext.Handler`): The handler to wrap.
+        handler (:class:`telegram.ext.BaseHandler`): The handler to wrap.
         roles (:class:`ptbcontrib.roles.Roles`): The roles to apply to the handler. Can be combined
             with bitwise operations.
     """
 
-    def __init__(self, handler: Handler[Update, _CCT], roles: Role) -> None:
+    def __init__(self, handler: BaseHandler[Update, _CCT], roles: Role) -> None:
         self.handler = handler
         self.roles: Union[Role, InvertedRole] = roles
         super().__init__(self.handler.callback)
