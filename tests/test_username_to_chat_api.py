@@ -1,22 +1,13 @@
 import pytest
+from httpx import AsyncClient, Response
 from telegram import Chat, error
-
-try:
-    import telegram.vendor.ptb_urllib3.urllib3 as urllib3
-except ImportError:  # pragma: no cover
-    import urllib3
-
-try:
-    import ujson as json
-except ImportError:
-    import json
 
 from ptbcontrib.username_to_chat_api import UsernameToChatAPI
 
 
 class TestUsernameToChatAPI:
-    def test_normal_run(self, monkeypatch, bot):
-        api_result = {
+    async def test_normal_run(self, monkeypatch, bot):
+        api_result_json = {
             "ok": True,
             "result": {
                 "id": 123,
@@ -27,17 +18,16 @@ class TestUsernameToChatAPI:
                 "bio": "A description.",
             },
         }
+        api_result = Response(200, json=api_result_json)
 
-        response = urllib3.response.HTTPResponse(
-            body=json.dumps(api_result).encode("UTF-8"), status=200
-        )
+        async def get(*args, **kwargs):
+            return api_result
 
-        def mockreturn(*args, **kwargs):
-            return response
+        # this tests the non initialized AsyncClient
 
-        monkeypatch.setattr(urllib3.PoolManager, "request", mockreturn)
         wrapper = UsernameToChatAPI("URL", "key", bot)
-        chat = wrapper.resolve("username")
+        monkeypatch.setattr(wrapper._client, "get", get)
+        chat = await wrapper.resolve("username")
         assert type(chat) == Chat
         assert chat.id == 123
         assert chat.type == Chat.PRIVATE
@@ -46,8 +36,8 @@ class TestUsernameToChatAPI:
         assert chat.last_name == "last_name"
         assert chat.bio == "A description."
 
-    def test_normal_run_channel(self, monkeypatch, bot):
-        api_result = {
+    async def test_normal_run_channel(self, monkeypatch, bot):
+        api_result_json = {
             "ok": True,
             "result": {
                 "id": 123,
@@ -57,17 +47,16 @@ class TestUsernameToChatAPI:
                 "description": "A description.",
             },
         }
+        api_result = Response(200, json=api_result_json)
 
-        response = urllib3.response.HTTPResponse(
-            body=json.dumps(api_result).encode("UTF-8"), status=200
-        )
+        async def get(*args, **kwargs):
+            return api_result
 
-        def mockreturn(*args, **kwargs):
-            return response
-
-        monkeypatch.setattr(urllib3.PoolManager, "request", mockreturn)
-        wrapper = UsernameToChatAPI("URL", "key", bot)
-        chat = wrapper.resolve("username")
+        # this tests passing the initialized AsyncClient
+        test_client = AsyncClient()
+        wrapper = UsernameToChatAPI("URL", "key", bot, test_client)
+        monkeypatch.setattr(wrapper._client, "get", get)
+        chat = await wrapper.resolve("username")
         assert type(chat) == Chat
         assert chat.id == 123
         assert chat.type == Chat.CHANNEL
@@ -78,33 +67,42 @@ class TestUsernameToChatAPI:
     @pytest.mark.parametrize(
         "error_code,description, error_object",
         [
-            (401, "Unauthorized", error.Unauthorized),
+            (401, "Unauthorized", error.Forbidden),
             (400, "Bad Request: chat not found", error.BadRequest),
             (429, "Telegram forces us to wait", error.RetryAfter),
             (499, "This cant happen", error.TelegramError),
         ],
     )
-    def test_errors(self, monkeypatch, bot, error_code, description, error_object):
-        api_result = {"ok": False, "error_code": error_code, "description": description}
+    async def test_errors(self, monkeypatch, bot, error_code, description, error_object):
+        api_result_json = {"ok": False, "error_code": error_code, "description": description}
         if error_code == 429:
-            # this add the flood wait time when the flood wait error happens
-            api_result["retry_after"] = 12
+            # this adds the flood wait time when the flood wait error happens
+            api_result_json["retry_after"] = 12
+        api_result = Response(error_code, json=api_result_json)
 
-        response = urllib3.response.HTTPResponse(
-            body=json.dumps(api_result).encode("UTF-8"), status=error_code
-        )
+        async def get(*args, **kwargs):
+            return api_result
 
-        def mockreturn(*args, **kwargs):
-            return response
-
-        monkeypatch.setattr(urllib3.PoolManager, "request", mockreturn)
         wrapper = UsernameToChatAPI("URL", "key", bot)
+        monkeypatch.setattr(wrapper._client, "get", get)
+
         with pytest.raises(error_object):
-            wrapper.resolve("username")
+            await wrapper.resolve("username")
 
         if error_code == 429:
             try:
-                wrapper.resolve("username")
+                await wrapper.resolve("username")
             except error.RetryAfter as e:
                 # specific check that the flood wait time out is provided
                 assert e.retry_after == 12
+
+    async def test_shutdown(self, bot):
+        # not much to test here, just making sure no errors are raised
+
+        wrapper = UsernameToChatAPI("URL", "key", bot)
+        await wrapper.shutdown()
+
+        test_client = AsyncClient()
+        wrapper = UsernameToChatAPI("URL", "key", bot, test_client)
+        await test_client.aclose()
+        await wrapper.shutdown()

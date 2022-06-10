@@ -20,7 +20,7 @@ import datetime
 
 import pytest
 from telegram import Chat, Message, Update, User
-from telegram.ext import Filters
+from telegram.ext import filters
 
 from ptbcontrib.reply_to_message_filter import ReplyToMessageFilter
 
@@ -51,45 +51,45 @@ def update():
 class TestReplyToMessageFilter:
     def test_basic(self, update):
         update.message.reply_to_message.text = "test"
-        assert ReplyToMessageFilter(Filters.all)(update)
-        assert ReplyToMessageFilter(Filters.text)(update)
+        assert ReplyToMessageFilter(filters.ALL).check_update(update)
+        assert ReplyToMessageFilter(filters.TEXT).check_update(update)
         update.message.reply_to_message.text = None
-        assert not ReplyToMessageFilter(Filters.text)(update)
+        assert not ReplyToMessageFilter(filters.TEXT).check_update(update)
         update.message.reply_to_message = None
-        assert not ReplyToMessageFilter(Filters.all)(update)
+        assert not ReplyToMessageFilter(filters.ALL).check_update(update)
 
     def test_combination(self, update):
-        assert not (Filters.text & ~ReplyToMessageFilter(Filters.text))(update)
+        assert not (filters.TEXT & ~ReplyToMessageFilter(filters.TEXT)).check_update(update)
         update.message.text = "test"
         update.message.reply_to_message.text = "text"
-        assert not (Filters.text & ~ReplyToMessageFilter(Filters.text))(update)
+        assert not (filters.TEXT & ~ReplyToMessageFilter(filters.TEXT)).check_update(update)
         update.message.text = None
         update.message.reply_to_message.text = None
-        assert not (Filters.text & ~ReplyToMessageFilter(Filters.text))(update)
+        assert not (filters.TEXT & ~ReplyToMessageFilter(filters.TEXT)).check_update(update)
         update.message.text = "test"
-        assert (Filters.text & ~ReplyToMessageFilter(Filters.text))(update)
+        assert (filters.TEXT & ~ReplyToMessageFilter(filters.TEXT)).check_update(update)
 
     def test_update_filter(self, update):
-        assert not ReplyToMessageFilter(Filters.update.channel_post)(update)
+        assert not ReplyToMessageFilter(filters.UpdateType.CHANNEL_POST).check_update(update)
         update.channel_post = update.message
         update.message = None
-        assert ReplyToMessageFilter(Filters.update.channel_post)(update)
+        assert ReplyToMessageFilter(filters.UpdateType.CHANNEL_POST).check_update(update)
 
     def test_regex_filter(self, update):
-        regex_filter = Filters.regex(r"(\d+)")
-        assert not ReplyToMessageFilter(regex_filter)(update)
+        regex_filter = filters.Regex(r"(\d+)")
+        assert not ReplyToMessageFilter(regex_filter).check_update(update)
         update.message.reply_to_message.text = "foo 123, bar"
-        result = ReplyToMessageFilter(regex_filter)(update)
+        result = ReplyToMessageFilter(regex_filter).check_update(update)
         assert isinstance(result, dict)
 
-        result = ReplyToMessageFilter(Filters.text & regex_filter)(update)
+        result = ReplyToMessageFilter(filters.TEXT & regex_filter).check_update(update)
         assert isinstance(result, dict)
-        assert (Filters.text & ReplyToMessageFilter(regex_filter))(update) is False
+        assert (filters.TEXT & ReplyToMessageFilter(regex_filter)).check_update(update) is False
         update.message.text = "test"
-        result = (Filters.text & ReplyToMessageFilter(regex_filter))(update)
+        result = (filters.TEXT & ReplyToMessageFilter(regex_filter)).check_update(update)
         assert isinstance(result, dict)
 
         update.message.text = "foo 456, bar"
-        result = (regex_filter & ReplyToMessageFilter(regex_filter))(update)
+        result = (regex_filter & ReplyToMessageFilter(regex_filter)).check_update(update)
         assert isinstance(result, dict)
         assert len(result["matches"]) == 2

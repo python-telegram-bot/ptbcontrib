@@ -11,5 +11,6 @@ mypy==0.950
 pyupgrade==2.32.1
 
 pytest==7.1.2
+pytest-asyncio
 
 wheel

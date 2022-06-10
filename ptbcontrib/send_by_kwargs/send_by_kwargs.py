@@ -23,7 +23,7 @@ from typing import Callable, Dict, List, Union
 
 from telegram import Bot, Message
 
-UNIQUE_KWARGS = OrderedDict(
+_UNIQUE_KWARGS = OrderedDict(
     {
         "send_animation": ["animation"],
         "send_audio": ["audio"],
@@ -48,10 +48,10 @@ UNIQUE_KWARGS = OrderedDict(
     }
 )
 
-CACHED_SIGNATURES: Dict[str, inspect.Signature] = {}
+_CACHED_SIGNATURES: Dict[str, inspect.Signature] = {}
 
 
-class MissingRequiredParam(Exception):
+class _MissingRequiredParam(Exception):
     """Auxiliary Exception class for internal usage."""
 
     def __init__(self, param_name: str):
@@ -59,15 +59,15 @@ class MissingRequiredParam(Exception):
         self.param_name = param_name
 
 
-def get_relevant_kwargs(method: Callable, kwargs: Dict[str, object]) -> Dict[str, object]:
+def _get_relevant_kwargs(method: Callable, kwargs: Dict[str, object]) -> Dict[str, object]:
     """
     Extracts the kwargs relevant for the method at hand. For internal usage.
     """
-    signature = CACHED_SIGNATURES.setdefault(method.__name__, inspect.signature(method))
+    signature = _CACHED_SIGNATURES.setdefault(method.__name__, inspect.signature(method))
     relevant_kwargs = {}
     for name, param in signature.parameters.items():
         if param.default == inspect.Parameter.empty and name not in kwargs:
-            raise MissingRequiredParam(name)
+            raise _MissingRequiredParam(name)
         # we don't just do kwargs.get(name, None) here to make sure
         # that this still works with telegram.ext.Defaults
         if name in kwargs:
@@ -75,7 +75,7 @@ def get_relevant_kwargs(method: Callable, kwargs: Dict[str, object]) -> Dict[str
     return relevant_kwargs
 
 
-def send_by_kwargs(
+async def send_by_kwargs(
     bot: Bot, kwargs: Dict[str, object] = None, **_kwargs: object
 ) -> Union[Message, List[Message]]:
     """
@@ -106,8 +106,8 @@ def send_by_kwargs(
         kwargs = {}
     kwargs.update(_kwargs)
 
-    for method_name, unique_kwarg in UNIQUE_KWARGS.items():
-        if any(uk in kwargs for uk in unique_kwarg):
+    for method_name, unique_kwarg in _UNIQUE_KWARGS.items():
+        if any(kwargs.get(uk, None) is not None for uk in unique_kwarg):
             selected_method = method_name
             break
     else:
@@ -115,15 +115,15 @@ def send_by_kwargs(
 
     try:
         method = getattr(bot, selected_method)
-        relevant_kwargs = get_relevant_kwargs(method, kwargs)
-    except MissingRequiredParam as exc:
+        relevant_kwargs = _get_relevant_kwargs(method, kwargs)
+    except _MissingRequiredParam as exc:
         raise KeyError(
             f"Selected method {method.__name__!r}, but the required parameter "
             f"{exc.param_name!r} is missing in the provided kwargs."
         ) from exc
 
     try:
-        return method(**relevant_kwargs)
+        return await method(**relevant_kwargs)
     except Exception as exc:
         raise RuntimeError(
             f"Selected method {method.__name__!r}, but it raised the above exception."
