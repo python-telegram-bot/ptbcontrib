@@ -40,7 +40,7 @@ application = Application.builder().token(...).persistence(PostgresPersistence(s
 
 ## Requirements
 
-*   `python-telegram-bot==20.0a1`
+*   `python-telegram-bot==20.0a2`
 *   `SQLAlchemy`
 
 ## Authors

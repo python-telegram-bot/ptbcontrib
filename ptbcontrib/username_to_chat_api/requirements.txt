@@ -1,2 +1,2 @@
-python-telegram-bot==20.0a1
+python-telegram-bot==20.0a2
 httpx ~= 0.23.0
