@@ -28,7 +28,7 @@ documents_as_reply_to_documents = MessageHandler(
 
 ## Requirements
 
-*   `python-telegram-bot==20.0a0`
+*   `python-telegram-bot==20.0a4`
 
 ## Authors
 
