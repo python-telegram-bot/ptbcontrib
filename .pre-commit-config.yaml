@@ -1,7 +1,3 @@
-# Make sure that
-#   * the revs specified here match requirements-dev.txt
-#   * the makefile checks the same files as pre-commit
-
 ci:
     autofix_prs: false
     autoupdate_schedule: monthly
@@ -33,8 +29,6 @@ repos:
     hooks:
     -   id: mypy
         exclude: ^tests/
-        additional_dependencies:
-            - types-ujson
 -   repo: https://github.com/asottile/pyupgrade
     rev: v3.2.0
     hooks:

@@ -77,7 +77,7 @@ Here's how to make a one-off code change.
 
     - Documenting types of global variables and complex types of class members can be done using the Sphinx docstring convention.
 
-   -  In addition, ``ptbcontrib`` uses the `Black`_ coder formatting. Plugins for Black exist for some `popular editors`_. You can use those instead of manually formatting everything.
+   -  In addition, ``ptbcontrib`` uses some formatting/styling and linting tools in the pre-commit setup. Some of those tools also have command line tools that can help to run these tools outside of the pre-commit step. If you'd like to leverage that, please have a look at the `pre-commit config file`_ for an overview of which tools (and which versions of them) are used. For example, we use `Black`_ for code formatting. Plugins for Black exist for some `popular editors`_. You can use those instead of manually formatting everything.
 
    - Please ensure that the code you write is well-tested. For new contributions, please create a new file ``tests/test_{yourcontribution}.py`` for the tests.
 
@@ -195,5 +195,6 @@ to add new required arguments. It's also more explicit and easier to read.
 .. _`Google Python Style Docstrings`: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html
 .. _`MyPy`: https://mypy.readthedocs.io/en/stable/index.html
 .. _`here`: https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html
+.. _`pre-commit config file`: https://github.com/python-telegram-bot/ptbcontrib/blob/main/.pre-commit-config.yaml
 .. _`Black`: https://black.readthedocs.io/en/stable/index.html
 .. _`popular editors`: https://black.readthedocs.io/en/stable/editor_integration.html
