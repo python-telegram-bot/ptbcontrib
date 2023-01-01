@@ -184,10 +184,6 @@ if v13:
         if up.running:
             up.stop()
 
-    @pytest.fixture()
-    def timezone(tzinfo):
-        return tzinfo
-
 else:
     # Redefine the event_loop fixture to have a session scope. Otherwise `bot` fixture can't be
     # session. See https://github.com/pytest-dev/pytest-asyncio/issues/68 for more details.
