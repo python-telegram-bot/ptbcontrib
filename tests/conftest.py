@@ -25,7 +25,6 @@ from threading import Event, Thread
 from time import sleep
 
 import pytest
-import pytz
 from telegram import Bot, User, __version__
 from telegram.ext import Defaults, JobQueue, Updater
 
@@ -101,17 +100,6 @@ if v13:
         param = request.param if hasattr(request, "param") else {}
 
         defaults = Defaults(**param)
-        default_bot = DEFAULT_BOTS.get(defaults)
-        if default_bot:
-            return default_bot
-        else:
-            default_bot = make_bot(**{"defaults": defaults})
-            DEFAULT_BOTS[defaults] = default_bot
-            return default_bot
-
-    @pytest.fixture(scope="function")
-    def tz_bot(timezone):
-        defaults = Defaults(tzinfo=timezone)
         default_bot = DEFAULT_BOTS.get(defaults)
         if default_bot:
             return default_bot
@@ -196,14 +184,6 @@ if v13:
         if up.running:
             up.stop()
 
-    @pytest.fixture(params=["Europe/Berlin", "Asia/Singapore", "UTC"])
-    def tzinfo(request):
-        return pytz.timezone(request.param)
-
-    @pytest.fixture()
-    def timezone(tzinfo):
-        return tzinfo
-
 else:
     # Redefine the event_loop fixture to have a session scope. Otherwise `bot` fixture can't be
     # session. See https://github.com/pytest-dev/pytest-asyncio/issues/68 for more details.
@@ -263,12 +243,6 @@ else:
         param = request.param if hasattr(request, "param") else {}
 
         default_bot = make_bot(defaults=Defaults(**param))
-        async with default_bot:
-            yield default_bot
-
-    @pytest.fixture(scope="function")
-    async def tz_bot(timezone):
-        default_bot = make_bot(defaults=Defaults(tzinfo=timezone))
         async with default_bot:
             yield default_bot
 
