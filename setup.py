@@ -44,7 +44,6 @@ reqs = requirements()
 reqs_extra = requirements_extra()
 
 with codecs.open("README.rst", "r", "utf-8") as fd:
-
     setup(
         name="ptbcontrib",
         author_email="devs@python-telegram-bot.org",
