@@ -54,7 +54,6 @@ class PostgresPersistence(DictPersistence):
         on_flush: bool = False,
         **kwargs: Any,
     ) -> None:
-
         if url:
             if not url.startswith("postgresql://"):
                 raise TypeError(f"{url} isn't a valid PostgreSQL database URL.")

@@ -40,7 +40,6 @@ class FakeExecResult:
 
 
 class TestPostgresPersistence:
-
     executed = ""
     commited = 0
     ses_closed = False
