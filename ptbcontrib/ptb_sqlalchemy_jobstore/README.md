@@ -1,6 +1,6 @@
 # Adapter for persisting telegram.ext.Jobs
 
-Provides an adapter for the `SQLAlchemyJobStore` class from APScheduler package, that enables persisting jobs of type `telegram.ext.Job` using standart APScheduler mechanics. Note, that this is only working on `python-telegram-bot>=13.0`, which uses `apscheduler<4.0,>=3.6.3`
+Provides an adapter for the `SQLAlchemyJobStore` class from APScheduler package, that enables persisting jobs of type `telegram.ext.Job` using standart APScheduler mechanics. Note, that this is only working on `python-telegram-bot>=20.0`, which uses `apscheduler<4.0,>=3.6.3`
 
 ## The problem
 
@@ -12,21 +12,20 @@ The provided adapter erases all problematic fields and changes `telegram.ext.Job
 
 ### Usage
 ```python
-from telegram.ext import Updater
+from telegram.ext import Application
 from ptbcontrib.ptb_sqlalchemy_jobstore import PTBSQLAlchemyJobStore
 
 DB_URI = "postgresql://botuser:@localhost:5432/botdb"
 
-updater = Updater("TOKEN")
-dispatcher = updater.dispatcher
-dispatcher.job_queue.scheduler.add_jobstore(
-   PTBSQLAlchemyJobStore(
-       dispatcher=dispatcher, url=DB_URI,
-    ),
+application = Application.builder().token("TOKEN").build()
+application.job_queue.scheduler.add_jobstore(
+    PTBSQLAlchemyJobStore(
+        application=application,
+        url=DB_URI,
+    )
 )
 
-updater.start_polling()
-updater.idle()
+application.run_polling()
 ```
 
 ## Note
@@ -37,7 +36,7 @@ For more information please have a look at APS scheduler's documentation about a
 
 ## Requirements
 
-*   `20>python-telegram-bot>=13.0`
+*   `python-telegram-bot>=20.0`
 *   `SQLAlchemy`
 
 ## Authors

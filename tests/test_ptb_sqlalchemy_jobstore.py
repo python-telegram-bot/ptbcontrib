@@ -28,14 +28,14 @@ from ptbcontrib.ptb_sqlalchemy_jobstore import PTBSQLAlchemyJobStore  # noqa: E4
 
 
 @pytest.fixture(scope="function")
-def jq(cdp):
+async def jq(app):
     jq = JobQueue()
-    jq.set_dispatcher(cdp)
-    job_store = PTBSQLAlchemyJobStore(dispatcher=cdp, url="sqlite:///:memory:")
+    jq.set_application(app)
+    job_store = PTBSQLAlchemyJobStore(application=app, url="sqlite:///:memory:")
     jq.scheduler.add_jobstore(job_store)
-    jq.start()
+    await jq.start()
     yield jq
-    jq.stop()
+    await jq.stop()
 
 
 @pytest.fixture(scope="function")
@@ -89,7 +89,7 @@ class TestPTBJobstore:
         jobstore.remove_job(j2.id)
         assert jobstore.get_all_jobs() == []
 
-    def test_sqlite_warning(self, caplog, cdp):
+    def test_sqlite_warning(self, caplog, app):
         with caplog.at_level(logging.WARNING):
-            PTBSQLAlchemyJobStore(cdp, url="sqlite:///:memory:")
+            PTBSQLAlchemyJobStore(app, url="sqlite:///:memory:")
         assert "Use of SQLite db is not supported" in caplog.text
