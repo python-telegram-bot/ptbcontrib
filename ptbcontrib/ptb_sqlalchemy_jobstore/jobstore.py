@@ -18,7 +18,6 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This file contains PTBSQLAlchemyJobStore."""
 import logging
-from importlib import import_module
 from typing import Any, Optional
 
 from apscheduler.job import Job as APSJob
@@ -102,7 +101,7 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
                     tg_job.data,
                     tg_job.chat_id,
                     tg_job.user_id,
-                    tg_job.callback.__module__,
+                    tg_job.callback,
                 )
         prepped_job.args = filtered_args
         return prepped_job
@@ -117,10 +116,9 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
 
         # Here we rebuild callback context for the job which
         # are going for execution.
-        name, data, chat_id, user_id, module = job.args
-        callback_module = import_module(module)
+        name, data, chat_id, user_id, callback = job.args
         tg_job = Job(
-            callback=getattr(callback_module, name),
+            callback=callback,
             chat_id=chat_id,
             user_id=user_id,
             name=name,
