@@ -18,11 +18,11 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This file contains PTBSQLAlchemyJobStore."""
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from apscheduler.job import Job as APSJob
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from telegram.ext import Application, CallbackContext, Job
+from telegram.ext import Application, Job
 
 logger = logging.getLogger(__name__)
 
@@ -83,27 +83,16 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         # we'll get incorrect argument instead of CallbackContext.
         prepped_job = APSJob.__new__(APSJob)
         prepped_job.__setstate__(job.__getstate__())
-        # remove CallbackContext from job args since
-        # it includes references to application which
-        # is unpickleable. we'll recreate CallbackContext
-        # in _reconstitute_job method.
-        filtered_args: tuple = ()
-        for arg in prepped_job.args:
-            tg_job: Optional[Job] = None
-            if isinstance(arg, Job):
-                tg_job = arg
-            if isinstance(arg, CallbackContext):
-                assert arg.job is not None
-                tg_job = arg.job
-            if tg_job:
-                filtered_args = (
-                    tg_job.name,
-                    tg_job.data,
-                    tg_job.chat_id,
-                    tg_job.user_id,
-                    tg_job.callback,
-                )
-        prepped_job.args = filtered_args
+        # Extract relevant information from the job and
+        # store it in the job's args.
+        tg_job = Job._from_aps_job(job)  # pylint: disable=W0212
+        prepped_job.args = (
+            tg_job.name,
+            tg_job.data,
+            tg_job.chat_id,
+            tg_job.user_id,
+            tg_job.callback,
+        )
         return prepped_job
 
     def _reconstitute_job(self, job_state: bytes) -> APSJob:
@@ -114,8 +103,6 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         """
         job: APSJob = super()._reconstitute_job(job_state)  # pylint: disable=W0212
 
-        # Here we rebuild callback context for the job which
-        # are going for execution.
         name, data, chat_id, user_id, callback = job.args
         tg_job = Job(
             callback=callback,
@@ -124,10 +111,9 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
             name=name,
             data=data,
         )
-        ctx = CallbackContext.from_job(tg_job, self.application)
         job._modify(  # pylint: disable=W0212
             args=(
-                ctx.job,
+                tg_job,
                 self.application,
             )
         )

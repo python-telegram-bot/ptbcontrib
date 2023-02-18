@@ -69,7 +69,7 @@ class TestPTBJobstore:
         job = jobstore.lookup_job(initial_job.id)
         assert job == initial_job.job
         assert job.name == initial_job.job.name
-        assert job.func == initial_job.job.func
+        assert job.args[0].callback is initial_job.callback is dummy_job
 
     def test_non_existent_job(self, jobstore):
         assert jobstore.lookup_job("foo") is None
