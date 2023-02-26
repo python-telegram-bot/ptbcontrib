@@ -208,11 +208,21 @@ else:
         asyncio.get_event_loop().close()
 
     class DictBot(Bot):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            # Makes it easier to work with the bot in tests
+            self._unfreeze()
+
         async def get_me(self, *args, **kwargs):
             """Will be called by Bot.initialize and we only have a face token ..."""
             return User(id=1, first_name="Botty", last_name="McBotface", is_bot=True)
 
     class DictExtBot(ExtBot):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            # Makes it easier to work with the bot in tests
+            self._unfreeze()
+
         async def get_me(self, *args, **kwargs):
             """Will be called by Bot.initialize and we only have a face token ..."""
             return User(id=1, first_name="Botty", last_name="McBotface", is_bot=True)

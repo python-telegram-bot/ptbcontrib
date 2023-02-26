@@ -32,12 +32,17 @@ from ptbcontrib.roles import BOT_DATA_KEY, Role, Roles, RolesBotData, RolesHandl
 
 @pytest.fixture(scope="function")
 def update():
-    return Update(
+    update = Update(
         0,
         Message(
             0, dtm.datetime.utcnow(), Chat(0, "private"), from_user=User(0, "TestUser", False)
         ),
     )
+    update._unfreeze()
+    update.message._unfreeze()
+    update.message.from_user._unfreeze()
+    update.message.chat._unfreeze()
+    return update
 
 
 @pytest.fixture(scope="function")
