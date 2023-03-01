@@ -27,7 +27,7 @@ from ptbcontrib.reply_to_message_filter import ReplyToMessageFilter
 
 @pytest.fixture(scope="function")
 def update():
-    return Update(
+    update = Update(
         0,
         Message(
             0,
@@ -46,6 +46,10 @@ def update():
             ),
         ),
     )
+    update._unfreeze()
+    update.message._unfreeze()
+    update.message.reply_to_message._unfreeze()
+    return update
 
 
 class TestReplyToMessageFilter:

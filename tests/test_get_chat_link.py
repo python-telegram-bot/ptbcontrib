@@ -35,7 +35,10 @@ def bot_factory():
 
 @pytest.fixture(scope="function")
 def chat(bot_factory):
-    return Chat(1, type="channel", name="test channel", bot=bot_factory)
+    chat = Chat(1, type="channel", title="test channel")
+    chat.set_bot(bot_factory)
+    chat._unfreeze()
+    return chat
 
 
 @pytest.fixture(scope="function")
