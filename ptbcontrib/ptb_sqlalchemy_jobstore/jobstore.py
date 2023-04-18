@@ -83,9 +83,13 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         # we'll get incorrect argument instead of CallbackContext.
         prepped_job = APSJob.__new__(APSJob)
         prepped_job.__setstate__(job.__getstate__())
+        # Get the tg_job instance in memory or the one that we deserialized during _reconstitute (first arg in args)
+        if len(job.args) == 1:
+            tg_job = Job._from_aps_job(job)  # pylint: disable=W0212
+        else:
+            tg_job = job.args[0]  # take the tg_job instance deserialized before during _reconstitute
         # Extract relevant information from the job and
         # store it in the job's args.
-        tg_job = Job._from_aps_job(job)  # pylint: disable=W0212
         prepped_job.args = (
             tg_job.name,
             tg_job.data,
