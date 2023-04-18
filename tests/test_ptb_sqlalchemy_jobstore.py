@@ -21,7 +21,9 @@ import logging
 import os
 import platform
 
+import apscheduler.triggers.interval
 import pytest
+from apscheduler.triggers.base import BaseTrigger
 from telegram.ext import CallbackContext, JobQueue
 
 from ptbcontrib.ptb_sqlalchemy_jobstore import PTBSQLAlchemyJobStore  # noqa: E402
@@ -80,6 +82,16 @@ class TestPTBJobstore:
         j3 = jq.run_once(dummy_job, 3)
         jobs = jobstore.get_all_jobs()
         assert jobs == [j1.job, j2.job, j3.job]
+
+    def test_operations_on_job(self, jq, jobstore):
+        trigger = apscheduler.triggers.interval.IntervalTrigger(seconds=3)
+        j1 = jq.run_once(dummy_job, 1)
+        jq.scheduler.get_job(j1.job.id).pause()
+        jq.scheduler.get_job(j1.job.id).resume()
+        j_final = jq.scheduler.get_job(j1.job.id).reschedule(trigger)
+        assert j_final.id == j1.job.id
+
+
 
     def test_remove_job(self, jq, jobstore):
         j1 = jq.run_once(dummy_job, 1)
