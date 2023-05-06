@@ -38,7 +38,6 @@ class ErrorBroadcastHandler(StreamHandler):
         levels: List[int],
         chat_id: int,
         log_format: str = BASIC_FORMAT,
-        # pylint: disable=R0913, W0102
         **send_message_kwargs: Any,
     ):
         super().__init__()
