@@ -18,7 +18,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains a helper function to pipe logging messages to Telegram chat."""
 from logging import BASIC_FORMAT, Formatter, LogRecord, StreamHandler
-from typing import List
+from typing import Any, List
 
 from telegram import Bot
 
@@ -39,7 +39,7 @@ class ErrorBroadcastHandler(StreamHandler):
         chat_id: int,
         log_format: str = BASIC_FORMAT,
         # pylint: disable=R0913, W0102
-        send_message_kwargs: dict = {},
+        **send_message_kwargs: Any,
     ):
         super().__init__()
         self.setFormatter(Formatter(log_format))

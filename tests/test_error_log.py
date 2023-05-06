@@ -114,7 +114,7 @@ class TestErrorLog:
                 [logging.ERROR],
                 CHAT_ID_1,
                 "<code>%(name)s\t- %(levelname)s\t- %(message)s</code>",
-                {"parse_mode": ParseMode.HTML},
+                parse_mode=ParseMode.HTML,
             )
         )
 
