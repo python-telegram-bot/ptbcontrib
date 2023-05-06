@@ -17,11 +17,10 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains a helper function to pipe logging messages to Telegram chat."""
-from logging import LogRecord, StreamHandler
+from logging import BASIC_FORMAT, Formatter, LogRecord, StreamHandler
 from typing import List
 
 from telegram import Bot
-from telegram.constants import ParseMode
 
 
 class ErrorBroadcastHandler(StreamHandler):
@@ -38,32 +37,36 @@ class ErrorBroadcastHandler(StreamHandler):
         bot: Bot,
         levels: List[int],
         chat_id: int,
-        is_silent: bool = True,
+        log_format: str = BASIC_FORMAT,
+        # pylint: disable=R0913, W0102
+        send_message_kwargs: dict = {},
     ):
         super().__init__()
+        self.setFormatter(Formatter(log_format))
         self.levels = levels
         self.send = lambda msg: bot.send_message(
-            text=msg, chat_id=chat_id, disable_notification=is_silent, parse_mode=ParseMode.HTML
+            text=msg,
+            chat_id=chat_id,
+            **send_message_kwargs,
         )
-        self.is_muted = False
 
     def emit(self, record: LogRecord) -> None:
         """
-        Handles the LogRecord
+        Emit a record.
+
+        If a formatter is specified, it is used to format the record.
+        The record is then written to the stream with a trailing newline.  If
+        exception information is present, it is formatted using
+        traceback.print_exception and appended to the stream.  If the stream
+        has an 'encoding' attribute, it is used to determine how to do the
+        output to the stream.
 
         Args:
-            record (:obj:`LogRecord`):
+            record (:obj:`LogRecord`): The LogRecord object from logging.
         """
-        super().emit(record)
-        if record.levelno in self.levels and not self.is_muted:
+        if record.levelno in self.levels:
             try:
                 msg = self.format(record)
                 self.send(msg)
             except Exception:  # pylint: disable=W0718
                 self.handleError(record)
-
-    def set_muted(self, is_muted: bool) -> None:
-        """
-        Disables the handler
-        """
-        self.is_muted = is_muted

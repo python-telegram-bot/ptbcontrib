@@ -20,6 +20,7 @@ import logging
 
 import pytest
 from telegram.constants import ParseMode
+from telegram.error import TelegramError
 
 from ptbcontrib.error_log import ErrorBroadcastHandler
 
@@ -29,29 +30,116 @@ CHAT_ID_1 = -1000000000
 CHAT_ID_2 = -2000000000
 
 
+@pytest.fixture(scope="function")
+def argtest():
+    class TestArgs:
+        was_called = False
+
+        def __call__(self, *args, **kwargs):
+            self.was_called = True
+            self.args = list(args)
+            self.kwargs = kwargs
+
+    return TestArgs()
+
+
+@pytest.fixture(autouse=True)
+def clean_logging_handlers():
+    logging.getLogger().handlers.clear()
+
+
 class TestErrorLog:
-    test_flag = False
+    @pytest.mark.parametrize(
+        "levels, chat_id, was_called, kwargs",
+        [
+            [
+                [logging.ERROR],
+                CHAT_ID_1,
+                True,
+                {
+                    "chat_id": CHAT_ID_1,
+                    "text": "ERROR:tests.test_error_log:message",
+                },
+            ],
+            [[logging.WARNING], CHAT_ID_1, False, None],
+            [
+                [logging.WARNING, logging.ERROR],
+                CHAT_ID_1,
+                True,
+                {
+                    "chat_id": CHAT_ID_1,
+                    "text": "ERROR:tests.test_error_log:message",
+                },
+            ],
+        ],
+    )
+    async def test_send_log(self, bot, monkeypatch, argtest, levels, chat_id, was_called, kwargs):
+        logging.getLogger().addHandler(ErrorBroadcastHandler(bot, levels, chat_id))
 
-    @pytest.fixture(scope="function", autouse=True)
-    def reset(self):
-        self.test_flag = False
+        monkeypatch.setattr(bot, "send_message", argtest)
 
-    async def test_error_log(self, bot, monkeypatch, caplog):
+        logger.error("message")
+
+        assert argtest.was_called == was_called
+        if was_called:
+            assert argtest.kwargs == kwargs
+
+    async def test_send_2_chats(self, bot, monkeypatch, argtest):
         logging.getLogger().addHandler(ErrorBroadcastHandler(bot, [logging.ERROR], CHAT_ID_1))
+        logging.getLogger().addHandler(ErrorBroadcastHandler(bot, [logging.WARNING], CHAT_ID_2))
 
-        expected_kwargs = {
+        monkeypatch.setattr(bot, "send_message", argtest)
+
+        logger.error("message")
+
+        assert argtest.was_called is True
+        assert argtest.kwargs == {
             "chat_id": CHAT_ID_1,
-            "text": "error",
-            "disable_notification": True,
+            "text": "ERROR:tests.test_error_log:message",
+        }
+
+        argtest.was_called = False
+        logger.warning("message")
+
+        assert argtest.was_called is True
+        assert argtest.kwargs == {
+            "chat_id": CHAT_ID_2,
+            "text": "WARNING:tests.test_error_log:message",
+        }
+
+    async def test_send_html_encoded(self, bot, monkeypatch, argtest):
+        logging.getLogger().addHandler(
+            ErrorBroadcastHandler(
+                bot,
+                [logging.ERROR],
+                CHAT_ID_1,
+                "<code>%(name)s\t- %(levelname)s\t- %(message)s</code>",
+                {"parse_mode": ParseMode.HTML},
+            )
+        )
+
+        monkeypatch.setattr(bot, "send_message", argtest)
+
+        logger.error("message")
+
+        assert argtest.was_called is True
+        assert argtest.kwargs == {
+            "chat_id": CHAT_ID_1,
+            "text": "<code>tests.test_error_log\t- ERROR\t- message</code>",
             "parse_mode": ParseMode.HTML,
         }
 
-        def make_assertion(**kw):
-            self.test_flag = kw == expected_kwargs
+    async def test_send_exception(self, bot, monkeypatch, argtest, capsys):
+        logging.getLogger().addHandler(ErrorBroadcastHandler(bot, [logging.ERROR], CHAT_ID_1))
 
-        monkeypatch.setattr(bot, "send_message", make_assertion)
+        def mock(**_kw):
+            raise TelegramError("Error")
 
-        logger.error("error")
+        monkeypatch.setattr(bot, "send_message", mock)
 
-        assert self.test_flag
-        assert caplog.records[0].msg == "error"
+        logger.error("message")
+
+        assert argtest.was_called is False
+        captured = capsys.readouterr()
+        assert "--- Logging error ---" in captured.err
+        assert "Message: 'message'" in captured.err
