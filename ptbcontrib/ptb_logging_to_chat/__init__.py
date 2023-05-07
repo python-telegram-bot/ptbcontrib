@@ -16,6 +16,6 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains code to pipe logs to a Telegram chat."""
 
-from .log_handler import LoggingToChatHandler
+from .chat_logging_handler import PTBChatLoggingHandler
 
-__all__ = ["LoggingToChatHandler"]
+__all__ = ["PTBChatLoggingHandler"]

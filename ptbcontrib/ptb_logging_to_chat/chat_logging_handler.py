@@ -23,7 +23,7 @@ from typing import Any, List
 from telegram import Bot
 
 
-class LoggingToChatHandler(StreamHandler):
+class PTBChatLoggingHandler(StreamHandler):
     """
     A handler class which writes logging records, appropriately formatted,
     to a Telegram chat.
