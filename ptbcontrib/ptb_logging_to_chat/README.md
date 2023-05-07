@@ -51,6 +51,8 @@ Result:
 
 ## Requirements
 
+*   `python-telegram-bot>=20.0`
+
 ## Authors
 
 *   [alexeyqu](https://github.com/alexeyqu)
