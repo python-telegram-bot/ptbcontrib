@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module contains code to pipe error logs to a special chat."""
+"""This module contains code to pipe logs to a Telegram chat."""
 
 from .log_handler import LoggingToChatHandler
 

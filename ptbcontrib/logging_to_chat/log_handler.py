@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module contains a helper function to pipe logging messages to Telegram chat."""
+"""This module contains logging handler which pipes logs to a Telegram chat."""
 from logging import BASIC_FORMAT, Formatter, LogRecord, StreamHandler
 from typing import Any, List
 
@@ -25,11 +25,16 @@ from telegram import Bot
 
 class LoggingToChatHandler(StreamHandler):
     """
-    Allows to send records from logging module to a specified Telegram chat.
+    A handler class which writes logging records, appropriately formatted,
+    to a Telegram chat.
 
     Args:
-        bot (:obj:`Bot`): The bot object
-        levels (:obj:`List[int]`): List of logging levels caught by this handler
+        bot (:obj:`Bot`): The bot object used to send the messages.
+        levels (:obj:`list` of :obj:`int`): List of logging levels handled.
+        chat_id (`int`): Telegram chat ID.
+        log_format (`str`): Format string to render the logging records.
+            Defaults to `logging.BASIC_FORMAT`.
+        send_message_kwargs (`Any`): kwargs to be passed to `bot.send_message` method.
     """
 
     def __init__(
