@@ -16,6 +16,6 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains code to pipe error logs to a special chat."""
 
-from .log_handler import ErrorBroadcastHandler
+from .log_handler import LoggingToChatHandler
 
-__all__ = ["ErrorBroadcastHandler"]
+__all__ = ["LoggingToChatHandler"]

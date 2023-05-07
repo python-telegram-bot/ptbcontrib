@@ -23,7 +23,7 @@ from typing import Any, List
 from telegram import Bot
 
 
-class ErrorBroadcastHandler(StreamHandler):
+class LoggingToChatHandler(StreamHandler):
     """
     Allows to send records from logging module to a specified Telegram chat.
 
