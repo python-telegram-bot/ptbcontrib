@@ -31,17 +31,6 @@ class PTBMongoDBJobStore(PTBStoreAdapter, MongoDBJobStore):
     Wraps apscheduler.MongoDBJobStore to make :class:`telegram.ext.Job` class storable.
     """
 
-    def __init__(self, application: Application, **kwargs: Any) -> None:
-        """
-        Args:
-            application (:class:`telegram.ext.Application`): Application instance
-                that will be passed to CallbackContext when recreating jobs.
-            **kwargs (:obj:`dict`): Arbitrary keyword Arguments to be passed to
-                the MongoDBJobStore constructor.
-        """
-
-        super().__init__(application, **kwargs)
-
     def add_job(self, job: APSJob) -> None:
         """
         Called from apscheduler's internals after adding a new job.

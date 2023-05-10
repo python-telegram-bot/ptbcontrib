@@ -26,7 +26,6 @@ from telegram.ext import Application
 
 from .ptb_adapter import PTBStoreAdapter
 
-
 logger = logging.getLogger(__name__)
 
 
