@@ -36,8 +36,8 @@ For more information please have a look at APS scheduler's documentation about a
 
 ## Requirements
 
-*   `python-telegram-bot>=20.0`
-*   `pymongo`
+*   `python-telegram-bot[job-queue]~=20.0`
+*   `pymongo>=4.1,<5`
 
 ## Authors
 
