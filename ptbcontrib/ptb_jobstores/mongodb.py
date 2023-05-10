@@ -17,11 +17,8 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This file contains PTBMongoDBJobStore."""
-from typing import Any
-
 from apscheduler.job import Job as APSJob
 from apscheduler.jobstores.mongodb import MongoDBJobStore
-from telegram.ext import Application
 
 from .ptb_adapter import PTBStoreAdapter
 
