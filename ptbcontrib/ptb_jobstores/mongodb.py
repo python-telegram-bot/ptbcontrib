@@ -21,7 +21,7 @@ from typing import Any
 
 from apscheduler.job import Job as APSJob
 from apscheduler.jobstores.mongodb import MongoDBJobStore
-from telegram.ext import Application, Job
+from telegram.ext import Application
 
 from .ptb_adapter import PTBStoreAdapter
 
@@ -59,3 +59,12 @@ class PTBMongoDBJobStore(PTBStoreAdapter, MongoDBJobStore):
         """
         job = self._prepare_job(job)
         super().update_job(job)
+
+    def _reconstitute_job(self, job_state: bytes) -> APSJob:
+        """
+        Called from apscheduler's internals when loading job.
+        Args:
+            job_state (:obj:`str`): String containing pickled job state.
+        """
+        job: APSJob = super()._reconstitute_job(job_state)  # pylint: disable=W0212
+        return super()._restore_job(job)

@@ -70,14 +70,12 @@ class PTBStoreAdapter:
         )
         return prepped_job
 
-    def _reconstitute_job(self, job_state: bytes) -> APSJob:
+    def _restore_job(self, job: APSJob) -> APSJob:
         """
-        Called from apscheduler's internals when loading job.
+        Restore all telegram.ext.Job data.
         Args:
-            job_state (:obj:`str`): String containing pickled job state.
+            job (:obj:`apscheduler.job`): The job to be processed.
         """
-        job: APSJob = super()._reconstitute_job(job_state)  # pylint: disable=W0212
-
         name, data, chat_id, user_id, callback = job.args
         tg_job = Job(
             callback=callback,
