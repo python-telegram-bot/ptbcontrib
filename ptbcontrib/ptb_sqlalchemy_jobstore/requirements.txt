@@ -1,3 +1,0 @@
-python-telegram-bot[job-queue]>=20
-SQLAlchemy==1.4.46
-

@@ -16,20 +16,16 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This file contains PTBSQLAlchemyJobStore."""
-import logging
+"""This file contains PTBStoreAdapter."""
 from typing import Any
 
 from apscheduler.job import Job as APSJob
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from telegram.ext import Application, Job
 
-logger = logging.getLogger(__name__)
 
-
-class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
+class PTBStoreAdapter:
     """
-    Wraps apscheduler.SQLAlchemyJobStore to make :class:`telegram.ext.Job` class storable.
+    Store Adapter to make :class:`telegram.ext.Job` class storable.
     """
 
     def __init__(self, application: Application, **kwargs: Any) -> None:
@@ -38,37 +34,11 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
             application (:class:`telegram.ext.Application`): Application instance
                 that will be passed to CallbackContext when recreating jobs.
             **kwargs (:obj:`dict`): Arbitrary keyword Arguments to be passed to
-                the SQLAlchemyJobStore constructor.
+                the JobStore constructor.
         """
 
-        if "url" in kwargs and kwargs["url"].startswith("sqlite:///"):
-            logger.warning(
-                "Use of SQLite db is not supported  due to "
-                "multi-threading limitations of SQLite databases "
-                "You can still try to use it, but it will likely "
-                "behave differently from what you expect."
-            )
-
-        super().__init__(**kwargs)
         self.application = application
-
-    def add_job(self, job: APSJob) -> None:
-        """
-        Called from apscheduler's internals after adding a new job.
-        Args:
-            job (:obj:`apscheduler.job`): The job to be persisted.
-        """
-        job = self._prepare_job(job)
-        super().add_job(job)
-
-    def update_job(self, job: APSJob) -> None:
-        """
-        Called from apscheduler's internals after updating a job.
-        Args:
-            job (:obj:`apscheduler.job`): The job to be updated.
-        """
-        job = self._prepare_job(job)
-        super().update_job(job)
+        super().__init__(**kwargs)
 
     @staticmethod
     def _prepare_job(job: APSJob) -> APSJob:
@@ -83,9 +53,14 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         # we'll get incorrect argument instead of CallbackContext.
         prepped_job = APSJob.__new__(APSJob)
         prepped_job.__setstate__(job.__getstate__())
+        # Get the tg_job instance in memory
+        # or the one that we deserialized during _reconstitute (first arg in args)
+        if len(job.args) == 1:
+            tg_job = Job._from_aps_job(job)  # pylint: disable=W0212
+        else:
+            tg_job = job.args[0]
         # Extract relevant information from the job and
         # store it in the job's args.
-        tg_job = Job._from_aps_job(job)  # pylint: disable=W0212
         prepped_job.args = (
             tg_job.name,
             tg_job.data,
