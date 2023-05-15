@@ -24,7 +24,7 @@ import platform
 import pytest
 from telegram.ext import CallbackContext, JobQueue
 
-from ptbcontrib.ptb_sqlalchemy_jobstore import PTBSQLAlchemyJobStore  # noqa: E402
+from ptbcontrib.ptb_jobstores import PTBSQLAlchemyJobStore  # noqa: E402
 
 
 @pytest.fixture(scope="function")
