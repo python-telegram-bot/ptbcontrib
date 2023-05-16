@@ -21,7 +21,7 @@ application = Application.builder().token("TOKEN").build()
 application.job_queue.scheduler.add_jobstore(
     PTBMongoDBJobStore(
         application=application,
-        url=DB_URI,
+        host=DB_URI,
     )
 )
 
