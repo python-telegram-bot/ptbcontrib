@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains logging handler which pipes logs to a Telegram chat."""
+import asyncio
 from logging import BASIC_FORMAT, Formatter, LogRecord, StreamHandler
 from typing import Any, List
 
@@ -68,9 +69,17 @@ class PTBChatLoggingHandler(StreamHandler):
         Args:
             record (:obj:`LogRecord`): The LogRecord object from logging.
         """
+        coro = self._async_emit(record)
+        try:
+            asyncio.create_task(coro)
+        except RuntimeError:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(coro)
+
+    async def _async_emit(self, record: LogRecord) -> None:
         if record.levelno in self.levels:
             try:
                 msg = self.format(record)
-                self.send(msg)
+                await self.send(msg)
             except Exception:  # pylint: disable=W0718
                 self.handleError(record)

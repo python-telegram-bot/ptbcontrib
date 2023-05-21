@@ -31,11 +31,11 @@ CHAT_ID_2 = -2000000000
 
 
 @pytest.fixture(scope="function")
-def argtest():
+async def argtest():
     class TestArgs:
         was_called = False
 
-        def __call__(self, *args, **kwargs):
+        async def __call__(self, *args, **kwargs):
             self.was_called = True
             self.args = list(args)
             self.kwargs = kwargs
@@ -73,6 +73,7 @@ class TestErrorLog:
             ],
         ],
     )
+    @pytest.mark.asyncio
     async def test_send_log(self, bot, monkeypatch, argtest, levels, chat_id, was_called, kwargs):
         logging.getLogger().addHandler(PTBChatLoggingHandler(bot, levels, chat_id))
 
