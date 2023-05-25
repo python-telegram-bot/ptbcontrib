@@ -90,8 +90,6 @@ class TestPTBJobstore:
         j_final = jq.scheduler.get_job(j1.job.id).reschedule(trigger)
         assert j_final.id == j1.job.id
 
-
-
     def test_remove_job(self, jq, jobstore):
         j1 = jq.run_once(dummy_job, 1)
         j2 = jq.run_once(dummy_job, 2)
