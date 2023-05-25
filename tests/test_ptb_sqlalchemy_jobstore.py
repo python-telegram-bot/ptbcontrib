@@ -23,7 +23,6 @@ import platform
 
 import apscheduler.triggers.interval
 import pytest
-from apscheduler.triggers.base import BaseTrigger
 from telegram.ext import CallbackContext, JobQueue
 
 from ptbcontrib.ptb_sqlalchemy_jobstore import PTBSQLAlchemyJobStore  # noqa: E402
