@@ -25,7 +25,6 @@ Result:
 
 ![image](https://github.com/alexeyqu/ptbcontrib/assets/7394728/fae832a4-072d-4756-9525-eb97886b205c)
 
-
 ### Pretty example
 
 ```python
@@ -47,7 +46,6 @@ logger.error("something went wrong!")
 Result:
 
 ![image](https://github.com/alexeyqu/ptbcontrib/assets/7394728/59ca52bf-277a-4a4a-a8cb-5567fafc72e0)
-
 
 ### Note
 
