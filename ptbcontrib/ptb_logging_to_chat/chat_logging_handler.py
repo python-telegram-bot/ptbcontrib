@@ -30,9 +30,17 @@ TELEGRAM_API_URL = "bot{token}/sendMessage"
 
 class PTBChatLoggingHandler(HTTPHandler):
     """
-    A handler class which writes logging records, appropriately formatted,
+    A handler class which sends the logging records, appropriately formatted,
     to a Telegram chat.
-    Args: TODO(alexeyqu)
+
+    Args:
+        token (str): The Telegram bot token.
+        levels (:obj:`list` of :obj:`int`): The logging levels handled.
+        chat_id (int): The ID of the recipient Telegram chat.
+        log_format (str): The format string for the logger.
+        parse_mode (:obj:`bool`, optional): The parse mode for Telegram, e.g. HTML.
+        disable_notification (:obj:`bool`, optional): The API flag to disable notifications.
+        disable_web_page_preview (:obj:`bool`, optional): The API flag to disable web page preview.
     """
 
     def __init__(
@@ -59,6 +67,15 @@ class PTBChatLoggingHandler(HTTPHandler):
         self.disable_web_page_preview = disable_web_page_preview
 
     def mapLogRecord(self, record: LogRecord) -> Dict[str, Any]:
+        """
+        Override the default HTTPHandler implementation of mapping the log record to data.
+
+        Args:
+            record (:obj:`LogRecord`): The entity to be logged.
+
+        Returns:
+            dict(str, :obj:`Any`): The payload for the requests.post call.
+        """
         payload = {
             "text": self.format(record),
             "chat_id": self.chat_id,
@@ -75,8 +92,10 @@ class PTBChatLoggingHandler(HTTPHandler):
     def emit(self, record: LogRecord) -> None:
         """
         Emit a record.
+        Sends the formatted log to Telegram API via requests.post method.
 
-        Send the record to the Web server as a percent-encoded dictionary
+        Args:
+            record (:obj:`LogRecord`): The entity to be logged.
         """
         if record.levelno in self.levels:
             try:
