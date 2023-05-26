@@ -19,7 +19,6 @@
 import logging
 
 import pytest
-import requests
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
@@ -37,10 +36,9 @@ def argtest():
     class TestArgs:
         was_called = False
 
-        def __call__(self, *args, **kwargs):
+        def __call__(self, data):
             self.was_called = True
-            self.args = list(args)
-            self.kwargs = kwargs
+            self.data = data
 
     return TestArgs()
 
@@ -52,20 +50,15 @@ def clean_logging_handlers():
 
 class TestPTBLoggingToChat:
     @pytest.mark.parametrize(
-        "levels, chat_id, was_called, kwargs",
+        "levels, chat_id, was_called, data",
         [
             [
                 [logging.ERROR],
                 CHAT_ID_1,
                 True,
                 {
-                    "data": {
-                        "chat_id": str(CHAT_ID_1),
-                        "text": "ERROR:tests.test_ptb_logging_to_chat:message",
-                    },
-                    "headers": {
-                        "content-type": "application/json",
-                    },
+                    "chat_id": str(CHAT_ID_1),
+                    "text": "ERROR:tests.test_ptb_logging_to_chat:message",
                 },
             ],
             [[logging.WARNING], CHAT_ID_1, False, None],
@@ -74,63 +67,48 @@ class TestPTBLoggingToChat:
                 CHAT_ID_1,
                 True,
                 {
-                    "data": {
-                        "chat_id": str(CHAT_ID_1),
-                        "text": "ERROR:tests.test_ptb_logging_to_chat:message",
-                    },
-                    "headers": {
-                        "content-type": "application/json",
-                    },
+                    "chat_id": str(CHAT_ID_1),
+                    "text": "ERROR:tests.test_ptb_logging_to_chat:message",
                 },
             ],
         ],
     )
     @pytest.mark.asyncio
-    async def test_send_log(self, bot, monkeypatch, argtest, levels, chat_id, was_called, kwargs):
+    async def test_send_log(self, monkeypatch, argtest, levels, chat_id, was_called, data):
         logger.addHandler(PTBChatLoggingHandler(TOKEN, levels, chat_id))
 
-        monkeypatch.setattr(requests, "post", argtest)
+        monkeypatch.setattr(PTBChatLoggingHandler, "_emit", argtest)
 
         logger.error("message")
 
         assert argtest.was_called == was_called
         if was_called:
-            assert argtest.kwargs == kwargs
+            assert argtest.data == data
 
-    async def test_send_2_chats(self, bot, monkeypatch, argtest):
+    async def test_send_2_chats(self, monkeypatch, argtest):
         logger.addHandler(PTBChatLoggingHandler(TOKEN, [logging.ERROR], CHAT_ID_1))
         logger.addHandler(PTBChatLoggingHandler(TOKEN, [logging.WARNING], CHAT_ID_2))
 
-        monkeypatch.setattr(requests, "post", argtest)
+        monkeypatch.setattr(PTBChatLoggingHandler, "_emit", argtest)
 
         logger.error("message")
 
         assert argtest.was_called is True
-        assert argtest.kwargs == {
-            "data": {
-                "chat_id": str(CHAT_ID_1),
-                "text": "ERROR:tests.test_ptb_logging_to_chat:message",
-            },
-            "headers": {
-                "content-type": "application/json",
-            },
+        assert argtest.data == {
+            "chat_id": str(CHAT_ID_1),
+            "text": "ERROR:tests.test_ptb_logging_to_chat:message",
         }
 
         argtest.was_called = False
         logger.warning("message")
 
         assert argtest.was_called is True
-        assert argtest.kwargs == {
-            "data": {
-                "chat_id": str(CHAT_ID_2),
-                "text": "WARNING:tests.test_ptb_logging_to_chat:message",
-            },
-            "headers": {
-                "content-type": "application/json",
-            },
+        assert argtest.data == {
+            "chat_id": str(CHAT_ID_2),
+            "text": "WARNING:tests.test_ptb_logging_to_chat:message",
         }
 
-    async def test_send_html_encoded(self, bot, monkeypatch, argtest):
+    async def test_send_html_encoded(self, monkeypatch, argtest):
         logger.addHandler(
             PTBChatLoggingHandler(
                 TOKEN,
@@ -141,29 +119,24 @@ class TestPTBLoggingToChat:
             )
         )
 
-        monkeypatch.setattr(requests, "post", argtest)
+        monkeypatch.setattr(PTBChatLoggingHandler, "_emit", argtest)
 
         logger.error("message")
 
         assert argtest.was_called is True
-        assert argtest.kwargs == {
-            "data": {
-                "chat_id": str(CHAT_ID_1),
-                "text": "<code>tests.test_ptb_logging_to_chat\t- ERROR\t- message</code>",
-                "parse_mode": ParseMode.HTML,
-            },
-            "headers": {
-                "content-type": "application/json",
-            },
+        assert argtest.data == {
+            "chat_id": str(CHAT_ID_1),
+            "text": "<code>tests.test_ptb_logging_to_chat\t- ERROR\t- message</code>",
+            "parse_mode": ParseMode.HTML,
         }
 
-    async def test_send_exception(self, bot, monkeypatch, argtest, capsys):
+    async def test_send_exception(self, monkeypatch, argtest, capsys):
         logger.addHandler(PTBChatLoggingHandler(TOKEN, [logging.ERROR], CHAT_ID_1))
 
         def mock(**_kw):
             raise TelegramError("Error")
 
-        monkeypatch.setattr(requests, "post", mock)
+        monkeypatch.setattr(PTBChatLoggingHandler, "_emit", mock)
 
         logger.error("message")
 

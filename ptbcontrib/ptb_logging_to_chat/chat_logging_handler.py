@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains logging handler which pipes logs to a Telegram chat."""
+import json
 from logging import BASIC_FORMAT, Formatter, LogRecord
 from logging.handlers import HTTPHandler
 from typing import Any, Dict, List, Optional
@@ -99,10 +100,20 @@ class PTBChatLoggingHandler(HTTPHandler):
         """
         if record.levelno in self.levels:
             try:
-                requests.post(
-                    f"https://{self.host}/{self.url}",
-                    data=self.mapLogRecord(record),
-                    headers={"content-type": "application/json"},
-                )
+                self._emit(self.mapLogRecord(record))
             except Exception:  # pylint: disable=W0718
                 self.handleError(record)
+
+    def _emit(self, data: Dict[str, Any]) -> None:
+        """
+        Emit a record.
+        Wrapper for `requests.post` for convenience.
+
+        Args:
+            dict(str, :obj:`Any`): The payload for the requests.post call.
+        """
+        requests.post(
+            f"https://{self.host}/{self.url}",
+            data=json.dumps(data),
+            headers={"content-type": "application/json"},
+        )
