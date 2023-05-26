@@ -19,7 +19,7 @@
 """This module contains logging handler which pipes logs to a Telegram chat."""
 from logging import BASIC_FORMAT, Formatter, LogRecord
 from logging.handlers import HTTPHandler
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from telegram.constants import ParseMode
@@ -58,14 +58,19 @@ class PTBChatLoggingHandler(HTTPHandler):
         self.disable_notification = disable_notification
         self.disable_web_page_preview = disable_web_page_preview
 
-    def mapLogRecord(self, record: LogRecord) -> Dict:
-        return {
+    def mapLogRecord(self, record: LogRecord) -> Dict[str, Any]:
+        payload = {
             "text": self.format(record),
             "chat_id": self.chat_id,
-            "parse_mode": self.parse_mode,
-            "disable_notification": self.disable_notification,
-            "disable_web_page_preview": self.disable_web_page_preview,
-        }
+        }  # type: Dict[str, Any]
+        # could use a lambda here if more arguments needed
+        if self.parse_mode is not None:
+            payload["parse_mode"] = self.parse_mode
+        if self.disable_web_page_preview is not None:
+            payload["disable_web_page_preview"] = self.disable_web_page_preview
+        if self.disable_notification is not None:
+            payload["disable_notification"] = self.disable_notification
+        return payload
 
     def emit(self, record: LogRecord) -> None:
         """
