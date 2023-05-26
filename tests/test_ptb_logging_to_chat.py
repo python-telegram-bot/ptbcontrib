@@ -19,8 +19,13 @@
 import logging
 
 import pytest
-from telegram.constants import ParseMode
-from telegram.error import TelegramError
+
+try:
+    # python-telegram-bot >= 20.0.0
+    from telegram.constants import ParseMode
+except ImportError:
+    # python-telegram-bot < 20.0.0
+    from telegram import ParseMode
 
 from ptbcontrib.ptb_logging_to_chat import PTBChatLoggingHandler
 
@@ -134,7 +139,7 @@ class TestPTBLoggingToChat:
         logger.addHandler(PTBChatLoggingHandler(TOKEN, [logging.ERROR], CHAT_ID_1))
 
         def mock(**_kw):
-            raise TelegramError("Error")
+            raise RuntimeError("Error")
 
         monkeypatch.setattr(PTBChatLoggingHandler, "_emit", mock)
 

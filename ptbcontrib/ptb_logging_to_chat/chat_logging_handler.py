@@ -23,7 +23,13 @@ from logging.handlers import HTTPHandler
 from typing import Any, Dict, List, Optional
 
 import requests
-from telegram.constants import ParseMode
+
+try:
+    # python-telegram-bot >= 20.0.0
+    from telegram.constants import ParseMode
+except ImportError:
+    # python-telegram-bot < 20.0.0
+    from telegram import ParseMode
 
 TELEGRAM_API_HOST = "api.telegram.org"
 TELEGRAM_API_URL = "bot{token}/sendMessage"
