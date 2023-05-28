@@ -18,7 +18,7 @@ jobs:
         include:
           - os: ubuntu-latest
             python-version: 3.7
-            mongodb-version: ['4.2', '4.4', '5.0', '6.0', 'latest']
+            mongodb-version: latest
             test-build: True
           - os: windows-latest
             python-version: 3.7

@@ -27,8 +27,14 @@ from telegram.ext import CallbackContext, JobQueue
 from ptbcontrib.ptb_jobstores import PTBMongoDBJobStore, PTBSQLAlchemyJobStore  # noqa: E402
 
 
-@pytest.fixture(scope="function", params=[(PTBMongoDBJobStore, {'host': 'localhost'}), (PTBSQLAlchemyJobStore, {'url': 'sqlite:///:memory:'})])
-async def jq(app):
+@pytest.fixture(
+    scope="function",
+    params=[
+        (PTBMongoDBJobStore, {"host": "localhost"}),
+        (PTBSQLAlchemyJobStore, {"url": "sqlite:///:memory:"}),
+    ],
+)
+async def jq(app, request):
     jq = JobQueue()
     jq.set_application(app)
     job_store = request.param[0](application=app, **request.param[1])
