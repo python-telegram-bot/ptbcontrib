@@ -24,14 +24,14 @@ import platform
 import pytest
 from telegram.ext import CallbackContext, JobQueue
 
-from ptbcontrib.ptb_jobstores import PTBSQLAlchemyJobStore  # noqa: E402
+from ptbcontrib.ptb_jobstores import PTBMongoDBJobStore, PTBSQLAlchemyJobStore  # noqa: E402
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", params=[(PTBMongoDBJobStore, {'host': 'localhost'}), (PTBSQLAlchemyJobStore, {'url': 'sqlite:///:memory:'})])
 async def jq(app):
     jq = JobQueue()
     jq.set_application(app)
-    job_store = PTBSQLAlchemyJobStore(application=app, url="sqlite:///:memory:")
+    job_store = request.param[0](application=app, **request.param[1])
     jq.scheduler.add_jobstore(job_store)
     await jq.start()
     yield jq
@@ -56,7 +56,7 @@ def dummy_job(ctx):
 )
 class TestPTBJobstore:
     def test_default_jobstore_instance(self, jobstore):
-        assert isinstance(jobstore, PTBSQLAlchemyJobStore)
+        assert type(jobstore) in (PTBMongoDBJobStore, PTBSQLAlchemyJobStore)
 
     def test_next_runtime(self, jq, jobstore):
         jq.run_repeating(dummy_job, 10, first=0.1)
