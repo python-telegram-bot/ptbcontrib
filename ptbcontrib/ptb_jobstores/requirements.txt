@@ -1,0 +1,3 @@
+python-telegram-bot[job-queue]>=20.0,<=21.0
+pymongo>=4.1,<5
+SQLAlchemy~=1.4.46

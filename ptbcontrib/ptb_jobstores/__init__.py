@@ -14,7 +14,8 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module contains PTBSQLAlchemyJobStore."""
-from .jobstore import PTBSQLAlchemyJobStore
+"""This module contains PTB JobStores."""
+from .mongodb import PTBMongoDBJobStore
+from .sqlalchemy import PTBSQLAlchemyJobStore
 
-__all__ = ["PTBSQLAlchemyJobStore"]
+__all__ = ["PTBMongoDBJobStore", "PTBSQLAlchemyJobStore"]

@@ -22,12 +22,14 @@ from typing import Any
 
 from apscheduler.job import Job as APSJob
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from telegram.ext import Application, Job
+from telegram.ext import Application
+
+from .ptb_adapter import PTBStoreAdapter
 
 logger = logging.getLogger(__name__)
 
 
-class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
+class PTBSQLAlchemyJobStore(PTBStoreAdapter, SQLAlchemyJobStore):
     """
     Wraps apscheduler.SQLAlchemyJobStore to make :class:`telegram.ext.Job` class storable.
     """
@@ -49,8 +51,7 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
                 "behave differently from what you expect."
             )
 
-        super().__init__(**kwargs)
-        self.application = application
+        super().__init__(application, **kwargs)
 
     def add_job(self, job: APSJob) -> None:
         """
@@ -70,37 +71,6 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
         job = self._prepare_job(job)
         super().update_job(job)
 
-    @staticmethod
-    def _prepare_job(job: APSJob) -> APSJob:
-        """
-        Erase all unpickable data from telegram.ext.Job
-        Args:
-            job (:obj:`apscheduler.job`): The job to be processed.
-        """
-        # make new job which is copy of actual job cause
-        # modifying actual job also modifies jobs in threadpool
-        # executor which are currently running/going to run, and
-        # we'll get incorrect argument instead of CallbackContext.
-        prepped_job = APSJob.__new__(APSJob)
-        prepped_job.__setstate__(job.__getstate__())
-        # Get the tg_job instance in memory or the one that we deserialized during _reconstitute
-        # (first arg in args)
-        if len(job.args) == 1:
-            tg_job = Job._from_aps_job(job)  # pylint: disable=W0212
-        else:
-            # take the tg_job instance deserialized before during _reconstitute
-            tg_job = job.args[0]
-        # Extract relevant information from the job and
-        # store it in the job's args.
-        prepped_job.args = (
-            tg_job.name,
-            tg_job.data,
-            tg_job.chat_id,
-            tg_job.user_id,
-            tg_job.callback,
-        )
-        return prepped_job
-
     def _reconstitute_job(self, job_state: bytes) -> APSJob:
         """
         Called from apscheduler's internals when loading job.
@@ -108,19 +78,4 @@ class PTBSQLAlchemyJobStore(SQLAlchemyJobStore):
             job_state (:obj:`str`): String containing pickled job state.
         """
         job: APSJob = super()._reconstitute_job(job_state)  # pylint: disable=W0212
-
-        name, data, chat_id, user_id, callback = job.args
-        tg_job = Job(
-            callback=callback,
-            chat_id=chat_id,
-            user_id=user_id,
-            name=name,
-            data=data,
-        )
-        job._modify(  # pylint: disable=W0212
-            args=(
-                tg_job,
-                self.application,
-            )
-        )
-        return job
+        return super()._restore_job(job)

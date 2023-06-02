@@ -34,6 +34,11 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Start MongoDB
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        uses: supercharge/mongodb-github-action@1.8.0
+        with:
+          mongodb-version: latest
       - name: Install dependencies
         run: |
           python -W ignore -m pip install --upgrade pip
