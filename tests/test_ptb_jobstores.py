@@ -27,13 +27,20 @@ from telegram.ext import CallbackContext, JobQueue
 
 from ptbcontrib.ptb_jobstores import PTBMongoDBJobStore, PTBSQLAlchemyJobStore  # noqa: E402
 
+job_queue_params = [(PTBSQLAlchemyJobStore, {"url": "sqlite:///:memory:"})]
+job_queue_param_ids = ["SQLAlchemyJobStore"]
+
+if os.getenv("GITHUB_ACTIONS", False):
+    # Currently only tested by using the GitHub Action supercharge/mongodb-github-action@1.8.0
+    # which provides a MongoDB instance
+    job_queue_params.append((PTBMongoDBJobStore, {"host": "localhost"}))
+    job_queue_param_ids.append("MongoDBJobStore")
+
 
 @pytest.fixture(
     scope="function",
-    params=[
-        (PTBMongoDBJobStore, {"host": "localhost"}),
-        (PTBSQLAlchemyJobStore, {"url": "sqlite:///:memory:"}),
-    ],
+    params=job_queue_params,
+    ids=job_queue_param_ids,
 )
 async def jq(app, request):
     jq = JobQueue()
