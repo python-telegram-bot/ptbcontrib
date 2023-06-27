@@ -83,7 +83,7 @@ class TestPTBJobstore:
         job = jobstore.lookup_job(initial_job.id)
         assert job == initial_job.job
         assert job.name == initial_job.job.name
-        assert job.args[0].callback is initial_job.callback is dummy_job
+        assert job.job.callback is initial_job.callback is dummy_job
 
     def test_non_existent_job(self, jobstore):
         assert jobstore.lookup_job("foo") is None
@@ -115,3 +115,10 @@ class TestPTBJobstore:
         with caplog.at_level(logging.WARNING):
             PTBSQLAlchemyJobStore(app, url="sqlite:///:memory:")
         assert "Use of SQLite db is not supported" in caplog.text
+
+    def test_get_jobs_from_jobqueue(self, jq):
+        initial_job = jq.run_once(dummy_job, 1, name="dummy_job")
+        job_from_jq = jq.get_jobs_by_name("dummy_job")[0]
+        assert job_from_jq.job.id == initial_job.job.id
+        job_from_jq2 = jq.jobs()[0]
+        assert job_from_jq2.job.id == initial_job.job.id
