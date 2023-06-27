@@ -85,9 +85,9 @@ class PTBStoreAdapter:
             name=name,
             data=data,
         )
-        # restore ASPJob to TGJob._job
-        tg_job._job = job  # pylint: disable=W0212
-        # and bind the TGJob instance to job.func.__self__
+        # bind the TGJob instance to job.func.__self__
         binded_func = types.MethodType(job.func, tg_job)
         job._modify(args=(self.application,), func=binded_func)  # pylint: disable=W0212
+        # restore ASPJob to TGJob._job
+        tg_job._job = job  # pylint: disable=W0212
         return job
