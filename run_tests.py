@@ -108,6 +108,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
                     "pytest",
                     "-v",
                     str(root_path / "tests" / f"test_{name}.py"),
+                    f"--junitxml=./.test-reports/test_{name}.xml",
                 ]
             )
 

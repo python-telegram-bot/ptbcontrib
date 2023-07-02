@@ -1,4 +1,4 @@
-name: GitHub Actions
+name: Unit Tests
 on:
   pull_request:
     branches:
@@ -71,3 +71,10 @@ jobs:
           JOB_INDEX: ${{ strategy.job-index }}
           TEST_BUILD: "true"
         shell: bash --noprofile --norc {0}
+
+      - name: Test Summary
+        id: test_summary
+        uses: test-summary/action@v2.1
+        if: always()  # always run, even if tests fail
+        with:
+          paths: ".test_reports/test_*.xml"
