@@ -40,7 +40,7 @@ class TestExtractURLs:
         )
         results = extract_urls.extract_urls(test_message)
 
-        assert len(results) == 2
+        assert len(results) == 3
         assert test_entities[0]["url"] == results[0]
         assert test_entities[2]["url"] == results[1]
 
