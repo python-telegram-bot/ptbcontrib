@@ -77,9 +77,9 @@ class PostgresPersistence(DictPersistence):
             data_ = self._session.execute(text("SELECT data FROM persistence")).first()
             data = data_[0] if data_ is not None else {}
 
-            chat_data_json = data.get("chat_data", "")
-            user_data_json = data.get("user_data", "")
-            bot_data_json = data.get("bot_data", "")
+            chat_data_json = data.get("chat_data", "{}")
+            user_data_json = data.get("user_data", "{}")
+            bot_data_json = data.get("bot_data", "{}")
             conversations_json = data.get("conversations", "{}")
             callback_data_json = data.get("callback_data_json", "")
 
