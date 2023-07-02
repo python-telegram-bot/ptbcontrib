@@ -77,4 +77,4 @@ jobs:
         uses: test-summary/action@v2.1
         if: always()  # always run, even if tests fail
         with:
-          paths: ".test_reports/test_*.xml"
+          paths: ".test-reports/*.xml"
