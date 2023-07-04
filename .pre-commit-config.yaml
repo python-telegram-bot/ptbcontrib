@@ -25,12 +25,12 @@ repos:
         #  run pylint across multiple cpu cores to speed it up-
         - --jobs=0  # See https://pylint.pycqa.org/en/latest/user_guide/run.html?#parallel-execution to know more
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.3.0
+    rev: v1.4.1
     hooks:
     -   id: mypy
         exclude: ^tests/
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.4.0
+    rev: v3.8.0
     hooks:
     -   id: pyupgrade
         args:
