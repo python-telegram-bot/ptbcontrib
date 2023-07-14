@@ -107,7 +107,9 @@ class RolesHandler(BaseHandler[Update, _CCT]):
             with bitwise operations.
     """
 
-    def __init__(self, handler: BaseHandler[Update, _CCT], roles: Role) -> None:
+    def __init__(
+        self, handler: BaseHandler[Update, _CCT], roles: Union[Role, InvertedRole]
+    ) -> None:
         self.handler = handler
         self.roles: Union[Role, InvertedRole] = roles
         super().__init__(self.handler.callback)

@@ -4,7 +4,7 @@ Provides classes and methods for granular, hierarchical user access management. 
 
 ```python
 from telegram import Update
-from telegram.ext import TypeHandler, ApplicationBuilder, MessageHandler, SomeHandler
+from telegram.ext import TypeHandler, ApplicationBuilder, MessageHandler, SomeHandler, filters
 from ptbcontrib.roles import setup_roles, RolesHandler, Role
 
 
@@ -33,7 +33,7 @@ async def post_init(application):
     if 'my_role_2' not in roles:
         roles.add_role(name='my_role_2')
     
-    roles.add_admin('authors_user_id')
+    roles.add_admin(123)
     my_role_2 = roles['my_role_2']
     my_role_1.add_child_role(my_role_2)
 
@@ -41,7 +41,7 @@ async def post_init(application):
     application.add_handler(TypeHandler(Update, add_to_my_role_2))
     
     # Only the admin can add users to my_role_1
-    application.add_handler(RolesHandler(MessageHandler(Filters.text, add_to_my_role_1), roles=roles.admins))
+    application.add_handler(RolesHandler(MessageHandler(filters.text, add_to_my_role_1), roles=roles.admins))
     
     # This will be accessible by my_role_2, my_role_1 and the admin
     application.add_handler(RolesHandler(SomeHandler(...), roles=my_role_2))
@@ -51,20 +51,13 @@ async def post_init(application):
     
     # This will be accessible by anyone except my_role_1 and my_role_2
     application.add_handler(RolesHandler(SomeHandler(...), roles=~my_role_1))
-    
-    # This will be accessible only by the admins of the group the update was sent in
-    application.add_handler(RolesHandler(SomeHandler(...), roles=roles.chat_admins))
-    
-    # This will be accessible only by the creator of the group the update was sent in
-    application.add_handler(RolesHandler(SomeHandler(...), roles=roles.chat_creator))
 
     # You can compare the roles regarding hierarchy:
-    roles.ADMINS >= roles['my_role_1']  # True
-    roles.ADMINS >= roles['my_role_2']  # True
+    roles['my_role_1'] >= roles['my_role_2']  # True
     roles['my_role_1'] < roles['my_role_2']  # False
-    roles.ADMINS >= Role(...)  # False, since neither of those is a parent of the other
+    roles['my_role_1'] >= Role(...)  # False, since neither of those is a parent of the other
 
-application = ApplicationBuilder.token('TOKEN').post_init(post_init).build()
+application = ApplicationBuilder().token('TOKEN').post_init(post_init).build()
 ```
 
 Please see the docstrings for more details.

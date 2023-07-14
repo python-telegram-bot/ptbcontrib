@@ -24,7 +24,7 @@ from copy import deepcopy
 from typing import Optional
 
 import pytest
-from telegram import Chat, Message, Update, User
+from telegram import CallbackQuery, Chat, Message, Update, User
 from telegram.ext import CallbackContext, MessageHandler, PicklePersistence, filters
 
 from ptbcontrib.roles import BOT_DATA_KEY, Role, Roles, RolesBotData, RolesHandler, setup_roles
@@ -292,6 +292,20 @@ class TestRole:
             assert (Role(1) | ~Role(2)).check_update(update)
         finally:
             role._admin.kick_member(0)
+
+    def test_non_message_update(self, update, role):
+        update.message = None
+        assert not role.check_update(update)
+
+        update.callback_query = CallbackQuery(
+            id="id",
+            from_user=User(id=0, is_bot=False, first_name="first_name"),
+            chat_instance="chat_instance",
+        )
+        assert not role.check_update(update)
+
+        role.add_member(0)
+        assert role.check_update(update)
 
     def test_pickle(self, role, parent_role):
         role.add_member([0, 1, 3])
