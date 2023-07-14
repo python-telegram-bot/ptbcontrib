@@ -54,11 +54,8 @@ class PTBStoreAdapter:
         prepped_job = APSJob.__new__(APSJob)
         prepped_job.__setstate__(job.__getstate__())
         # Get the tg_job instance in memory
+        tg_job = Job.from_aps_job(job)
         # or the one that we deserialized during _reconstitute (first arg in args)
-        if len(job.args) == 1:
-            tg_job = Job._from_aps_job(job)  # pylint: disable=W0212
-        else:
-            tg_job = job.args[0]
         # Extract relevant information from the job and
         # store it in the job's args.
         prepped_job.args = (
@@ -86,8 +83,8 @@ class PTBStoreAdapter:
         )
         job._modify(  # pylint: disable=W0212
             args=(
-                tg_job,
                 self.application,
+                tg_job,
             )
         )
         return job
