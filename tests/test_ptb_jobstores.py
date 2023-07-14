@@ -49,9 +49,9 @@ async def jq(app, request):
     jq.scheduler.add_jobstore(job_store)
     await jq.start()
     yield jq
-    await jq.stop()
     if isinstance(job_store, PTBMongoDBJobStore):
         job_store.remove_all_jobs()
+    await jq.stop()
 
 
 @pytest.fixture(scope="function")
