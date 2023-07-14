@@ -55,7 +55,6 @@ class PTBStoreAdapter:
         prepped_job.__setstate__(job.__getstate__())
         # Get the tg_job instance in memory
         tg_job = Job.from_aps_job(job)
-        # or the one that we deserialized during _reconstitute (first arg in args)
         # Extract relevant information from the job and
         # store it in the job's args.
         prepped_job.args = (
