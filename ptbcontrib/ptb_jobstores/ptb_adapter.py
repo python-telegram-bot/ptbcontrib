@@ -82,7 +82,7 @@ class PTBStoreAdapter:
         )
         job._modify(  # pylint: disable=W0212
             args=(
-                self.application,
+                self.application.job_queue,
                 tg_job,
             )
         )

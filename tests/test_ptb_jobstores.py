@@ -23,7 +23,7 @@ import platform
 
 import apscheduler.triggers.interval
 import pytest
-from telegram.ext import CallbackContext, JobQueue
+from telegram.ext import ApplicationBuilder, CallbackContext, JobQueue
 
 from ptbcontrib.ptb_jobstores import PTBMongoDBJobStore, PTBSQLAlchemyJobStore  # noqa: E402
 
@@ -42,9 +42,9 @@ if os.getenv("GITHUB_ACTIONS", False):
     params=job_queue_params,
     ids=job_queue_param_ids,
 )
-async def jq(app, request):
+async def jq(request, bot):
     jq = JobQueue()
-    jq.set_application(app)
+    app = ApplicationBuilder().bot(bot).job_queue(jq).build()
     job_store = request.param[0](application=app, **request.param[1])
     jq.scheduler.add_jobstore(job_store)
     await jq.start()
@@ -85,6 +85,7 @@ class TestPTBJobstore:
         aps_job = jobstore.lookup_job(initial_job.id)
         assert aps_job == initial_job.job
         assert aps_job.name == initial_job.job.name
+        assert aps_job.args[0] is jq
         assert aps_job.args[1].callback is initial_job.callback is dummy_job
 
     def test_non_existent_job(self, jobstore):
