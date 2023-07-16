@@ -103,22 +103,25 @@ class RolesHandler(BaseHandler[Update, _CCT]):
 
     Args:
         handler (:class:`telegram.ext.BaseHandler`): The handler to wrap.
-        roles (:class:`ptbcontrib.roles.Roles`): The roles to apply to the handler. Can be combined
-            with bitwise operations.
+        roles (:class:`ptbcontrib.roles.Roles`| :obj:`None`): The roles to apply to the handler.
+            Can be combined with bitwise operations. :obj:`None` is accepted as input, in which
+            case no roles restrictions will be applied. This can be useful if you want to have
+            ``context.roles`` available without restricting access.
+
     """
 
     def __init__(
-        self, handler: BaseHandler[Update, _CCT], roles: Union[Role, InvertedRole]
+        self, handler: BaseHandler[Update, _CCT], roles: Union[Role, InvertedRole, None]
     ) -> None:
         self.handler = handler
-        self.roles: Union[Role, InvertedRole] = roles
+        self.roles: Union[Role, InvertedRole, None] = roles
         super().__init__(self.handler.callback)
 
     def check_update(self, update: object) -> Any:
         """Checks if the update should be handled."""
         if not isinstance(update, Update):
             return False
-        if self.roles.check_update(update):
+        if self.roles is None or self.roles.check_update(update):
             return self.handler.check_update(update)
         return False
 

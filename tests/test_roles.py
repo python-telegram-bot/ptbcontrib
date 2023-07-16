@@ -541,6 +541,32 @@ class TestRolesHandler:
         assert self.test_flag
 
     @pytest.mark.parametrize("roles_bot_data", [True, False])
+    async def test_callback_and_context_no_roles(self, app, update, roles_bot_data):
+        if roles_bot_data:
+            app.bot_data = RolesData()
+        self.roles = setup_roles(app)
+        self.roles.admins.add_member(42)
+        self.roles.add_role(name="role", chat_ids=[1])
+        self.test_flag = False
+
+        def callback(_, context: CallbackContext):
+            self.test_flag = context.roles is self.roles
+
+        handler = MessageHandler(filters.ALL, callback=callback)
+        roles_handler = RolesHandler(handler, roles=None)
+
+        assert roles_handler.check_update(update)
+        update.message.from_user.id = 1
+        assert roles_handler.check_update(update)
+        update.message.from_user.id = 42
+        assert roles_handler.check_update(update)
+
+        app.add_handler(roles_handler)
+        async with app:
+            await app.process_update(update)
+        assert self.test_flag
+
+    @pytest.mark.parametrize("roles_bot_data", [True, False])
     async def test_handler_error_message(self, app, update, roles_bot_data):
         if roles_bot_data:
             app.bot_data = RolesData()
