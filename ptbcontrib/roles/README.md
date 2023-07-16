@@ -41,7 +41,7 @@ async def post_init(application):
     application.add_handler(TypeHandler(Update, add_to_my_role_2))
     
     # Only the admin can add users to my_role_1
-    application.add_handler(RolesHandler(MessageHandler(filters.text, add_to_my_role_1), roles=roles.admins))
+    application.add_handler(RolesHandler(MessageHandler(filters.TEXT, add_to_my_role_1), roles=roles.admins))
     
     # This will be accessible by my_role_2, my_role_1 and the admin
     application.add_handler(RolesHandler(SomeHandler(...), roles=my_role_2))
@@ -55,7 +55,7 @@ async def post_init(application):
     # You can compare the roles regarding hierarchy:
     roles['my_role_1'] >= roles['my_role_2']  # True
     roles['my_role_1'] < roles['my_role_2']  # False
-    roles['my_role_1'] >= Role(...)  # False, since neither of those is a parent of the other
+    roles.admins >= Role(...)  # False, since neither of those is a parent of the other
 
 application = ApplicationBuilder().token('TOKEN').post_init(post_init).build()
 ```
