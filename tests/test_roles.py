@@ -24,7 +24,7 @@ from copy import deepcopy
 from typing import Optional
 
 import pytest
-from telegram import Chat, Message, Update, User
+from telegram import CallbackQuery, Chat, Message, Update, User
 from telegram.ext import CallbackContext, MessageHandler, PicklePersistence, filters
 
 from ptbcontrib.roles import BOT_DATA_KEY, Role, Roles, RolesBotData, RolesHandler, setup_roles
@@ -293,6 +293,20 @@ class TestRole:
         finally:
             role._admin.kick_member(0)
 
+    def test_non_message_update(self, update, role):
+        update.message = None
+        assert not role.check_update(update)
+
+        update.callback_query = CallbackQuery(
+            id="id",
+            from_user=User(id=0, is_bot=False, first_name="first_name"),
+            chat_instance="chat_instance",
+        )
+        assert not role.check_update(update)
+
+        role.add_member(0)
+        assert role.check_update(update)
+
     def test_pickle(self, role, parent_role):
         role.add_member([0, 1, 3])
         parent_role.add_member([4, 5, 6])
@@ -516,6 +530,32 @@ class TestRolesHandler:
         roles_handler = RolesHandler(handler, roles=self.roles["role"])
 
         assert not roles_handler.check_update(update)
+        update.message.from_user.id = 1
+        assert roles_handler.check_update(update)
+        update.message.from_user.id = 42
+        assert roles_handler.check_update(update)
+
+        app.add_handler(roles_handler)
+        async with app:
+            await app.process_update(update)
+        assert self.test_flag
+
+    @pytest.mark.parametrize("roles_bot_data", [True, False])
+    async def test_callback_and_context_no_roles(self, app, update, roles_bot_data):
+        if roles_bot_data:
+            app.bot_data = RolesData()
+        self.roles = setup_roles(app)
+        self.roles.admins.add_member(42)
+        self.roles.add_role(name="role", chat_ids=[1])
+        self.test_flag = False
+
+        def callback(_, context: CallbackContext):
+            self.test_flag = context.roles is self.roles
+
+        handler = MessageHandler(filters.ALL, callback=callback)
+        roles_handler = RolesHandler(handler, roles=None)
+
+        assert roles_handler.check_update(update)
         update.message.from_user.id = 1
         assert roles_handler.check_update(update)
         update.message.from_user.id = 42
