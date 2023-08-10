@@ -396,6 +396,13 @@ class InvertedRole(UpdateFilter):
         super().__init__(name=f"<inverted {role}>", data_filter=False)
         self.role = role
 
+    def check_update(self, update: Update) -> bool:
+        """Check if the update is allowed by this role. This is just an alias for
+        :meth:`filter`.
+        """
+        # Override UpdateFilter.check_update to handle also updates that are not messages
+        return self.filter(update)
+
     def filter(self, update: Update) -> bool:
         """Checks if the update should be handled."""
         return self.role.filter(update, inverted=True)
