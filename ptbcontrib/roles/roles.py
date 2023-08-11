@@ -27,6 +27,8 @@ from telegram.ext.filters import UpdateFilter
 _REPLACED_LOCK: str = "ptbcontrib_roles_replaced_lock"
 
 
+# We only inherit from UpdateFilter to get the nice syntax of the bitwise operators.
+# If not for that, we could do without inheritance.
 class Role(UpdateFilter):
     """This class represents a security level used by :class:`telegram.ext.Roles`. Roles have a
     hierarchy, i.e. a role can do everthing, its child roles can do. To compare two roles you may
@@ -132,6 +134,13 @@ class Role(UpdateFilter):
             self.__init_admin()
             self._admin_event.wait()
             self._admin.add_child_role(self)
+
+    def check_update(self, update: Update) -> bool:
+        """Check if the update is allowed by this role. This is just an alias for
+        :meth:`filter`.
+        """
+        # Override UpdateFilter.check_update to handle also updates that are not messages
+        return self.filter(update)
 
     @staticmethod
     def _parse_chat_id(chat_id: Union[int, List[int], Tuple[int, ...], None]) -> Set[int]:
@@ -387,6 +396,13 @@ class InvertedRole(UpdateFilter):
         super().__init__(name=f"<inverted {role}>", data_filter=False)
         self.role = role
 
+    def check_update(self, update: Update) -> bool:
+        """Check if the update is allowed by this role. This is just an alias for
+        :meth:`filter`.
+        """
+        # Override UpdateFilter.check_update to handle also updates that are not messages
+        return self.filter(update)
+
     def filter(self, update: Update) -> bool:
         """Checks if the update should be handled."""
         return self.role.filter(update, inverted=True)
@@ -421,8 +437,7 @@ class Roles(Mapping):
 
     def set_bot(self, bot: Bot) -> None:
         """If for some reason you can't pass the bot on initialization, you can set it with this
-        method. Make sure to set the bot before the first call of :attr:`chat_admins` or
-        :attr:`chat_creator`.
+        method.
 
         Args:
             bot (:class:`telegram.Bot`): The bot to set.
