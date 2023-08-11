@@ -28,7 +28,7 @@ class TestUsernameToChatAPI:
         wrapper = UsernameToChatAPI("URL", "key", bot)
         monkeypatch.setattr(wrapper._client, "get", get)
         chat = await wrapper.resolve("username")
-        assert type(chat) == Chat
+        assert type(chat) is Chat
         assert chat.id == 123
         assert chat.type == Chat.PRIVATE
         assert chat.username == "username"
@@ -57,7 +57,7 @@ class TestUsernameToChatAPI:
         wrapper = UsernameToChatAPI("URL", "key", bot, test_client)
         monkeypatch.setattr(wrapper._client, "get", get)
         chat = await wrapper.resolve("username")
-        assert type(chat) == Chat
+        assert type(chat) is Chat
         assert chat.id == 123
         assert chat.type == Chat.CHANNEL
         assert chat.username == "username"
