@@ -296,6 +296,7 @@ class TestRole:
     def test_non_message_update(self, update, role):
         update.message = None
         assert not role.check_update(update)
+        assert not (~role).check_update(update)
 
         update.callback_query = CallbackQuery(
             id="id",
@@ -303,9 +304,11 @@ class TestRole:
             chat_instance="chat_instance",
         )
         assert not role.check_update(update)
+        assert (~role).check_update(update)
 
         role.add_member(0)
         assert role.check_update(update)
+        assert not (~role).check_update(update)
 
     def test_pickle(self, role, parent_role):
         role.add_member([0, 1, 3])
