@@ -20,7 +20,7 @@
 from apscheduler.job import Job as APSJob
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 
-from ..ptb_adapter import PTBStoreAdapter
+from .. import PTBStoreAdapter
 
 
 class PTBMongoDBJobStore(PTBStoreAdapter, MongoDBJobStore):

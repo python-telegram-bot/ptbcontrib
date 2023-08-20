@@ -24,7 +24,7 @@ from apscheduler.job import Job as APSJob
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from telegram.ext import Application
 
-from ..ptb_adapter import PTBStoreAdapter
+from .. import PTBStoreAdapter
 
 logger = logging.getLogger(__name__)
 
