@@ -2,17 +2,20 @@
 """The setup and build script for the ptbcontrib library."""
 
 import codecs
-import os
-from typing import Dict, List
+import re
+from pathlib import Path
+from typing import Dict, List, Union
 
 from setuptools import find_packages, setup
 
+_SUB_REQ_PATTERN = re.compile(r"requirements_(\w+).txt")
 
-def requirements(filename: str = "requirements.txt") -> List[str]:
+
+def requirements(filename: Union[str, Path] = "requirements.txt") -> List[str]:
     """Build the requirements list for this project"""
     requirements_list = []
 
-    with open(filename, encoding="UTF-8") as file:
+    with Path(filename).open(encoding="UTF-8") as file:
         for install in file:
             requirements_list.append(install.strip())
 
@@ -23,18 +26,16 @@ def requirements_extra() -> Dict[str, List[str]]:
     """Build the extra requirements list for each contribution"""
     extra_requirements: Dict[str, List[str]] = {}
 
-    for extension in os.walk("ptbcontrib"):
-        if extension[0].endswith("__"):
-            continue
-
-        module = os.path.basename(extension[0])
-
-        if "requirements.txt" in extension[2]:
-            extra_requirements[module] = requirements(
-                os.path.join(extension[0], "requirements.txt")
-            )
+    for file in Path("ptbcontrib").glob("*/requirements*.txt"):
+        module = file.parent.name
+        if file.name == "requirements.txt":
+            extra_requirements[module] = requirements(file.absolute())
         else:
-            extra_requirements[module] = []
+            match = _SUB_REQ_PATTERN.match(file.name)
+            if match:
+                extra_requirements[f"{module}_{match.group(1)}"] = requirements(file.absolute())
+            else:
+                extra_requirements[module] = []
 
     return extra_requirements
 
