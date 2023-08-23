@@ -13,7 +13,7 @@ The provided adapter erases all problematic fields and changes `telegram.ext.Job
 ### Usage
 ```python
 from telegram.ext import Application
-from ptbcontrib.ptb_mongodb_jobstore import PTBMongoDBJobStore
+from ptbcontrib.ptb_jobstores.mongodb import PTBMongoDBJobStore
 
 DB_URI = "mongodb://botuser:botpassword@localhost:27017/admin?retryWrites=true&w=majority"
 
@@ -35,11 +35,23 @@ use `job_kwargs` parameter that accepts arbitrary arguments as a dictionary and 
 For more information please have a look at APS scheduler's documentation about adding jobs by clicking [here](https://apscheduler.readthedocs.io/en/stable/userguide.html#adding-jobs).
 
 ## Requirements
+Main requirement includes:
 
 *   `python-telegram-bot[job-queue]~=20.0`
+
+
+For each Python ORM, you need to install the corresponding package:
+
+If you are using PyMongo:
 *   `pymongo>=4.1,<5`
+
+And use requirements_mongodb.txt.
+
+
+Or, if you are using SQLAlchemy:
 *   `SQLAlchemy==1.4.46`
 
+And use requirements_sqlalchemy.txt.
 ## Authors
 
 *   [Niko Bolg](https://github.com/nkbolg)
