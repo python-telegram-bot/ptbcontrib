@@ -48,8 +48,8 @@ And use `requirements_mongodb.txt`.
 
 To install this extension separately, use:
 
-```bash
-$ pip install "ptbcontrib[ptb_jobstores_mongodb] @ git+https://github.com/python-telegram-bot/ptbcontrib.git@main"
+```shell
+pip install "ptbcontrib[ptb_jobstores_mongodb] @ git+https://github.com/python-telegram-bot/ptbcontrib.git@main"
 ```
 
 Or, if you are using SQLAlchemy:
@@ -59,8 +59,8 @@ And use `requirements_sqlalchemy.txt`.
 
 To install this extension separately, use:
 
-```bash
-$ pip install "ptbcontrib[ptb_jobstores_sqlalchemy] @ git+https://github.com/python-telegram-bot/ptbcontrib.git@main"
+```shell
+pip install "ptbcontrib[ptb_jobstores_sqlalchemy] @ git+https://github.com/python-telegram-bot/ptbcontrib.git@main"
 ```
 ## Authors
 
