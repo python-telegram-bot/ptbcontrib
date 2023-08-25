@@ -39,19 +39,25 @@ Main requirement includes:
 
 *   `python-telegram-bot[job-queue]~=20.0`
 
-
 For each Python ORM, you need to install the corresponding package:
 
 If you are using PyMongo:
 *   `pymongo>=4.1,<5`
 
-And use requirements_mongodb.txt.
+And use `requirements_mongodb.txt`.
 
+To install this extension separately, use:
+
+    $ pip install "ptbcontrib[ptb_jobstores_mongodb] @ git+https://github.com/python-telegram-bot/ptbcontrib.git@main"
 
 Or, if you are using SQLAlchemy:
 *   `SQLAlchemy==1.4.46`
 
-And use requirements_sqlalchemy.txt.
+And use `requirements_sqlalchemy.txt`.
+
+To install this extension separately, use:
+
+    $ pip install "ptbcontrib[ptb_jobstores_sqlalchemy] @ git+https://github.com/python-telegram-bot/ptbcontrib.git@main"
 ## Authors
 
 *   [Niko Bolg](https://github.com/nkbolg)
