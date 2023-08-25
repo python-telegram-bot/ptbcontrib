@@ -9,15 +9,24 @@ from typing import Dict, List, Union
 from setuptools import find_packages, setup
 
 _SUB_REQ_PATTERN = re.compile(r"requirements_(\w+).txt")
+_REC_REQ_PATTERN = re.compile(r"-r\s+(\S+)")
 
 
 def requirements(filename: Union[str, Path] = "requirements.txt") -> List[str]:
     """Build the requirements list for this project"""
     requirements_list = []
+    file_path = Path(filename)
 
-    with Path(filename).open(encoding="UTF-8") as file:
+    with file_path.open(encoding="UTF-8") as file:
         for install in file:
-            requirements_list.append(install.strip())
+            match = _REC_REQ_PATTERN.match(install)
+            if match:
+                # In case there is a line like '-r requirements_other.txt'
+                referenced_path = file_path.parent / match.group(1)
+                print(referenced_path)
+                requirements_list.extend(requirements(referenced_path))
+            else:
+                requirements_list.append(install.strip())
 
     return requirements_list
 
