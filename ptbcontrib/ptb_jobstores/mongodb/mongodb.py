@@ -16,42 +16,17 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This file contains PTBSQLAlchemyJobStore."""
-import logging
-from typing import Any
-
+"""This file contains PTBMongoDBJobStore."""
 from apscheduler.job import Job as APSJob
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from telegram.ext import Application
+from apscheduler.jobstores.mongodb import MongoDBJobStore
 
-from .ptb_adapter import PTBStoreAdapter
-
-logger = logging.getLogger(__name__)
+from .. import PTBStoreAdapter
 
 
-class PTBSQLAlchemyJobStore(PTBStoreAdapter, SQLAlchemyJobStore):
+class PTBMongoDBJobStore(PTBStoreAdapter, MongoDBJobStore):
     """
-    Wraps apscheduler.SQLAlchemyJobStore to make :class:`telegram.ext.Job` class storable.
+    Wraps apscheduler.MongoDBJobStore to make :class:`telegram.ext.Job` class storable.
     """
-
-    def __init__(self, application: Application, **kwargs: Any) -> None:
-        """
-        Args:
-            application (:class:`telegram.ext.Application`): Application instance
-                that will be passed to CallbackContext when recreating jobs.
-            **kwargs (:obj:`dict`): Arbitrary keyword Arguments to be passed to
-                the SQLAlchemyJobStore constructor.
-        """
-
-        if "url" in kwargs and kwargs["url"].startswith("sqlite:///"):
-            logger.warning(
-                "Use of SQLite db is not supported  due to "
-                "multi-threading limitations of SQLite databases "
-                "You can still try to use it, but it will likely "
-                "behave differently from what you expect."
-            )
-
-        super().__init__(application, **kwargs)
 
     def add_job(self, job: APSJob) -> None:
         """

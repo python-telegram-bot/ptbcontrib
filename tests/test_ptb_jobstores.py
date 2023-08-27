@@ -25,7 +25,8 @@ import apscheduler.triggers.interval
 import pytest
 from telegram.ext import ApplicationBuilder, CallbackContext, JobQueue
 
-from ptbcontrib.ptb_jobstores import PTBMongoDBJobStore, PTBSQLAlchemyJobStore  # noqa: E402
+from ptbcontrib.ptb_jobstores.mongodb import PTBMongoDBJobStore  # noqa: E402
+from ptbcontrib.ptb_jobstores.sqlalchemy import PTBSQLAlchemyJobStore  # noqa: E402
 
 job_queue_params = [(PTBSQLAlchemyJobStore, {"url": "sqlite:///:memory:"})]
 job_queue_param_ids = ["SQLAlchemyJobStore"]

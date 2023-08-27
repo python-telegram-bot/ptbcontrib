@@ -2,19 +2,31 @@
 """The setup and build script for the ptbcontrib library."""
 
 import codecs
-import os
-from typing import Dict, List
+import re
+from pathlib import Path
+from typing import Dict, List, Union
 
 from setuptools import find_packages, setup
 
+_SUB_REQ_PATTERN = re.compile(r"requirements_(\w+).txt")
+_REC_REQ_PATTERN = re.compile(r"-r\s+(\S+)")
 
-def requirements(filename: str = "requirements.txt") -> List[str]:
+
+def requirements(filename: Union[str, Path] = "requirements.txt") -> List[str]:
     """Build the requirements list for this project"""
     requirements_list = []
+    file_path = Path(filename)
 
-    with open(filename, encoding="UTF-8") as file:
+    with file_path.open(encoding="UTF-8") as file:
         for install in file:
-            requirements_list.append(install.strip())
+            match = _REC_REQ_PATTERN.match(install)
+            if match:
+                # In case there is a line like '-r requirements_other.txt'
+                referenced_path = file_path.parent / match.group(1)
+                print(referenced_path)
+                requirements_list.extend(requirements(referenced_path))
+            else:
+                requirements_list.append(install.strip())
 
     return requirements_list
 
@@ -23,18 +35,16 @@ def requirements_extra() -> Dict[str, List[str]]:
     """Build the extra requirements list for each contribution"""
     extra_requirements: Dict[str, List[str]] = {}
 
-    for extension in os.walk("ptbcontrib"):
-        if extension[0].endswith("__"):
-            continue
-
-        module = os.path.basename(extension[0])
-
-        if "requirements.txt" in extension[2]:
-            extra_requirements[module] = requirements(
-                os.path.join(extension[0], "requirements.txt")
-            )
+    for file in Path("ptbcontrib").glob("*/requirements*.txt"):
+        module = file.parent.name
+        if file.name == "requirements.txt":
+            extra_requirements[module] = requirements(file.absolute())
         else:
-            extra_requirements[module] = []
+            match = _SUB_REQ_PATTERN.match(file.name)
+            if match:
+                extra_requirements[f"{module}_{match.group(1)}"] = requirements(file.absolute())
+            else:
+                extra_requirements[module] = []
 
     return extra_requirements
 
