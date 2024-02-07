@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: disable=duplicate-code
 #
 # A library containing community-based extension for the python-telegram-bot library
 # Copyright (C) 2020-2024
