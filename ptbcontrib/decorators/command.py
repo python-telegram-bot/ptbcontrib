@@ -68,7 +68,7 @@ class TelegramHandler:
             @param filters:
             @param command:
         """
-        if filters and allow_edit:
+        if allow_edit:
             filters = filters
         elif filters:
             filters = filters & ~filters_module.UpdateType.EDITED_MESSAGE
