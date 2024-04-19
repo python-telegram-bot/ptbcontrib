@@ -16,9 +16,9 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+"""This modules contains TelegramHandler"""
 
-
-from typing import List, Optional, Pattern, Union, Any, Callable
+from typing import Any, Callable, List, Optional, Pattern, Union
 
 from telegram.ext import Application, CallbackQueryHandler, ChatMemberHandler, InlineQueryHandler
 from telegram.ext import filters as filters_module
@@ -30,7 +30,7 @@ from .handlers import NewMessageHandler as MessageHandler
 
 class TelegramHandler:
     """
-    A class that provides decorators for registering command, message, callback query, inline query and chat member update handlers.
+    A class that provides decorators for registering handlers.
     """
 
     def __init__(self, application: Application) -> None:
@@ -111,8 +111,7 @@ class TelegramHandler:
         return _message
 
     def callback_query(
-        self, pattern: str = None,
-        block: Optional[bool] = True
+        self, pattern: str = None, block: Optional[bool] = True
     ) -> Callable[[Any], None]:
         """
         Decorator for registering a callback query handler with the Telegram Bot API.
@@ -150,10 +149,7 @@ class TelegramHandler:
         def _inline_query(func) -> None:
             self.app.add_handler(
                 InlineQueryHandler(
-                    callback=func,
-                    pattern=pattern,
-                    block=block,
-                    chat_types=chat_types
+                    callback=func, pattern=pattern, block=block, chat_types=chat_types
                 )
             )
             return func

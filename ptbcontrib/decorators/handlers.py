@@ -16,13 +16,13 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+"""This modules contains NewCommandHandler & NewMessageHandler"""
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import telegram.ext as tg
 from telegram import Update
 from telegram.ext import filters as filters_module
-
 
 FilterDataDict = Dict[str, List[Any]]
 
