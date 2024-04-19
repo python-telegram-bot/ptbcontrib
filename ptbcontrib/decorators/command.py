@@ -20,12 +20,7 @@
 
 from typing import List, Optional, Pattern, Union, Any, Callable
 
-from telegram.ext import (
-    Application,
-    CallbackQueryHandler,
-    ChatMemberHandler,
-    InlineQueryHandler
-)
+from telegram.ext import Application, CallbackQueryHandler, ChatMemberHandler, InlineQueryHandler
 from telegram.ext import filters as filters_module
 from telegram.ext.filters import BaseFilter
 
@@ -42,20 +37,20 @@ class TelegramHandler:
         self.app = application
 
     def command(
-            self,
-            command: List[str],
-            filters: Optional[filters_module.BaseFilter] = None,
-            block: Optional[bool] = True,
-            has_args: Optional[Union[bool, int]] = None,
-            group: Optional[int] = 0,
-            allow_edit: Optional[Union[bool, bool]] = False,
-            prefix: Optional[Union[str, List]] = None,
+        self,
+        command: List[str],
+        filters: Optional[filters_module.BaseFilter] = None,
+        block: Optional[bool] = True,
+        has_args: Optional[Union[bool, int]] = None,
+        group: Optional[int] = 0,
+        allow_edit: Optional[Union[bool, bool]] = False,
+        prefix: Optional[List] = None,
     ) -> Callable[[Any], None]:
         """
         Decorator for registering a command handler with the Telegram Bot API.
 
         Returns:
-            Callable: The decorated function.
+            function: Decorated command.
 
             @param command:
             @param filters:
@@ -89,17 +84,17 @@ class TelegramHandler:
         return _command
 
     def message(
-            self,
-            filters: BaseFilter | None,
-            block: Optional[bool] = True,
-            allow_edit: Optional[Union[bool, bool]] = False,
-            group: Optional[int] = 0,
+        self,
+        filters: BaseFilter | None,
+        block: Optional[bool] = True,
+        allow_edit: Optional[Union[bool, bool]] = False,
+        group: Optional[int] = 0,
     ) -> Callable[[Any], None]:
         """
         Decorator for registering a message handler with the Telegram Bot API.
 
         Returns:
-            Callable: The decorated function.
+            function: Decorated message.
             @param filters:
             @param block:
             @param allow_edit:
@@ -115,16 +110,18 @@ class TelegramHandler:
 
         return _message
 
-    def callback_query(self, pattern: str = None, block: Optional[bool] = True) -> Callable[[Any], None]:
+    def callback_query(
+        self, pattern: str = None,
+        block: Optional[bool] = True
+    ) -> Callable[[Any], None]:
         """
         Decorator for registering a callback query handler with the Telegram Bot API.
 
         Returns:
-            Callable: The decorated function.
+            function: Decorated callback query.
 
             @param pattern:
             @param block:
-            @return:
         """
 
         def _callback_query(func) -> None:
@@ -134,39 +131,45 @@ class TelegramHandler:
         return _callback_query
 
     def inline_query(
-            self,
-            pattern: Optional[Union[str, Pattern[str]]] = None,
-            block: Optional[bool] = True,
-            chat_types: Optional[List[str]] = None,
+        self,
+        pattern: Optional[Union[str, Pattern[str]]] = None,
+        block: Optional[bool] = True,
+        chat_types: Optional[List[str]] = None,
     ) -> Callable[[Any], None]:
         """
         Decorator for registering an inline query handler with the Telegram Bot API.
 
         Returns:
-            Callable: The decorated function.
+            function: Decorated inline query.
 
             @param pattern:
             @param block:
             @param chat_types:
-            @return:
         """
 
         def _inline_query(func) -> None:
-            self.app.add_handler(InlineQueryHandler(callback=func, pattern=pattern, block=block, chat_types=chat_types))
+            self.app.add_handler(
+                InlineQueryHandler(
+                    callback=func,
+                    pattern=pattern,
+                    block=block,
+                    chat_types=chat_types
+                )
+            )
             return func
 
         return _inline_query
 
     def chat_member(
-            self,
-            chat_member_types: int = -1,
-            block: Optional[bool] = True,
-            group: Optional[int] = 0,
+        self,
+        chat_member_types: int = -1,
+        block: Optional[bool] = True,
+        group: Optional[int] = 0,
     ) -> Callable[[Any], None]:
         """Decorator for handle Telegram updates that contain a chat member update.
 
         Returns:
-            Callable: The decorated function.
+            function: Decorated chat member.
 
             @param chat_member_types:
             @param block:

@@ -29,16 +29,27 @@ FilterDataDict = Dict[str, List[Any]]
 
 class NewCommandHandler(tg.CommandHandler):
     def __init__(
-            self,
-            command: Union[str, list],
-            callback,
-            prefix: Optional[List] = None,
-            **kwargs,
+        self,
+        command: Union[str, list],
+        callback,
+        prefix: Optional[List] = None,
+        **kwargs,
     ) -> None:
+        """
+        :param command: command name or list of commands
+        :param callback: callback function
+        :param prefix: command prefix
+        :param kwargs: keyword arguments
+        Args:
+            command:
+            callback:
+            prefix:
+            **kwargs:
+        """
         if prefix is None:
             prefix = ["/", "!"]
         super().__init__(command, callback, **kwargs)
-        self.PREFIX = prefix
+        self.prefix = prefix
 
         if isinstance(command, str):
             frozenset({command.lower()})
@@ -46,7 +57,7 @@ class NewCommandHandler(tg.CommandHandler):
             frozenset(x.lower() for x in command)
 
     def check_update(
-            self, update: object
+        self, update: object
     ) -> Optional[Union[bool, Tuple[List[str], Optional[Union[bool, FilterDataDict]]]]]:
 
         if isinstance(update, Update) and update.effective_message:
@@ -54,7 +65,7 @@ class NewCommandHandler(tg.CommandHandler):
 
             if message.text and len(message.text) > 1:
                 fst_word = message.text.split(sep=None, maxsplit=1)[0]
-                if len(fst_word) > 1 and any(fst_word.startswith(start) for start in self.PREFIX):
+                if len(fst_word) > 1 and any(fst_word.startswith(start) for start in self.prefix):
                     args = message.text.split()[1:]
                     command_parts = fst_word[1:].split("@")
                     command_parts.append(message.get_bot().username)
@@ -76,15 +87,26 @@ class NewCommandHandler(tg.CommandHandler):
 
 class NewMessageHandler(tg.MessageHandler):
     def __init__(
-            self,
-            filters,
-            callback,
-            block: Optional[bool] = True,
-            allow_edit=False,
+        self,
+        filters,
+        callback,
+        block: Optional[bool] = True,
+        allow_edit=False,
     ) -> None:
+        """
+        :param filters:
+        :param callback:
+        :param block:
+        :param allow_edit:
+        Args:
+            filters:
+            callback:
+            block:
+            allow_edit:
+        """
         super().__init__(filters, callback, block=block)
         if allow_edit is False:
             self.filters &= ~(
-                    filters_module.UpdateType.EDITED_MESSAGE
-                    | filters_module.UpdateType.EDITED_CHANNEL_POST
+                filters_module.UpdateType.EDITED_MESSAGE
+                | filters_module.UpdateType.EDITED_CHANNEL_POST
             )
