@@ -18,21 +18,19 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 
 
-from typing import List, Optional, Pattern, Union
+from typing import List, Optional, Pattern, Union, Any, Callable
 
-from telegram._utils.defaultvalue import DEFAULT_TRUE
-from telegram._utils.types import DVType
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
     ChatMemberHandler,
-    InlineQueryHandler,
+    InlineQueryHandler
 )
 from telegram.ext import filters as filters_module
 from telegram.ext.filters import BaseFilter
 
-from .handlers import CustomCommandHandler as CommandHandler
-from .handlers import CustomMessageHandler as MessageHandler
+from .handlers import NewCommandHandler as CommandHandler
+from .handlers import NewMessageHandler as MessageHandler
 
 
 class TelegramHandler:
@@ -40,19 +38,19 @@ class TelegramHandler:
     A class that provides decorators for registering command, message, callback query, inline query and chat member update handlers.
     """
 
-    def __init__(self, application: Application):
+    def __init__(self, application: Application) -> None:
         self.app = application
 
     def command(
-        self,
-        command: str,
-        filters: Optional[filters_module.BaseFilter] = None,
-        block: DVType[bool] = DEFAULT_TRUE,
-        has_args: Optional[Union[bool, int]] = None,
-        group: Optional[int] = 0,
-        allow_edit: Optional[Union[bool, bool]] = False,
-        prefix: Optional[list] = ("/", "!"),
-    ):
+            self,
+            command: List[str],
+            filters: Optional[filters_module.BaseFilter] = None,
+            block: Optional[bool] = True,
+            has_args: Optional[Union[bool, int]] = None,
+            group: Optional[int] = 0,
+            allow_edit: Optional[Union[bool, bool]] = False,
+            prefix: Optional[Union[str, List]] = None,
+    ) -> Callable[[Any], None]:
         """
         Decorator for registering a command handler with the Telegram Bot API.
 
@@ -60,13 +58,12 @@ class TelegramHandler:
             Callable: The decorated function.
 
             @param command:
-            @param prefix:
-            @param allow_edit:
-            @param group:
-            @param has_args:
-            @param block:
             @param filters:
-            @param command:
+            @param block:
+            @param has_args:
+            @param group:
+            @param allow_edit:
+            @param prefix:
         """
         if allow_edit:
             filters = filters
@@ -75,8 +72,7 @@ class TelegramHandler:
         else:
             filters = ~filters_module.UpdateType.EDITED_MESSAGE
 
-        def _command(func):
-
+        def _command(func) -> None:
             self.app.add_handler(
                 CommandHandler(
                     command,
@@ -93,12 +89,12 @@ class TelegramHandler:
         return _command
 
     def message(
-        self,
-        filters: BaseFilter | None,
-        block: DVType[bool] = DEFAULT_TRUE,
-        allow_edit: Optional[Union[bool, bool]] = False,
-        group: Optional[int] = 0,
-    ):
+            self,
+            filters: BaseFilter | None,
+            block: Optional[bool] = True,
+            allow_edit: Optional[Union[bool, bool]] = False,
+            group: Optional[int] = 0,
+    ) -> Callable[[Any], None]:
         """
         Decorator for registering a message handler with the Telegram Bot API.
 
@@ -110,18 +106,16 @@ class TelegramHandler:
             @param group:
         """
 
-        def _message(func):
+        def _message(func) -> None:
             self.app.add_handler(
-                MessageHandler(
-                    filters=filters, callback=func, block=block, allow_edit=allow_edit
-                ),
+                MessageHandler(filters=filters, callback=func, block=block, allow_edit=allow_edit),
                 group,
             )
             return func
 
         return _message
 
-    def callback_query(self, pattern: str = None, block: DVType[bool] = DEFAULT_TRUE):
+    def callback_query(self, pattern: str = None, block: Optional[bool] = True) -> Callable[[Any], None]:
         """
         Decorator for registering a callback query handler with the Telegram Bot API.
 
@@ -133,20 +127,18 @@ class TelegramHandler:
             @return:
         """
 
-        def _callback_query(func):
-            self.app.add_handler(
-                CallbackQueryHandler(callback=func, pattern=pattern, block=block)
-            )
+        def _callback_query(func) -> None:
+            self.app.add_handler(CallbackQueryHandler(callback=func, pattern=pattern, block=block))
             return func
 
         return _callback_query
 
     def inline_query(
-        self,
-        pattern: Optional[Union[str, Pattern[str]]] = None,
-        block: DVType[bool] = DEFAULT_TRUE,
-        chat_types: Optional[List[str]] = None,
-    ):
+            self,
+            pattern: Optional[Union[str, Pattern[str]]] = None,
+            block: Optional[bool] = True,
+            chat_types: Optional[List[str]] = None,
+    ) -> Callable[[Any], None]:
         """
         Decorator for registering an inline query handler with the Telegram Bot API.
 
@@ -159,22 +151,18 @@ class TelegramHandler:
             @return:
         """
 
-        def _inline_query(func):
-            self.app.add_handler(
-                InlineQueryHandler(
-                    callback=func, pattern=pattern, block=block, chat_types=chat_types
-                )
-            )
+        def _inline_query(func) -> None:
+            self.app.add_handler(InlineQueryHandler(callback=func, pattern=pattern, block=block, chat_types=chat_types))
             return func
 
         return _inline_query
 
     def chat_member(
-        self,
-        chat_member_types: int = -1,
-        block: DVType[bool] = DEFAULT_TRUE,
-        group: Optional[int] = 0,
-    ):
+            self,
+            chat_member_types: int = -1,
+            block: Optional[bool] = True,
+            group: Optional[int] = 0,
+    ) -> Callable[[Any], None]:
         """Decorator for handle Telegram updates that contain a chat member update.
 
         Returns:
@@ -185,10 +173,8 @@ class TelegramHandler:
             @param group:
         """
 
-        def _chatMemberUpdate(func):
-            self.app.add_handler(
-                ChatMemberHandler(func, chat_member_types, block), group
-            )
+        def _chat_member(func) -> None:
+            self.app.add_handler(ChatMemberHandler(func, chat_member_types, block), group)
             return func
 
-        return _chatMemberUpdate
+        return _chat_member

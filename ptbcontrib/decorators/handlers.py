@@ -21,20 +21,20 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import telegram.ext as tg
 from telegram import Update
-from telegram._utils.defaultvalue import DEFAULT_TRUE
-from telegram._utils.types import DVType
 from telegram.ext import filters as filters_module
-from telegram.ext._utils.types import FilterDataDict
 
 
-class CustomCommandHandler(tg.CommandHandler):
+FilterDataDict = Dict[str, List[Any]]
+
+
+class NewCommandHandler(tg.CommandHandler):
     def __init__(
-        self,
-        command: Union[str, list],
-        callback,
-        prefix: Optional[List] = None,
-        **kwargs,
-    ):
+            self,
+            command: Union[str, list],
+            callback,
+            prefix: Optional[List] = None,
+            **kwargs,
+    ) -> None:
         if prefix is None:
             prefix = ["/", "!"]
         super().__init__(command, callback, **kwargs)
@@ -46,25 +46,22 @@ class CustomCommandHandler(tg.CommandHandler):
             frozenset(x.lower() for x in command)
 
     def check_update(
-        self, update: object
+            self, update: object
     ) -> Optional[Union[bool, Tuple[List[str], Optional[Union[bool, FilterDataDict]]]]]:
 
         if isinstance(update, Update) and update.effective_message:
             message = update.effective_message
 
             if message.text and len(message.text) > 1:
-                fst_word = message.text.split(None, 1)[0]
-                if len(fst_word) > 1 and any(
-                    fst_word.startswith(start) for start in self.PREFIX
-                ):
+                fst_word = message.text.split(sep=None, maxsplit=1)[0]
+                if len(fst_word) > 1 and any(fst_word.startswith(start) for start in self.PREFIX):
                     args = message.text.split()[1:]
                     command_parts = fst_word[1:].split("@")
                     command_parts.append(message.get_bot().username)
 
                     if (
                         command_parts[0].lower() not in self.commands
-                        or command_parts[1].lower()
-                        != message.get_bot().username.lower()
+                        or command_parts[1].lower() != message.get_bot().username.lower()
                     ):
                         return None
 
@@ -77,29 +74,17 @@ class CustomCommandHandler(tg.CommandHandler):
         return None
 
 
-class CustomMessageHandler(tg.MessageHandler):
+class NewMessageHandler(tg.MessageHandler):
     def __init__(
-        self,
-        filters,
-        callback,
-        block: DVType[bool] = DEFAULT_TRUE,
-        allow_edit=False,
-        **kwargs,
-    ):
+            self,
+            filters,
+            callback,
+            block: Optional[bool] = True,
+            allow_edit=False,
+    ) -> None:
         super().__init__(filters, callback, block=block)
         if allow_edit is False:
             self.filters &= ~(
-                filters_module.UpdateType.EDITED_MESSAGE
-                | filters_module.UpdateType.EDITED_CHANNEL_POST
+                    filters_module.UpdateType.EDITED_MESSAGE
+                    | filters_module.UpdateType.EDITED_CHANNEL_POST
             )
-
-        def check_update(
-            self, update: object
-        ) -> Optional[Union[bool, Dict[str, List[Any]]]]:
-            if isinstance(update, Update):
-                return self.filters.check_update(update) or False
-            return None
-
-
-tg.CommandHandler = CustomCommandHandler
-tg.MessageHandler = CustomMessageHandler
