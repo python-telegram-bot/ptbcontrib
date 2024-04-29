@@ -37,8 +37,6 @@ class PostgresPersistence(DictPersistence):
     Args:
         url (:obj:`str`, Optional) the postgresql database url.
         session (:obj:`scoped_session`, Optional): sqlalchemy scoped session.
-        on_flush (:obj:`bool`, optional): if set to :obj:`True` :class:`PostgresPersistence`
-            will only update bot/chat/user data when :meth:flush is called.
         **kwargs (:obj:`dict`): Arbitrary keyword Arguments to be passed to
             the DictPersistence constructor.
 
@@ -51,7 +49,6 @@ class PostgresPersistence(DictPersistence):
         self,
         url: str = None,
         session: scoped_session = None,
-        on_flush: bool = False,
         **kwargs: Any,
     ) -> None:
         if url:
@@ -70,7 +67,6 @@ class PostgresPersistence(DictPersistence):
 
         self.logger = getLogger(__name__)
 
-        self.on_flush = on_flush
         self.__init_database()
         try:
             self.logger.info("Loading database....")
@@ -153,8 +149,7 @@ class PostgresPersistence(DictPersistence):
             new_state (:obj:`tuple` | :obj:`any`): The new state for the given key.
         """
         await super().update_conversation(name, key, new_state)
-        if not self.on_flush:
-            await self.flush()
+        await self.flush()
 
     async def update_user_data(self, user_id: int, data: Dict) -> None:
         """Will update the user_data (if changed).
@@ -163,8 +158,7 @@ class PostgresPersistence(DictPersistence):
             data (:obj:`dict`): The :attr:`telegram.ext.Dispatcher.user_data` ``[user_id]``.
         """
         await super().update_user_data(user_id, data)
-        if not self.on_flush:
-            await self.flush()
+        await self.flush()
 
     async def update_chat_data(self, chat_id: int, data: Dict) -> None:
         """Will update the chat_data (if changed).
@@ -173,8 +167,7 @@ class PostgresPersistence(DictPersistence):
             data (:obj:`dict`): The :attr:`telegram.ext.Dispatcher.chat_data` ``[chat_id]``.
         """
         await super().update_chat_data(chat_id, data)
-        if not self.on_flush:
-            await self.flush()
+        await self.flush()
 
     async def update_bot_data(self, data: Dict) -> None:
         """Will update the bot_data (if changed).
@@ -182,8 +175,7 @@ class PostgresPersistence(DictPersistence):
             data (:obj:`dict`): The :attr:`telegram.ext.Dispatcher.bot_data`.
         """
         await super().update_bot_data(data)
-        if not self.on_flush:
-            await self.flush()
+        await self.flush()
 
     async def update_callback_data(self, data: CDCData) -> None:
         """Will update the callback_data (if changed).
@@ -194,13 +186,11 @@ class PostgresPersistence(DictPersistence):
                 :class:`telegram.ext.CallbackDataCache`.
         """
         await super().update_callback_data(data)
-        if not self.on_flush:
-            await self.flush()
+        await self.flush()
 
     async def flush(self) -> None:
         """Will be called by :class:`telegram.ext.Updater` upon receiving a stop signal. Gives the
         persistence a chance to finish up saving or close a database connection gracefully.
         """
         self._update_database()
-        if not self.on_flush:
-            self.logger.info("Closing database...")
+        self.logger.info("Closing database...")
