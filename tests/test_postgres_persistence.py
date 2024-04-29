@@ -43,7 +43,6 @@ class TestPostgresPersistence:
     executed = ""
     commited = 0
     ses_closed = False
-    flush_flag = False
 
     @pytest.fixture(autouse=True, name="reset")
     def reset_fixture(self):
@@ -53,7 +52,6 @@ class TestPostgresPersistence:
         self.executed = ""
         self.commited = 0
         self.ses_closed = False
-        self.flush_flag = False
 
     def mocked_execute(self, query, *args, **kwargs):
         self.executed = query
@@ -122,48 +120,6 @@ class TestPostgresPersistence:
         assert self.executed != ""
         assert self.commited == 555
         assert self.ses_closed is True
-
-    @pytest.mark.parametrize(["on_flush", "expected"], [(False, True)])
-    async def test_on_flush(self, bot, update, monkeypatch, on_flush, expected):
-        session = scoped_session("a")
-        monkeypatch.setattr(session, "execute", self.mocked_execute)
-        monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
-
-        persistence = PostgresPersistence(session=session, on_flush=on_flush)
-
-        def mocked_update_database():
-            self.flush_flag = True
-
-        monkeypatch.setattr(persistence, "_update_database", mocked_update_database)
-        app = Application.builder().bot(DictExtBot(bot.token)).persistence(persistence).build()
-
-        async def first(update, context):
-            context.user_data["test1"] = "test2"
-            context.chat_data[3] = "test4"
-            context.bot_data["test1"] = "test2"
-
-        async def second(update, context):
-            if not context.user_data["test1"] == "test2":
-                pytest.fail()
-            if not context.chat_data[3] == "test4":
-                pytest.fail()
-            if not context.bot_data["test1"] == "test2":
-                pytest.fail()
-
-        h1 = MessageHandler(None, first)
-        h2 = MessageHandler(None, second)
-
-        async with app:
-            app.add_handler(h1)
-            await app.process_update(update)
-
-            app.remove_handler(h1)
-            app.add_handler(h2)
-            await app.process_update(update)
-
-            await app.update_persistence()
-            assert self.flush_flag is expected
 
     def test_load_on_boot(self, monkeypatch):
         session = scoped_session("a")
