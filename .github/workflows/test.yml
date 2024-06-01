@@ -29,7 +29,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Start MongoDB
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        uses: supercharge/mongodb-github-action@1.10.0
+        uses: supercharge/mongodb-github-action@1.11.0
         with:
           mongodb-version: latest
       - name: Install dependencies
