@@ -1,6 +1,6 @@
 import asyncio
+from collections.abc import Iterable
 import logging
-from typing_extensions import override
 from telegram.constants import ParseMode
 
 from telegram.ext import ExtBot
@@ -10,7 +10,7 @@ class LogForwarder(logging.Handler):
     def __init__(
         self,
         bot: ExtBot,
-        chat_ids: list[int],
+        chat_ids: Iterable[int],
         parse_mode: ParseMode = ParseMode.MARKDOWN_V2,
         log_levels: list[str] = ["WARN", "ERROR"],
     ):
@@ -29,7 +29,6 @@ class LogForwarder(logging.Handler):
         msg = "```\n" + text + "\n```"
         return msg
 
-    @override
     def emit(self, record):
         try:
             formatted = self.format(record)
