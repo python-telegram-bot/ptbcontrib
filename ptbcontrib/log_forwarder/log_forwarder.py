@@ -1,8 +1,7 @@
 import asyncio
-from collections.abc import Iterable
 import logging
+from collections.abc import Iterable
 from telegram.constants import ParseMode
-
 from telegram.ext import ExtBot
 
 
@@ -29,7 +28,7 @@ class LogForwarder(logging.Handler):
         msg = "```\n" + text + "\n```"
         return msg
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord):
         try:
             formatted = self.format(record)
             msg = self.format_tg_msg(formatted)
