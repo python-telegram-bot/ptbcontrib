@@ -23,8 +23,10 @@ class LogForwarder(logging.Handler):
 
     def format_tg_msg(self, text: str) -> str:
         """
-        Formats the log message to be sent to Telegram. Override this method to customize the message.
-        The default implementation applies the handler's formatter and puts the result in a Markdown code block.
+        Formats the log message to be sent to Telegram.
+        Override this method to customize the message.
+        The default implementation applies the handler's formatter 
+        and puts the result in a Markdown code block.
         """
 
         msg = "```\n" + text + "\n```"

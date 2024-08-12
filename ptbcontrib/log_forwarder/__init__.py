@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """
-This module contains a subclass for the `logging.Handler` that forwards specific logs to Telegram chats.
+This module contains a subclass for the `logging.Handler`
+that forwards specific logs to Telegram chats.
 """
 
 from .log_forwarder import LogForwarder

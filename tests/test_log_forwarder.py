@@ -1,6 +1,8 @@
 import logging
 from unittest.mock import MagicMock
+
 from telegram.constants import ParseMode
+
 from ptbcontrib.log_forwarder import LogForwarder
 
 
