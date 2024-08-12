@@ -11,7 +11,7 @@ class LogForwarder(logging.Handler):
         bot: ExtBot,
         chat_ids: Iterable[int],
         parse_mode: ParseMode = ParseMode.MARKDOWN_V2,
-        log_levels: list[str] = ["WARN", "ERROR"],
+        log_levels: Iterable[str] = ("WARN", "ERROR"),
     ):
         super().__init__()
         self._bot = bot
@@ -25,6 +25,7 @@ class LogForwarder(logging.Handler):
         Formats the log message to be sent to Telegram. Override this method to customize the message.
         The default implementation applies the handler's formatter and puts the result in a Markdown code block.
         """
+
         msg = "```\n" + text + "\n```"
         return msg
 
@@ -38,7 +39,7 @@ class LogForwarder(logging.Handler):
                         chat_id=chat_id, text=msg, parse_mode=self._parse_mode
                     )
                     asyncio.run_coroutine_threadsafe(f, self._loop)
-        except RecursionError:  # See issue 36272
+        except RecursionError:  # https://bugs.python.org/issue36272
             raise
         except Exception:
             self.handleError(record)
