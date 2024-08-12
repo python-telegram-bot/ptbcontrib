@@ -1,7 +1,7 @@
 import logging
+from unittest.mock import MagicMock
 from telegram.constants import ParseMode
 from ptbcontrib.log_forwarder import LogForwarder
-from unittest.mock import MagicMock
 
 
 async def test_log_forwarder():
