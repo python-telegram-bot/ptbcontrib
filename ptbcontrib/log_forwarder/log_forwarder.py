@@ -1,3 +1,21 @@
+# A library containing community-based extension for the python-telegram-bot library
+# Copyright (C) 2020-2024
+# The ptbcontrib developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser Public License for more details.
+#
+# You should have received a copy of the GNU Lesser Public License
+# along with this program.  If not, see [http://www.gnu.org/licenses/].
+"""This module contains LogForwarder class"""
+
 import asyncio
 import logging
 from collections.abc import Iterable
@@ -7,6 +25,10 @@ from telegram.ext import ExtBot
 
 
 class LogForwarder(logging.Handler):
+    """
+    Logging handler to forward specific logs to Telegram chats.
+    """
+
     def __init__(
         self,
         bot: ExtBot,
@@ -32,7 +54,7 @@ class LogForwarder(logging.Handler):
         msg = "```\n" + text + "\n```"
         return msg
 
-    def emit(self, record: logging.LogRecord):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             formatted = self.format(record)
             msg = self.format_tg_msg(formatted)
@@ -44,5 +66,5 @@ class LogForwarder(logging.Handler):
                     asyncio.run_coroutine_threadsafe(f, self._loop)
         except RecursionError:  # https://bugs.python.org/issue36272
             raise
-        except Exception:
+        except Exception:  # pylint: disable=W0703
             self.handleError(record)
