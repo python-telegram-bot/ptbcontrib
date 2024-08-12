@@ -25,7 +25,7 @@ class LogForwarder(logging.Handler):
         """
         Formats the log message to be sent to Telegram.
         Override this method to customize the message.
-        The default implementation applies the handler's formatter 
+        The default implementation applies the handler's formatter
         and puts the result in a Markdown code block.
         """
 
