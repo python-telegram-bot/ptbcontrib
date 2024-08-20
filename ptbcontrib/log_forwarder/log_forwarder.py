@@ -16,6 +16,8 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains LogForwarder class"""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from collections.abc import Iterable
