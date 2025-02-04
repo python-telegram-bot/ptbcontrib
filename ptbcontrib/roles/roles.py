@@ -164,7 +164,7 @@ class Role(UpdateFilter):
 
     @staticmethod
     def _parse_child_role(
-        child_role: Union["Role", List["Role"], Tuple["Role", ...], None]
+        child_role: Union["Role", List["Role"], Tuple["Role", ...], None],
     ) -> Set["Role"]:
         if child_role is None:
             return set()
