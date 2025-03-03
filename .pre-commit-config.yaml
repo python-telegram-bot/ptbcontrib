@@ -11,7 +11,7 @@ repos:
         - --diff
         - --check
 -   repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
+    rev: 7.1.2
     hooks:
     -   id: flake8
 -   repo: https://github.com/PyCQA/pylint
@@ -25,7 +25,7 @@ repos:
         #  run pylint across multiple cpu cores to speed it up-
         - --jobs=0  # See https://pylint.pycqa.org/en/latest/user_guide/run.html?#parallel-execution to know more
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
+    rev: v1.15.0
     hooks:
     -   id: mypy
         exclude: ^tests/
@@ -36,7 +36,7 @@ repos:
         args:
           - --py37-plus
 -   repo: https://github.com/pycqa/isort
-    rev: 6.0.0
+    rev: 6.0.1
     hooks:
     -   id: isort
         name: isort
