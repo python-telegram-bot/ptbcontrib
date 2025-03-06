@@ -16,8 +16,35 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains extended keyboard classes with extra functionality for PTB keyboards."""
 
-from .keyboards import ExtendedInlineKeyboardMarkup
+from .base_keyboards import ExtendedInlineKeyboardMarkup, IExtendedInlineKeyboardMarkup
+from .select_keyboards import (
+    Exceptions,
+    IkbStruct,
+    SelectAllButton,
+    SelectButton,
+    SelectButtonBase,
+    SelectButtonBaseFields,
+    SelectButtonManager,
+    SelectButtonStruct,
+    SelectKeyboard,
+    SimpleButton,
+    SimpleButtonBase,
+    SimpleButtonManager,
+)
 
 __all__ = [
+    "IExtendedInlineKeyboardMarkup",
     "ExtendedInlineKeyboardMarkup",
+    "Exceptions",
+    "SelectButtonBaseFields",
+    "IkbStruct",
+    "SelectButtonStruct",
+    "SelectButtonBase",
+    "SelectButton",
+    "SelectButtonManager",
+    "SelectAllButton",
+    "SimpleButtonBase",
+    "SimpleButton",
+    "SimpleButtonManager",
+    "SelectKeyboard",
 ]

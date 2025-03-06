@@ -30,6 +30,37 @@ if TYPE_CHECKING:
     pass
 
 
+class Exceptions:
+    """Just a data container"""
+
+    class NotEnoughButtons(
+        Exception,
+    ):
+        """Exception raised when there are not enough buttons to fill the keyboard."""
+
+        def __init__(
+            self,
+            inline_keyboard: tuple[tuple[InlineKeyboardButton, ...], ...],
+            buttons: list[InlineKeyboardButton,],
+            buttons_in_row: int,
+        ) -> None:
+            super().__init__(
+                "Total count of buttons not enough to fill the keyboard by equal rows "
+                f"({len(buttons)} collected and "
+                f"{buttons_in_row * len(inline_keyboard, )} required."
+            )
+
+    class EmptyRowsDisallowed(
+        Exception,
+    ):
+        """Exception raised when empty rows are not allowed in the keyboard."""
+
+        def __init__(
+            self,
+        ) -> None:
+            super().__init__("Result num of rows less that original num of rows in the keyboard.")
+
+
 class IExtendedInlineKeyboardMarkup(
     ABC,
 ):
@@ -78,38 +109,6 @@ class ExtendedInlineKeyboardMarkup(
     IExtendedInlineKeyboardMarkup,
 ):
     """Popular keyboard actions"""
-
-    class Exceptions:
-        """Just a data container"""
-
-        class NotEnoughButtons(
-            Exception,
-        ):
-            """Exception raised when there are not enough buttons to fill the keyboard."""
-
-            def __init__(
-                self,
-                inline_keyboard: tuple[tuple[InlineKeyboardButton, ...], ...],
-                buttons: list[InlineKeyboardButton,],
-                buttons_in_row: int,
-            ) -> None:
-                super().__init__(
-                    "Total count of buttons not enough to fill the keyboard by equal rows "
-                    f"({len(buttons)} collected and "
-                    f"{buttons_in_row * len(inline_keyboard, )} required."
-                )
-
-        class EmptyRowsDisallowed(
-            Exception,
-        ):
-            """Exception raised when empty rows are not allowed in the keyboard."""
-
-            def __init__(
-                self,
-            ) -> None:
-                super().__init__(
-                    "Result num of rows less that original num of rows in the keyboard."
-                )
 
     def to_list(
         self,
@@ -172,7 +171,7 @@ class ExtendedInlineKeyboardMarkup(
         if strict and len(buttons) < buttons_in_row * len(
             self.inline_keyboard,
         ):
-            raise self.Exceptions.NotEnoughButtons(
+            raise Exceptions.NotEnoughButtons(
                 inline_keyboard=self.inline_keyboard,
                 buttons=buttons,
                 buttons_in_row=buttons_in_row,
@@ -185,6 +184,6 @@ class ExtendedInlineKeyboardMarkup(
         if not empty_rows_allowed and len(new_keyboard) < len(
             self.inline_keyboard,
         ):
-            raise self.Exceptions.EmptyRowsDisallowed
+            raise Exceptions.EmptyRowsDisallowed
 
         return new_keyboard
