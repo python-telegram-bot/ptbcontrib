@@ -8,17 +8,27 @@ This module provides simple base actions that mostly intended to be used as base
 For example currently `select keyboards` made independently 
 and occasionally repeats the functionality present in this base module. 
 
+## Popular cases:
+
 ```python
 class IExtendedInlineKeyboardMarkup(ABC, ):
     """ Popular keyboard actions """
 
     def to_list(self, ) -> list[list[InlineKeyboardButton]]:
+       """
+       tuple[tuple[...]] -> list[list[...]]
+       Converts inline keyboard from tuple to list for modifications ability.
+       """
 
     def find_btn_by_cbk(self, cbk: str, ) -> tuple[InlineKeyboardButton, int, int] | None:
         """ Returns buttons, row index, column index if found, None otherwise """
 
     def get_buttons(self, ) -> list[InlineKeyboardButton]:
-        """ Just get flat list of buttons of the keyboard """
+        """
+        Just get flat list of buttons of the keyboard
+        Usage: 
+        keyboard_buttons = extended_keyboard.get_buttons()  # list of buttons as result
+        """
 
     def split(
             self,
@@ -32,45 +42,23 @@ class IExtendedInlineKeyboardMarkup(ABC, ):
         Split keyboard by N buttons in row.
         Last row will contain remainder,
         i.e. num of buttons in the last row maybe less than `buttons_in_row` parameter.
+        ((button_1, ), (button_2, )) -> ((button_1, button_2, ), )
 
+        Usage: 
+        button_1 = InlineKeyboardButton(...)
+        button_2 = InlineKeyboardButton(...)
+        extended_keyboard = ExtendedInlineKeyboardMarkup(
+        inline_keyboard=((button_1, ), (button_2, )),
+        )
+        new_inline_keyboard = extended_keyboard.split(  # -> ((button_1, button_2, ), )
+            buttons_in_row = 2,
+            #  empty_rows_allowed=True  # If some rows should be filled later by user.
+            #  strict=True  # If Every row should contain exactly 2 (buttons_in_row) buttons.  
+        )
         Possible enhancement:
             keep_empty_rows: bool - keep empty rows in final keyboard if not enough buttons.
             # Please create feature issue if you need it.
         """
-```
-
-Popular keyboard actions
-```python
-
-
-def to_list(self, ) -> list[list[InlineKeyboardButton]]:
-
-
-def find_btn_by_cbk(self, cbk: str, ) -> tuple[InlineKeyboardButton, int, int] | None:
-    """ Returns buttons, row index, column index if found, None otherwise """
-
-
-def get_buttons(self, ) -> list[InlineKeyboardButton]:
-    """ Just get flat list of buttons of the keyboard """
-
-
-def split(
-        self,
-        buttons_in_row: int,
-        buttons: Sequence[InlineKeyboardButton] | None = None,
-        update_self: bool = True,
-        empty_rows_allowed: bool = True,
-        strict: bool = False,
-) -> list[list[InlineKeyboardButton]]:
-    """
-    Split keyboard by N buttons in row.
-    Last row will contain remainder,
-    i.e. num of buttons in the last row maybe less than `buttons_in_row` parameter.
-
-    Possible enhancement:
-        keep_empty_rows: bool - keep empty rows in final keyboard if not enough buttons.
-        # Please create feature issue if you need it.
-    """
 ```
 
 ## Module `select keyboards`

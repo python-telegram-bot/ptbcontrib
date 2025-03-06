@@ -16,9 +16,16 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains extended keyboard classes with extra functionality for PTB keyboards."""
 
-from .base_keyboards import ExtendedInlineKeyboardMarkup, IExtendedInlineKeyboardMarkup
+# isort: off
+from .base_keyboards import (
+    Exceptions as BaseExceptions,
+    ExtendedInlineKeyboardMarkup,
+    IExtendedInlineKeyboardMarkup,
+)
+
+# isort: off
 from .select_keyboards import (
-    Exceptions,
+    Exceptions as SelectExceptions,
     IkbStruct,
     SelectAllButton,
     SelectButton,
@@ -33,9 +40,10 @@ from .select_keyboards import (
 )
 
 __all__ = [
+    "BaseExceptions",
     "IExtendedInlineKeyboardMarkup",
     "ExtendedInlineKeyboardMarkup",
-    "Exceptions",
+    "SelectExceptions",
     "SelectButtonBaseFields",
     "IkbStruct",
     "SelectButtonStruct",

@@ -22,16 +22,21 @@ from __future__ import annotations
 import re
 
 import pytest
-from telegram import InlineKeyboardButton as Ikb
-from telegram import InlineKeyboardMarkup as Ikm
 
-from ptbcontrib.extended_keyboards.select_keyboards import (
-    Exceptions,
-    SelectAllButton,
+# isort: off
+from telegram import (
+    InlineKeyboardMarkup as Ikm,
+    InlineKeyboardButton as Ikb,
+)
+
+# isort: off
+from ptbcontrib.extended_keyboards import (
+    SelectExceptions as Exceptions,
     SelectButton,
-    SelectKeyboard,
+    SelectAllButton,
     SimpleButton,
     SimpleButtonManager,
+    SelectKeyboard,
 )
 
 ikb_select_1 = Ikb(

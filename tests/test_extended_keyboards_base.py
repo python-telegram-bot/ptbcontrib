@@ -21,15 +21,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import pytest
 from telegram import InlineKeyboardButton
 
-from ptbcontrib.extended_keyboards import ExtendedInlineKeyboardMarkup
+# isort: off
+from ptbcontrib.extended_keyboards import (
+    BaseExceptions as Exceptions,
+    ExtendedInlineKeyboardMarkup,
+)
 
-if TYPE_CHECKING:
-    pass
 
 btn_1 = InlineKeyboardButton(
     text="1",
@@ -256,7 +256,7 @@ class TestExtendedInlineKeyboardMarkup:
         @staticmethod
         def test_empty_rows_disallowed():
             with pytest.raises(
-                expected_exception=extended_keyboard.Exceptions.EmptyRowsDisallowed,
+                expected_exception=Exceptions.EmptyRowsDisallowed,
             ):
                 extended_keyboard.split(
                     buttons_in_row=100,
@@ -266,7 +266,7 @@ class TestExtendedInlineKeyboardMarkup:
         @staticmethod
         def test_strict():
             with pytest.raises(
-                expected_exception=extended_keyboard.Exceptions.NotEnoughButtons,
+                expected_exception=Exceptions.NotEnoughButtons,
             ):
                 extended_keyboard.split(
                     buttons_in_row=100,

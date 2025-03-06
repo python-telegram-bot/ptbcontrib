@@ -22,12 +22,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
-if TYPE_CHECKING:
-    pass
+# isort: off
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+)
 
 
 class Exceptions:
@@ -122,15 +122,24 @@ class ExtendedInlineKeyboardMarkup(
         cbk: str,
         strict: bool = True,
     ) -> tuple[InlineKeyboardButton, int, int] | None:
-        """Returns buttons, row index, column index if found, None otherwise"""
+        """
+        Returns buttons, row index, column index if found, None otherwise
+        Note: only string callback data supported for `InlineKeyboardButton`.
+        """
         for row_index, row in enumerate(self.inline_keyboard):
             for column_index, _ in enumerate(row):
+                button = self.inline_keyboard[row_index][column_index]  # alias
+                if not isinstance(
+                    button.callback_data,
+                    str,
+                ):
+                    continue  # Only string callback data supported
                 if strict:
-                    condition = cbk == self.inline_keyboard[row_index][column_index].callback_data
-                else:  # "in" to keep ability to match by prefix and some cbk key if need it
-                    condition = cbk in self.inline_keyboard[row_index][column_index].callback_data
-                if condition:
-                    return self.inline_keyboard[row_index][column_index], row_index, column_index
+                    check_result = cbk == button.callback_data
+                else:  # "in" to keep ability to match by prefix and some cbk key
+                    check_result = cbk in button.callback_data
+                if check_result:
+                    return button, row_index, column_index
         return None
 
     def get_buttons(
@@ -153,14 +162,22 @@ class ExtendedInlineKeyboardMarkup(
         Split keyboard by N buttons in row.
         Last row will contain remainder,
         i.e. num of buttons in the last row maybe less than `buttons_in_row` parameter.
+        ((button_1, ), (button_2, )) -> ((button_1, button_2, ), )
 
+        Usage:
+        button_1 = InlineKeyboardButton(...)
+        button_2 = InlineKeyboardButton(...)
+        extended_keyboard = ExtendedInlineKeyboardMarkup(
+        inline_keyboard=((button_1, ), (button_2, )),
+        )
+        new_inline_keyboard = extended_keyboard.split(  # -> ((button_1, button_2, ), )
+            buttons_in_row = 2,
+            #  empty_rows_allowed=True  # If some rows should be filled later by user.
+            #  strict=True  # If Every row should contain exactly 2 (buttons_in_row) buttons.
+        )
         Possible enhancement:
             keep_empty_rows: bool - keep empty rows in final keyboard if not enough buttons.
             # Please create feature issue if you need it.
-
-            update_self: bool - Override current `self.inline_keyboard` object
-            (currently banned by PTB,
-            "inline_keyboard` of class `ExtendedInlineKeyboardMarkup` can't be set!").
         """
 
         if buttons_in_row < 1:
@@ -169,7 +186,7 @@ class ExtendedInlineKeyboardMarkup(
         buttons = self.get_buttons()
 
         if strict and len(buttons) < buttons_in_row * len(
-            self.inline_keyboard,
+            self.inline_keyboard,  # num of rows
         ):
             raise Exceptions.NotEnoughButtons(
                 inline_keyboard=self.inline_keyboard,

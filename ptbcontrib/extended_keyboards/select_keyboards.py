@@ -26,13 +26,17 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, ClassVar, Sequence, overload
 
-from telegram import InlineKeyboardButton as Ikb
-from telegram import InlineKeyboardMarkup as Ikm
+# isort: off
+from telegram import (
+    InlineKeyboardMarkup as Ikm,
+    InlineKeyboardButton as Ikb,
+)
 
 if TYPE_CHECKING:
+    from typing_extensions import Self
     from telegram import CallbackGame, LoginUrl, SwitchInlineQueryChosenChat, WebAppInfo
     from telegram._utils.types import JSONDict
-    from typing_extensions import Self
+
 
 CHECKED_SYMBOL = "☑"
 UNCHECKED_SYMBOL = "🔲"
