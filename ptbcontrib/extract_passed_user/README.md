@@ -44,7 +44,8 @@ Message=(..., text='@friend_nickname')
 shared_user = extract_passed_user(message=message, username_resolver=UsernameToChatAPI(..., )) 
 ```
 
-### `get_num_from_text` - helper function which extracts first found number from the string as said in the docs above
+### `get_num_from_text` function:
+helper function which extracts first found number from the string as said in the docs above
 
 ## Requirements
 

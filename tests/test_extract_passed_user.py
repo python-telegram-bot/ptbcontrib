@@ -90,7 +90,7 @@ class TestGetNumsFromText:
 
 
 def test_default_resolver():
-    extract.default_resolver(
+    extract._default_resolver(
         username="username",
         wrapper=create_autospec(
             spec=UsernameToChatAPI,
@@ -149,7 +149,7 @@ async def test_text_username():
 async def test_text_username_default_resolver():
     with patch.object(
         target=extract,
-        attribute="default_resolver",
+        attribute="_default_resolver",
         autospec=True,
         spec_set=True,
         return_value=chat,

@@ -43,7 +43,7 @@ def get_num_from_text(
     return None
 
 
-def default_resolver(
+def _default_resolver(
     wrapper: UsernameToChatAPI,
     username: str,
 ) -> Chat | None:
@@ -78,7 +78,7 @@ async def extract_passed_user(
         return message.users_shared.users[0]
     if username_resolver and message.text and (username := re.search(r"@\S+", message.text)):
         if isinstance(username_resolver, UsernameToChatAPI):
-            chat = default_resolver(
+            chat = _default_resolver(
                 wrapper=username_resolver,
                 username=username.group(),
             )
