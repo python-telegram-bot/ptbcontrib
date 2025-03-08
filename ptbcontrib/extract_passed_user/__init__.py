@@ -16,9 +16,9 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains a helper function to get joinable links from chats."""
 
-from .extract import extract_passed_user, get_nums_from_text
+from .extract import extract_passed_user, get_num_from_text
 
 __all__ = [
     "extract_passed_user",
-    "get_nums_from_text",
+    "get_num_from_text",
 ]

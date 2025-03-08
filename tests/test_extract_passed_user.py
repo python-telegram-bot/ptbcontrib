@@ -28,12 +28,11 @@ import pytest
 from telegram import Chat, Contact, Message, SharedUser, UsersShared
 from telegram.constants import ChatType
 
-from ptbcontrib.extract_passed_user import extract, extract_passed_user, get_nums_from_text
+from ptbcontrib.extract_passed_user import extract, extract_passed_user, get_num_from_text
 from ptbcontrib.username_to_chat_api import UsernameToChatAPI
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
-
 
 chat = Chat(
     id=1,
@@ -65,7 +64,7 @@ class TestGetNumsFromText:
         argvalues=[
             ("abc123xyz", 123),
             ("98765", 98765),
-            ("abc9def8g7h6", 9876),
+            ("  ab#$@c9def8g7h6 ", 9),
         ],
     )
     def test_success(
@@ -73,7 +72,7 @@ class TestGetNumsFromText:
         expected: int,
     ):
         assert (
-            get_nums_from_text(
+            get_num_from_text(
                 text=text,
             )
             == expected
@@ -83,7 +82,7 @@ class TestGetNumsFromText:
     def test_exceptions():
         for text in ("abcdef", ""):
             assert (
-                get_nums_from_text(
+                get_num_from_text(
                     text=text,
                 )
                 is None
@@ -140,7 +139,7 @@ async def test_text_username():
 
     result = await extract_passed_user(
         message=message_fabric(
-            text="  @username ",
+            text="  foo 434 @username @second_user ",
         ),
         username_resolver=resolver,
     )

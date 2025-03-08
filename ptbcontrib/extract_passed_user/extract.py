@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from typing import TYPE_CHECKING, Callable
 
 from telegram import SharedUser
@@ -33,14 +34,13 @@ if TYPE_CHECKING:
     from telegram import Chat, Message
 
 
-def get_nums_from_text(
+def get_num_from_text(
     text: str,
 ) -> int | None:
-    """Extract numbers from text"""
-    try:
-        return int("".join([letter for letter in text if letter.isdigit()]))
-    except ValueError:
-        return None
+    """Extract first number from text"""
+    if matched_number := re.search(r"\d+", text):
+        return int(matched_number.group())
+    return None
 
 
 def default_resolver(
@@ -67,7 +67,7 @@ async def extract_passed_user(
     1. message.users_shared
     2. message.contact.user_id
     3. message.text starts with '@' and resolved by wrapper
-    4. message.text has only numbers, resolved by get_nums_from_text
+    4. message.text has only numbers, resolved by get_num_from_text
 
     About contact entity:
         1. `contact` may be without user_id.
@@ -76,23 +76,20 @@ async def extract_passed_user(
     chat = user_id = None
     if message.users_shared:  # Note: May be select multiple
         return message.users_shared.users[0]
-    if username_resolver and message.text and message.text.strip().startswith("@"):
+    if username_resolver and message.text and (username := re.search(r"@\S+", message.text)):
         if isinstance(username_resolver, UsernameToChatAPI):
             chat = default_resolver(
                 wrapper=username_resolver,
-                username=message.text,
+                username=username.group(),
             )
         else:
             chat: Chat | None = await username_resolver(  # type: ignore[no-redef]
                 username=message.text,
             )
-    elif hasattr(
-        message.contact,
-        "user_id",
-    ):
+    elif message.contact and message.contact.user_id:
         user_id = message.contact.user_id
     elif message.text:
-        user_id = get_nums_from_text(
+        user_id = get_num_from_text(
             text=message.text,
         )
 

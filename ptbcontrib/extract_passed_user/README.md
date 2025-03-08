@@ -1,5 +1,3 @@
-from tests.test_extract_passed_user import shared_user
-
 # Extract passed user
 
 This module intended for a single function:   
@@ -14,35 +12,39 @@ Currently, the function will check:
 
 ## Usage:
 
-1. By the users_shared: 
+### 1. By the users_shared:
+Note: `users_shared` object is tuple and may contain many users but only first of them will be returned. 
 ```python
 Message=(..., users_shared)
 shared_user = extract_passed_user(message=message)  # Just the first user in the users_shared tuple 
 ```
 
-2. By the contact:  
+### 2. By the contact:  
 Note: PTB `Contact.user_id` field is optional but required for the extraction or `None` otherwise will be returned. 
 ```python
 Message=(..., contact=Contact(...))
 shared_user = extract_passed_user(message=message) 
 ```
 
-3. By the text id: 
+### 3. By the text id:   
+Note: Only first found number in the text will be used as `user_id`.
 ```python
 Message=(..., text='Here my fried id - 123456, only numbers will be extracted.')
 shared_user = extract_passed_user(message=message) 
 ```
 
-4. By the text @name:  
+### 4. By the text @name:  
 Note: telegram bot API has no method to convert `@name` into `user_id`, 
 so ptbcontrlib module `username_to_chat_api` will be user for this.
 `username_resolver` parameter required for this, 
 it should be `UsernameToChatAPI` instance or custom async function.  
-The whole message text should contain only `@some_name` (Point to enhance in future releases).    
+Only first found world with `@` prefix in the text will be used as future `user_id`.
 ```python
 Message=(..., text='@friend_nickname')
 shared_user = extract_passed_user(message=message, username_resolver=UsernameToChatAPI(..., )) 
 ```
+
+### `get_num_from_text` - helper function which extracts first found number from the string as said in the docs above
 
 ## Requirements
 
