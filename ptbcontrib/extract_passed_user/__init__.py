@@ -18,4 +18,7 @@
 
 from .extract import extract_passed_user, get_nums_from_text
 
-__all__ = ["extract_passed_user", "get_nums_from_text", ]
+__all__ = [
+    "extract_passed_user",
+    "get_nums_from_text",
+]
