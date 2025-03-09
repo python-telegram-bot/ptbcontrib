@@ -4,18 +4,18 @@ ci:
 
 repos:
 -   repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 25.1.0
     hooks:
     -   id: black
         args:
         - --diff
         - --check
 -   repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
+    rev: 7.1.2
     hooks:
     -   id: flake8
 -   repo: https://github.com/PyCQA/pylint
-    rev: v3.3.2
+    rev: v3.3.4
     hooks:
     -   id: pylint
         name: pylint
@@ -25,18 +25,18 @@ repos:
         #  run pylint across multiple cpu cores to speed it up-
         - --jobs=0  # See https://pylint.pycqa.org/en/latest/user_guide/run.html?#parallel-execution to know more
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+    rev: v1.15.0
     hooks:
     -   id: mypy
         exclude: ^tests/
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.0
+    rev: v3.19.1
     hooks:
     -   id: pyupgrade
         args:
           - --py37-plus
 -   repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+    rev: 6.0.1
     hooks:
     -   id: isort
         name: isort
