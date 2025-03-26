@@ -206,6 +206,6 @@ class AiohttpRequest(BaseRequest):
 
             # We include the class name for easier debugging. Especially useful if the error
             # message of `err` is empty.
-            raise NetworkError(f"httpx.{err.__class__.__name__}: {err}") from err
+            raise NetworkError(f"aiohttp.{err.__class__.__name__}: {err}") from err
 
         return res.status, await res.read()
