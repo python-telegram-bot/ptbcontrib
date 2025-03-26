@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module contains methods to make POST and GET requests using the httpx library."""
+"""This module contains methods to make POST and GET requests using the aiohttp library."""
 import asyncio
 from typing import Any, Optional, Union
 
@@ -26,11 +26,6 @@ from telegram._utils.logging import get_logger
 from telegram._utils.types import ODVInput
 from telegram.error import NetworkError, TimedOut
 from telegram.request import BaseRequest, RequestData
-
-# Note to future devs:
-# Proxies are currently only tested manually. The httpx development docs have a nice guide on that:
-# https://www.python-httpx.org/contributing/#development-proxy-setup (also saved on archive.org)
-# That also works with socks5. Just pass `--mode socks5` to mitmproxy
 
 _LOGGER = get_logger(__name__, "AiohttpRequest")
 
