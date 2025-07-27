@@ -23,8 +23,6 @@ from typing import Any, Optional, Union
 
 import aiohttp
 import yarl
-from telegram._utils.defaultvalue import DefaultValue
-from telegram._utils.types import ODVInput
 from telegram.error import NetworkError, TimedOut
 from telegram.request import BaseRequest, RequestData
 
@@ -61,11 +59,11 @@ class AiohttpRequest(BaseRequest):
             Warning:
                 This parameter is intended for advanced users that want to fine-tune the behavior
                 of the underlying ``aiohttp`` clientSession. The values passed here will override
-                all the defaults set by ``python-telegram-bot`` and all other parameters passed to
-                :class:`ClientSession`. The only exception is the :paramref:`media_total_timeout`
-                parameter, which is not passed to the client constructor.
-                No runtime warnings will be issued about parameters that are overridden in this
-                way.
+                all the defaults set previously and all other parameters passed to
+                :class:`ClientSession`, if applicable. The only exception is the
+                :paramref:`media_total_timeout` parameter, which is not passed to the client
+                constructor. No runtime warnings will be issued about parameters that are
+                overridden in this way.
 
     """
 
@@ -152,10 +150,12 @@ class AiohttpRequest(BaseRequest):
         url: str,
         method: str,
         request_data: Optional[RequestData] = None,
-        read_timeout: ODVInput[float] = BaseRequest.DEFAULT_NONE,
-        write_timeout: ODVInput[float] = BaseRequest.DEFAULT_NONE,
-        connect_timeout: ODVInput[float] = BaseRequest.DEFAULT_NONE,
-        pool_timeout: ODVInput[float] = BaseRequest.DEFAULT_NONE,
+        read_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
+        write_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
+        connect_timeout: Optional[
+            Union[BaseRequest.DEFAULT_NONE, float]
+        ] = BaseRequest.DEFAULT_NONE,
+        pool_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
     ) -> tuple[int, bytes]:
         """See :meth:`BaseRequest.do_request`.
 
@@ -186,13 +186,13 @@ class AiohttpRequest(BaseRequest):
 
         # If user did not specify timeouts (for e.g. in a bot method), use the default ones when we
         # created this instance.
-        if isinstance(read_timeout, DefaultValue):
+        if read_timeout is BaseRequest.DEFAULT_NONE:
             read_timeout = self._session_kwargs["timeout"].sock_read
-        if isinstance(connect_timeout, DefaultValue):
+        if connect_timeout is BaseRequest.DEFAULT_NONE:
             connect_timeout = self._session_kwargs["timeout"].sock_connect
-        if isinstance(pool_timeout, DefaultValue):
+        if pool_timeout is BaseRequest.DEFAULT_NONE:
             pool_timeout = self._session_kwargs["timeout"].connect
-        if isinstance(write_timeout, DefaultValue):
+        if write_timeout is BaseRequest.DEFAULT_NONE:
             write_timeout = self._session_kwargs["timeout"].ceil_threshold
 
         timeout = aiohttp.ClientTimeout(
@@ -206,6 +206,8 @@ class AiohttpRequest(BaseRequest):
             sock_connect=connect_timeout,
             ceil_threshold=write_timeout,
         )
+
+        print(timeout)
 
         try:
             res = await self._session.request(
