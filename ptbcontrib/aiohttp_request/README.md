@@ -1,6 +1,6 @@
 # AiohttpRequest instance
 
-This is an implementation of aiohttp, to be used as a replacement for httpx based on "popular" demand [#4560](python-telegram-bot/python-telegram-bot#4560).
+This is an implementation of [`BaseRequest`](docs.ptb.org/…) based on [aiohttp](https://aiohttp-docs), to be used as alternative for [`HTTPXRequest`](docs.ptb.org/…)  based on the request in [#4560](python-telegram-bot/python-telegram-bot#4560).
 
 This can be used either in a bot instance like this:
 ```python
@@ -10,7 +10,7 @@ from ptbcontrib.aiohttp_request import AiohttpRequest
 
 
 async def main():
-    bot = telegram.Bot("TOKEN", request=AiohttpRequest())
+    bot = telegram.Bot("TOKEN", request=AiohttpRequest(), get_updates_request=AiohttpRequest())
     async with bot:
         print(await bot.get_me())
 

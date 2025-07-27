@@ -226,7 +226,7 @@ class AiohttpRequest(BaseRequest):
                 ) from err
             raise TimedOut from err
         except aiohttp.ClientError as err:
-            # HTTPError must come last as its the base httpx exception class
+            # HTTPError must come last as its the base aiohttp exception class
             # p4: do something smart here; for now just raise NetworkError
 
             # We include the class name for easier debugging. Especially useful if the error
