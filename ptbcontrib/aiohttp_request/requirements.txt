@@ -1,2 +1,2 @@
-python-telegram-bot>=21.1
+python-telegram-bot>=22.1
 aiohttp[speedups]>=3.11

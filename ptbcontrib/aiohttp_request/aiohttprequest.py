@@ -18,16 +18,17 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains methods to make POST and GET requests using the aiohttp library."""
 import asyncio
+import logging
 from typing import Any, Optional, Union
 
 import aiohttp
 import yarl
-from telegram._utils.logging import get_logger
+from telegram._utils.defaultvalue import DefaultValue
 from telegram._utils.types import ODVInput
 from telegram.error import NetworkError, TimedOut
 from telegram.request import BaseRequest, RequestData
 
-_LOGGER = get_logger(__name__, "AiohttpRequest")
+_LOGGER = logging.getLogger("AiohttpRequest")
 
 
 class AiohttpRequest(BaseRequest):
@@ -43,13 +44,13 @@ class AiohttpRequest(BaseRequest):
             Note:
                 :paramref:`media_total_timeout` will still be applied if a file is send, so be sure
                 to also set it to an appropriate value.
-                PylintDoesntAllowMeToWriteTODO Should I warn about this?
         media_total_timeout (:obj:`float` | :obj:`None`, optional): This overrides the total
             timeout with requests that upload media/files. Defaults to ``20`` seconds.
         proxy (:obj:`str` | `yarl.URL``, optional): The URL to a proxy server, aiohttp supports
             plain HTTP proxies and HTTP proxies that can be upgraded to HTTPS via the HTTP
             CONNECT method. See the docs of aiohttp: https://docs.aiohttp.org/en/stable/
             client_advanced.html#aiohttp-client-proxy-support.
+        proxy_auth (``aiohttp.BasicAuth``, optional): Proxy authorization, see :paramref:`proxy`.
         trust_env (:obj:`bool`, optional): In order to read proxy environmental variables, see the
             docs of aiohttp: https://docs.aiohttp.org/en/stable/client_advanced.html
             #aiohttp-client-proxy-support.
@@ -61,25 +62,28 @@ class AiohttpRequest(BaseRequest):
                 This parameter is intended for advanced users that want to fine-tune the behavior
                 of the underlying ``aiohttp`` clientSession. The values passed here will override
                 all the defaults set by ``python-telegram-bot`` and all other parameters passed to
-                :class:`ClientSession`. The only exception is the :paramref:`media_write_timeout`
+                :class:`ClientSession`. The only exception is the :paramref:`media_total_timeout`
                 parameter, which is not passed to the client constructor.
                 No runtime warnings will be issued about parameters that are overridden in this
                 way.
 
     """
 
-    __slots__ = ("_session", "_session_kwargs", "_media_total_timeout")
+    __slots__ = ("_session", "_session_kwargs", "_media_total_timeout", "_connection_pool_size")
 
     def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         connection_pool_size: int = 1,
         client_timeout: Optional[aiohttp.ClientTimeout] = None,
-        media_total_timeout: Optional[float] = 20.0,
+        media_total_timeout: Optional[float] = 30.0,
         proxy: Optional[Union[str, yarl.URL]] = None,
+        proxy_auth: Optional[aiohttp.BasicAuth] = None,
         trust_env: Optional[bool] = None,
         aiohttp_kwargs: Optional[dict[str, Any]] = None,
     ):
         self._media_total_timeout = media_total_timeout
+        # this needs to be saved in case of initialize gets a closed session
+        self._connection_pool_size = connection_pool_size
         timeout = (
             client_timeout
             if client_timeout
@@ -103,6 +107,7 @@ class AiohttpRequest(BaseRequest):
             "timeout": timeout,
             "connector": conn,
             "proxy": proxy,
+            "proxy_auth": proxy_auth,
             "trust_env": trust_env,
             **(aiohttp_kwargs or {}),
         }
@@ -113,8 +118,8 @@ class AiohttpRequest(BaseRequest):
     def read_timeout(self) -> Optional[float]:
         """See :attr:`BaseRequest.read_timeout`.
 
-        This makes not a lot of sense to implement since there is no actual read_timeout.
-        But what can I do.
+        aiohttp does not have a read timeout. Instead the total timeout for a request (including
+        connection establishment, request sending and response reading) is returned.
         """
         return self._session.timeout.total
 
@@ -124,6 +129,14 @@ class AiohttpRequest(BaseRequest):
     async def initialize(self) -> None:
         """See :meth:`BaseRequest.initialize`."""
         if self._session.closed:
+            # this means the TCPConnector has been closed, so we need to recreate it
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.get_event_loop()
+
+            conn = aiohttp.TCPConnector(limit=self._connection_pool_size, loop=loop)
+            self._session_kwargs["connector"] = conn
             self._session = self._build_client()
 
     async def shutdown(self) -> None:
@@ -134,7 +147,6 @@ class AiohttpRequest(BaseRequest):
 
         await self._session.close()
 
-    # pylint: disable=unused-argument
     async def do_request(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         url: str,
@@ -145,7 +157,18 @@ class AiohttpRequest(BaseRequest):
         connect_timeout: ODVInput[float] = BaseRequest.DEFAULT_NONE,
         pool_timeout: ODVInput[float] = BaseRequest.DEFAULT_NONE,
     ) -> tuple[int, bytes]:
-        """See :meth:`BaseRequest.do_request`."""
+        """See :meth:`BaseRequest.do_request`.
+
+        Since aiohttp has differen't timeouts, the params were mapped.
+
+        * :paramref:`pool_timeout` is mapped to :attr`~aiohttp.ClientTimeout.connect`
+        * :paramref:`connect_timeout` is mapped to :attr`~aiohttp.ClientTimeout.sock_connect`
+        * :paramref:`read_timeout` is mapped to :attr`~aiohttp.ClientTimeout.sock_read`
+        * :paramref:`write_timeout` is mapped to :attr`~aiohttp.ClientTimeout.ceil_threshold`
+
+        The :attr`~aiohttp.ClientTimeout.total` timeout is not changed since it also includes
+        response reading. You can only change them when initializing the class.
+        """
         if self._session.closed:
             raise RuntimeError("This AiohttpRequest is not initialized!")
 
@@ -161,20 +184,27 @@ class AiohttpRequest(BaseRequest):
                     filename=request_data.multipart_data[field_name][0],
                 )
 
-        # I dont think it makes sense to support the timeout params.
-        # PylintDoesntAllowMeToWriteTOLiDO if no one complains in initial PR
-        # raise warnings if they are passed
+        # If user did not specify timeouts (for e.g. in a bot method), use the default ones when we
+        # created this instance.
+        if isinstance(read_timeout, DefaultValue):
+            read_timeout = self._session_kwargs["timeout"].sock_read
+        if isinstance(connect_timeout, DefaultValue):
+            connect_timeout = self._session_kwargs["timeout"].sock_connect
+        if isinstance(pool_timeout, DefaultValue):
+            pool_timeout = self._session_kwargs["timeout"].connect
+        if isinstance(write_timeout, DefaultValue):
+            write_timeout = self._session_kwargs["timeout"].ceil_threshold
 
-        timeout = (
-            aiohttp.ClientTimeout(
-                total=self._media_total_timeout,
-                connect=self._session_kwargs["timeout"].connect,
-                sock_read=self._session_kwargs["timeout"].sock_read,
-                sock_connect=self._session_kwargs["timeout"].sock_connect,
-                ceil_threshold=self._session_kwargs["timeout"].ceil_threshold,
-            )
-            if request_data and request_data.contains_files
-            else self._session_kwargs["timeout"]
+        timeout = aiohttp.ClientTimeout(
+            total=(
+                self._media_total_timeout
+                if (request_data and request_data.contains_files)
+                else self._session_kwargs["timeout"].total
+            ),
+            connect=pool_timeout,
+            sock_read=read_timeout,
+            sock_connect=connect_timeout,
+            ceil_threshold=write_timeout,
         )
 
         try:

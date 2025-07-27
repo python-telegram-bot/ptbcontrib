@@ -112,35 +112,28 @@ class TestRequest:
     def _reset(self):
         self.test_flag = None
 
-    # def test_aiohttp_kwargs(self, monkeypatch):
-    #     self.test_flag = {}
-    #
-    #     orig_init = aiohttp.ClientSession.__init__
-    #
-    #     class Session(aiohttp.ClientSession):
-    #         def __init__(*args, **kwargs):
-    #             orig_init(*args, **kwargs)
-    #             self.test_flag["args"] = args
-    #             self.test_flag["kwargs"] = kwargs
-    #
-    #     monkeypatch.setattr(aiohttp, "ClientSession", Session)
-    #
-    #     AiohttpRequest(
-    #         client_timeout=aiohttp.ClientTimeout(total=1.0),
-    #         connection_pool_size=42,
-    #         httpx_kwargs={
-    #             "timeout": httpx.Timeout(7),
-    #             "limits": httpx.Limits(max_connections=7),
-    #             "http1": True,
-    #             "verify": False,
-    #         },
-    #     )
-    #     kwargs = self.test_flag["kwargs"]
-    #
-    #     assert kwargs["timeout"].connect == 7
-    #     assert kwargs["limits"].max_connections == 7
-    #     assert kwargs["http1"] is True
-    #     assert kwargs["verify"] is False
+    def test_aiohttp_kwargs(self, monkeypatch):
+        self.test_flag = {}
+
+        orig_init = aiohttp.ClientSession.__init__
+
+        class Session(aiohttp.ClientSession):
+            def __init__(*args, **kwargs):
+                orig_init(*args, **kwargs)
+                self.test_flag["args"] = args
+                self.test_flag["kwargs"] = kwargs
+
+        monkeypatch.setattr(aiohttp, "ClientSession", Session)
+
+        AiohttpRequest(
+            client_timeout=aiohttp.ClientTimeout(total=1.0),
+            aiohttp_kwargs={
+                "timeout": aiohttp.ClientTimeout(total=40.0),
+            },
+        )
+        kwargs = self.test_flag["kwargs"]
+
+        assert kwargs["timeout"].total == 40
 
     async def test_context_manager(self, monkeypatch):
         async def initialize():
@@ -386,41 +379,26 @@ class TestAiohttpRequest:
     def _reset(self):
         self.test_flag = None
 
-    # def test_init(self, monkeypatch):
-    #     @dataclass
-    #     class Session:
-    #         timeout: object
-    #         proxy: object
-    #         limits: object
-    #         http1: object
-    #         http2: object
-    #         transport: object = None
-    #
-    #     monkeypatch.setattr(aiohttp, "ClientSession", Session)
-    #
-    #     request = AiohttpRequest()
-    #     assert request._client.timeout ==
-    #     httpx.Timeout(connect=5.0, read=5.0, write=5.0, pool=1.0)
-    #     assert request._client.proxy is None
-    #     assert request._client.limits == httpx.Limits(
-    #         max_connections=1, max_keepalive_connections=1
-    #     )
-    #     assert request._client.http1 is True
-    #     assert not request._client.http2
-    #
-    #     request = AiohttpRequest(
-    #         connection_pool_size=42,
-    #         proxy="proxy",
-    #         connect_timeout=43,
-    #         read_timeout=44,
-    #         write_timeout=45,
-    #         pool_timeout=46,
-    #     )
-    #     assert request._client.proxy == "proxy"
-    #     assert request._client.limits == httpx.Limits(
-    #         max_connections=42, max_keepalive_connections=42
-    #     )
-    #     assert request._client.timeout == httpx.Timeout(connect=43, read=44, write=45, pool=46)
+    def test_init(self, monkeypatch):
+
+        request = AiohttpRequest()
+        assert request._session.timeout == aiohttp.ClientTimeout(total=15)
+        assert request._session._default_proxy is None
+        assert request._session._version is aiohttp.HttpVersion11
+
+        request = AiohttpRequest(
+            connection_pool_size=42,
+            client_timeout=aiohttp.ClientTimeout(total=25),
+            media_total_timeout=200,
+            proxy="proxy",
+            proxy_auth=aiohttp.BasicAuth("user", "pass"),
+            trust_env=True,
+        )
+        assert request._session._default_proxy == "proxy"
+        assert request._session._default_proxy_auth == aiohttp.BasicAuth("user", "pass")
+        assert request._session.timeout == aiohttp.ClientTimeout(total=25)
+        assert request._media_total_timeout == 200
+        assert request._session._trust_env
 
     async def test_multiple_inits_and_shutdowns(self, monkeypatch):
         self.test_flag = defaultdict(int)
@@ -507,31 +485,31 @@ class TestAiohttpRequest:
 
         assert self.test_flag
 
-    # async def test_do_request_manual_timeouts(self, monkeypatch, aiohttp_request):
-    #     default_timeouts = aiohttp.ClientTimeout(total=42, connect=43,
-    #     sock_read=44, sock_connect=45, ceil_threshold=46)
-    #     manual_timeouts = aiohttp.ClientTimeout(total=52, connect=53,
-    #     sock_read=54, sock_connect=55, ceil_threshold=56)
-    #
-    #     async def make_assertion(_, **kwargs):
-    #         print(kwargs.get("timeout"))
-    #         self.test_flag = kwargs.get("timeout") == manual_timeouts
-    #         return Response()
-    #
-    #     async with AiohttpRequest(
-    #             client_timeout=default_timeouts
-    #     ) as aiohttp_request_ctx:
-    #         monkeypatch.setattr(aiohttp.ClientSession, "request", make_assertion)
-    #         await aiohttp_request_ctx.do_request(
-    #             method="GET",
-    #             url="URL",
-    #             connect_timeout=manual_timeouts.connect,
-    #             read_timeout=manual_timeouts.total,
-    #             write_timeout=manual_timeouts.sock_read,
-    #             pool_timeout=manual_timeouts.sock_connect,
-    #         )
-    #
-    #     assert self.test_flag
+    async def test_do_request_manual_timeouts(self, monkeypatch, aiohttp_request):
+        default_timeouts = aiohttp.ClientTimeout(
+            total=42, connect=43, sock_read=44, sock_connect=45, ceil_threshold=46
+        )
+        manual_timeouts = aiohttp.ClientTimeout(
+            total=42, connect=53, sock_read=54, sock_connect=55, ceil_threshold=56
+        )
+
+        async def make_assertion(_, **kwargs):
+            print(kwargs.get("timeout"))
+            self.test_flag = kwargs.get("timeout") == manual_timeouts
+            return Response()
+
+        async with AiohttpRequest(client_timeout=default_timeouts) as aiohttp_request_ctx:
+            monkeypatch.setattr(aiohttp.ClientSession, "request", make_assertion)
+            await aiohttp_request_ctx.do_request(
+                method="GET",
+                url="URL",
+                connect_timeout=manual_timeouts.sock_connect,
+                read_timeout=manual_timeouts.sock_read,
+                write_timeout=manual_timeouts.ceil_threshold,
+                pool_timeout=manual_timeouts.connect,
+            )
+
+        assert self.test_flag
 
     async def test_do_request_params_no_data(self, monkeypatch, aiohttp_request):
         async def make_assertion(self, **kwargs):
