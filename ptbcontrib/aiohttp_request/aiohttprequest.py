@@ -159,7 +159,7 @@ class AiohttpRequest(BaseRequest):
     ) -> tuple[int, bytes]:
         """See :meth:`BaseRequest.do_request`.
 
-        Since aiohttp has differen't timeouts, the params were mapped.
+        Since aiohttp has different timeouts, the params were mapped.
 
         * :paramref:`pool_timeout` is mapped to :attr`~aiohttp.ClientTimeout.connect`
         * :paramref:`connect_timeout` is mapped to :attr`~aiohttp.ClientTimeout.sock_connect`
@@ -206,8 +206,6 @@ class AiohttpRequest(BaseRequest):
             sock_connect=connect_timeout,
             ceil_threshold=write_timeout,
         )
-
-        print(timeout)
 
         try:
             res = await self._session.request(
