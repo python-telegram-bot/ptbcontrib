@@ -150,12 +150,10 @@ class AiohttpRequest(BaseRequest):
         url: str,
         method: str,
         request_data: Optional[RequestData] = None,
-        read_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
-        write_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
-        connect_timeout: Optional[
-            Union[BaseRequest.DEFAULT_NONE, float]
-        ] = BaseRequest.DEFAULT_NONE,
-        pool_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
+        read_timeout: Optional[float] = BaseRequest.DEFAULT_NONE,
+        write_timeout: Optional[float] = BaseRequest.DEFAULT_NONE,
+        connect_timeout: Optional[float] = BaseRequest.DEFAULT_NONE,
+        pool_timeout: Optional[float] = BaseRequest.DEFAULT_NONE,
     ) -> tuple[int, bytes]:
         """See :meth:`BaseRequest.do_request`.
 
