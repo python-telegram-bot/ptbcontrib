@@ -213,7 +213,8 @@ class AiohttpRequest(BaseRequest):
                 timeout=timeout,
                 data=data,
             )
-        except TimeoutError as err:
+        # asyncio.TimeoutError is an alias of TimeoutError only starting with Python 3.11.
+        except asyncio.TimeoutError as err:
             if isinstance(err, aiohttp.ConnectionTimeoutError):
                 raise TimedOut(
                     message=(

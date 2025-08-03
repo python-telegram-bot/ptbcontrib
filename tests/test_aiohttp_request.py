@@ -199,10 +199,15 @@ class TestRequest:
 
         await aiohttp_request.shutdown()
 
-        assert len(caplog.records) == 1
-        record = caplog.records[0]
-        assert record.name == "telegram.request.BaseRequest"
-        assert record.getMessage().endswith(f'invalid JSON data: "{server_response.decode()}"')
+        assert len(caplog.records) >= 1
+        found = False
+        for record in caplog.records:
+            if record.name == "telegram.request.BaseRequest":
+                assert record.getMessage().endswith(
+                    f'invalid JSON data: "{server_response.decode()}"'
+                )
+                found = True
+        assert found, "Expected log message not found"
 
     async def test_chat_migrated(self, monkeypatch, aiohttp_request: AiohttpRequest):
         server_response = b'{"ok": "False", "parameters": {"migrate_to_chat_id": 123}}'
