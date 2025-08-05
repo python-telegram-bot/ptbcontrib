@@ -75,7 +75,7 @@ def run_tests(changed: bool, names: List[str]) -> int:
     exit_code = 0
     for name in names:
         try:
-            subprocess.check_call(  # nosec
+            result = subprocess.run(  # pylint: disable=subprocess-run-check  # nosec
                 [
                     sys.executable,
                     "-m",
@@ -83,8 +83,20 @@ def run_tests(changed: bool, names: List[str]) -> int:
                     "install",
                     "-r",
                     str(ptbcontrib_path / name / "requirements.txt"),
-                ]
+                ],
+                capture_output=True,
+                text=True,
             )
+            if (
+                result.stderr
+                and "No matching distribution found for python-telegram-bot" in result.stderr
+            ):
+                print(
+                    f"Ignoring contribution {name}, as this PTB version is not "
+                    f"supported on Python {sys.version}. "
+                )
+                continue
+            result.check_returncode()
 
             result = subprocess.run(  # nosec
                 [sys.executable, "-m", "telegram"],

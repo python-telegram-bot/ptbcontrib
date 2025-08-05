@@ -150,12 +150,10 @@ class AiohttpRequest(BaseRequest):
         url: str,
         method: str,
         request_data: Optional[RequestData] = None,
-        read_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
-        write_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
-        connect_timeout: Optional[
-            Union[BaseRequest.DEFAULT_NONE, float]
-        ] = BaseRequest.DEFAULT_NONE,
-        pool_timeout: Optional[Union[BaseRequest.DEFAULT_NONE, float]] = BaseRequest.DEFAULT_NONE,
+        read_timeout: Optional[float] = BaseRequest.DEFAULT_NONE,
+        write_timeout: Optional[float] = BaseRequest.DEFAULT_NONE,
+        connect_timeout: Optional[float] = BaseRequest.DEFAULT_NONE,
+        pool_timeout: Optional[float] = BaseRequest.DEFAULT_NONE,
     ) -> tuple[int, bytes]:
         """See :meth:`BaseRequest.do_request`.
 
@@ -215,7 +213,8 @@ class AiohttpRequest(BaseRequest):
                 timeout=timeout,
                 data=data,
             )
-        except TimeoutError as err:
+        # asyncio.TimeoutError is an alias of TimeoutError only starting with Python 3.11.
+        except asyncio.TimeoutError as err:
             if isinstance(err, aiohttp.ConnectionTimeoutError):
                 raise TimedOut(
                     message=(
