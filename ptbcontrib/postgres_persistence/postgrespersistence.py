@@ -81,7 +81,7 @@ class PostgresPersistence(DictPersistence):
             user_data_json = data.get("user_data", "{}")
             bot_data_json = data.get("bot_data", "{}")
             conversations_json = data.get("conversations", "{}")
-            callback_data_json = data.get("callback_data_json", "")
+            callback_data_json = data.get("callback_data", "")
 
             self.logger.info("Database loaded successfully!")
 
@@ -120,10 +120,31 @@ class PostgresPersistence(DictPersistence):
                 CONSTRAINT single_row CHECK (id = 1));"""
             self._session.execute(text(create_table_qry))
 
+            # Check if id column exists, is an integer type, and is a primary key
             check_column_qry = """
-                SELECT 1 FROM information_schema.columns
-                WHERE table_name = 'persistence' AND column_name = 'id';"""
-            needs_migration = self._session.execute(text(check_column_qry)).first() is None
+                SELECT 1 FROM information_schema.columns c
+                JOIN information_schema.key_column_usage kcu
+                    ON c.table_name = kcu.table_name
+                    AND c.column_name = kcu.column_name
+                    AND c.table_schema = kcu.table_schema
+                JOIN information_schema.table_constraints tc
+                    ON kcu.constraint_name = tc.constraint_name
+                    AND kcu.table_schema = tc.table_schema
+                WHERE c.table_schema = current_schema()
+                AND c.table_name = 'persistence'
+                AND c.column_name = 'id'
+                AND c.data_type IN ('integer', 'smallint', 'bigint')
+                AND tc.constraint_type = 'PRIMARY KEY';"""
+            column_valid = self._session.execute(text(check_column_qry)).first() is not None
+
+            # If column exists, check if there's a valid row with id = 1
+            data_valid = False
+            if column_valid:
+                check_data_qry = """
+                    SELECT 1 FROM persistence WHERE id = 1;"""
+                data_valid = self._session.execute(text(check_data_qry)).first() is not None
+
+            needs_migration = not (column_valid and data_valid)
 
             if needs_migration:
                 self.logger.info("Old database schema detected. Running migration...")

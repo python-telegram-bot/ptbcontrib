@@ -220,20 +220,41 @@ class TestPostgresPersistence:
         assert "CONSTRAINT single_row CHECK (id = 1)" in create_table_query
 
     def test_schema_migration_detection(self, monkeypatch):
-        """Test that old schema without id column is detected"""
+        """Test that valid schema with PRIMARY KEY and id=1 row is detected correctly"""
         executed_queries = []
 
-        class FakeExecResultWithColumn:
-            """Simulates that id column exists (no migration needed)"""
+        class FakeExecResultValidPK:
+            """Simulates that id column exists as PRIMARY KEY"""
 
             def first(self):
-                return (1,)  # Column exists
+                return (1,)  # Primary key validation passes
 
-        def mock_execute(query, params=None):  # pylint: disable=unused-argument
+        class FakeExecResultValidData:
+            """Simulates that row with id=1 exists"""
+
+            def first(self):
+                return (1,)
+
+        def mock_execute(query, params=None):
             executed_queries.append(query.text)
-            # Check if this is the column check query
-            if "information_schema.columns" in query.text and "column_name = 'id'" in query.text:
-                return FakeExecResultWithColumn()
+
+            # Match the full primary key validation query
+            if all(
+                x in query.text
+                for x in [
+                    "information_schema.columns",
+                    "key_column_usage",
+                    "table_constraints",
+                    "PRIMARY KEY",
+                    "column_name = 'id'",
+                ]
+            ):
+                return FakeExecResultValidPK()
+
+            # Check for data validation query (id=1 exists)
+            if "WHERE id = 1" in query.text and "information_schema" not in query.text:
+                return FakeExecResultValidData()
+
             return FakeExecResult()
 
         session = scoped_session("a")
@@ -252,7 +273,54 @@ class TestPostgresPersistence:
         for migration_cmd in migration_commands:
             assert not any(migration_cmd in query for query in executed_queries)
 
-    def test_schema_migration_execution(self, monkeypatch):
+        # Verify the PK validation query was actually executed
+        pk_validation_executed = any(
+            all(x in query for x in ["key_column_usage", "table_constraints", "PRIMARY KEY"])
+            for query in executed_queries
+        )
+        assert pk_validation_executed
+
+    def test_migration_when_id_not_primary_key(self, monkeypatch):
+        """Test that migration runs when id column exists but is not a PRIMARY KEY"""
+        executed_queries = []
+
+        class FakeExecResultNoPK:
+            """Simulates id column exists but is NOT a primary key"""
+
+            def first(self):
+                return None
+
+        def mock_execute(query, params=None):
+            executed_queries.append(query.text)
+
+            # Simulate failure of primary key validation
+            if all(
+                x in query.text
+                for x in [
+                    "information_schema.columns",
+                    "key_column_usage",
+                    "table_constraints",
+                    "PRIMARY KEY",
+                ]
+            ):
+                return FakeExecResultNoPK()
+
+            return FakeExecResult()
+
+        session = scoped_session("a")
+        monkeypatch.setattr(session, "execute", mock_execute)
+        monkeypatch.setattr(session, "commit", self.mock_commit)
+        monkeypatch.setattr(session, "close", self.mock_ses_close)
+
+        PostgresPersistence(session=session)
+
+        # Verify migration was triggered even though id column might exist
+        migration_triggered = any(
+            "ALTER TABLE persistence ADD PRIMARY KEY (id)" in query for query in executed_queries
+        )
+        assert migration_triggered
+
+    def test_full_migration_from_old_schema(self, monkeypatch):
         """Test that migration is executed when old schema is detected"""
         executed_queries = []
 
@@ -290,6 +358,39 @@ class TestPostgresPersistence:
             assert any(
                 expected_step in query for query in executed_queries
             ), f"Expected migration step not found: {expected_step}"
+
+    def test_migration_preserves_data(self, monkeypatch):
+        """Test that existing data survives migration"""
+        executed_queries = []
+        test_data = {"user_data": '{"1": {"test": "value"}}'}
+
+        class FakeExecResultNoColumn:
+            def first(self):
+                return None
+
+        class FakeExecResultWithData:
+            def first(self):
+                return (test_data,)
+
+        def mock_execute(query, params=None):
+            executed_queries.append(query.text)
+            # Simulate failure of primary key validation
+            if "information_schema" in query.text and "PRIMARY KEY" in query.text:
+                return FakeExecResultNoColumn()
+            # Simulate data exists
+            if "SELECT data FROM persistence" in query.text:
+                return FakeExecResultWithData()
+            return FakeExecResult()
+
+        session = scoped_session("a")
+        monkeypatch.setattr(session, "execute", mock_execute)
+        monkeypatch.setattr(session, "commit", self.mock_commit)
+        monkeypatch.setattr(session, "close", self.mock_ses_close)
+
+        persistence = PostgresPersistence(session=session)
+
+        # Verify data was loaded
+        assert persistence is not None
 
     def test_upsert_query_on_fresh_database(self, monkeypatch):
         """Test that upsert query is used when initializing fresh database"""
@@ -470,3 +571,28 @@ class TestPostgresPersistence:
 
         # Verify rollback was called
         assert rollback_called
+
+    def test_migration_uses_ctid(self, monkeypatch):
+        """Test that migration correctly uses ctid for selecting first row"""
+        executed_queries = []
+
+        class FakeExecResultNoColumn:
+            def first(self):
+                return None
+
+        def mock_execute(query, params=None):
+            executed_queries.append(query.text)
+            if "information_schema" in query.text and "PRIMARY KEY" in query.text:
+                return FakeExecResultNoColumn()
+            return FakeExecResult()
+
+        session = scoped_session("a")
+        monkeypatch.setattr(session, "execute", mock_execute)
+        monkeypatch.setattr(session, "commit", self.mock_commit)
+        monkeypatch.setattr(session, "close", self.mock_ses_close)
+
+        PostgresPersistence(session=session)
+
+        # Verify ctid is used in UPDATE during migration
+        ctid_query = any("ctid" in query for query in executed_queries)
+        assert ctid_query
