@@ -65,5 +65,5 @@ pip install "ptbcontrib[ptb_jobstores_sqlalchemy] @ git+https://github.com/pytho
 ## Authors
 
 *   [Niko Bolg](https://github.com/nkbolg)
-*   [Starry Shivam](https://github.com/starry69)
+*   [Starry Shivam](https://github.com/starry-shivam)
 *   [Holmes555](https://github.com/Holmes555)
