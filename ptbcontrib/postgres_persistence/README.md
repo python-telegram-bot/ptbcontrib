@@ -47,3 +47,6 @@ application = Application.builder().token(...).persistence(PostgresPersistence(s
 
 *   [Stɑrry Shivɑm](https://github.com/starry69)
 
+## Contributors
+
+*   [Chin Rong Ong](https://github.com/crong12)

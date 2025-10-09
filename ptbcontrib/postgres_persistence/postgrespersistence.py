@@ -81,7 +81,7 @@ class PostgresPersistence(DictPersistence):
             user_data_json = data.get("user_data", "{}")
             bot_data_json = data.get("bot_data", "{}")
             conversations_json = data.get("conversations", "{}")
-            callback_data_json = data.get("callback_data_json", "")
+            callback_data_json = data.get("callback_data", "")
 
             self.logger.info("Database loaded successfully!")
 
@@ -89,8 +89,10 @@ class PostgresPersistence(DictPersistence):
             # can perform `UPDATE` operations on it, cause SQL only allows
             # `UPDATE` operations if column have some data already present inside it.
             if not data:
-                insert_qry = "INSERT INTO persistence (data) VALUES (:jsondata)"
-                self._session.execute(text(insert_qry), {"jsondata": "{}"})
+                upsert_qry = """
+                INSERT INTO persistence (data) VALUES (:jsondata)
+                ON CONFLICT (id) DO UPDATE SET data = :jsondata"""
+                self._session.execute(text(upsert_qry), {"jsondata": "{}"})
                 self._session.commit()
 
             super().__init__(
@@ -108,16 +110,69 @@ class PostgresPersistence(DictPersistence):
         """
         creates table for storing the data if table
         doesn't exist already inside database.
+        runs schema migration if necessary.
         """
-        create_table_qry = """
-            CREATE TABLE IF NOT EXISTS persistence(
-            data json NOT NULL);"""
-        self._session.execute(text(create_table_qry))
-        self._session.commit()
+        try:
+            create_table_qry = """
+                CREATE TABLE IF NOT EXISTS persistence(
+                id INT PRIMARY KEY DEFAULT 1,
+                data json NOT NULL,
+                CONSTRAINT single_row CHECK (id = 1));"""
+            self._session.execute(text(create_table_qry))
+
+            # Check if id column exists, is an integer type, and is a primary key
+            check_column_qry = """
+                SELECT 1 FROM information_schema.columns c
+                JOIN information_schema.key_column_usage kcu
+                    ON c.table_name = kcu.table_name
+                    AND c.column_name = kcu.column_name
+                    AND c.table_schema = kcu.table_schema
+                JOIN information_schema.table_constraints tc
+                    ON kcu.constraint_name = tc.constraint_name
+                    AND kcu.table_schema = tc.table_schema
+                WHERE c.table_schema = current_schema()
+                AND c.table_name = 'persistence'
+                AND c.column_name = 'id'
+                AND c.data_type IN ('integer', 'smallint', 'bigint')
+                AND tc.constraint_type = 'PRIMARY KEY';"""
+            column_valid = self._session.execute(text(check_column_qry)).first() is not None
+
+            # If column exists, check if there's a valid row with id = 1
+            data_valid = False
+            if column_valid:
+                check_data_qry = """
+                    SELECT 1 FROM persistence WHERE id = 1;"""
+                data_valid = self._session.execute(text(check_data_qry)).first() is not None
+
+            needs_migration = not (column_valid and data_valid)
+
+            if needs_migration:
+                self.logger.info("Old database schema detected. Running migration...")
+                migration_commands = [
+                    "ALTER TABLE persistence ADD COLUMN id INT;",
+                    """
+                    UPDATE persistence SET id = 1 WHERE ctid = (
+                        SELECT ctid FROM persistence LIMIT 1
+                    );""",
+                    "DELETE FROM persistence WHERE id IS NULL;",
+                    "ALTER TABLE persistence ALTER COLUMN id SET NOT NULL;",
+                    "ALTER TABLE persistence ADD PRIMARY KEY (id);",
+                    "ALTER TABLE persistence ADD CONSTRAINT single_row CHECK (id = 1);",
+                ]
+                for command in migration_commands:
+                    self._session.execute(text(command))
+                self.logger.info("Database migration successful!")
+
+            self._session.commit()
+        except Exception as excp:  # pylint: disable=W0703
+            self.logger.error(
+                "Database initialization or migration failed!",
+                exc_info=excp,
+            )
+            self._session.rollback()
 
     def _dump_into_json(self) -> Any:
         """Dumps data into json format for inserting in db."""
-
         to_dump = {
             "chat_data": self.chat_data_json,
             "user_data": self.user_data_json,
@@ -131,16 +186,18 @@ class PostgresPersistence(DictPersistence):
     def _update_database(self) -> None:
         self.logger.debug("Updating database...")
         try:
-            insert_qry = "UPDATE persistence SET data = :jsondata"
+            upsert_qry = """
+            INSERT INTO persistence (data) VALUES (:jsondata)
+            ON CONFLICT (id) DO UPDATE SET data = :jsondata"""
             params = {"jsondata": self._dump_into_json()}
-            self._session.execute(text(insert_qry), params)
+            self._session.execute(text(upsert_qry), params)
             self._session.commit()
         except Exception as excp:  # pylint: disable=W0703
-            self._session.close()
             self.logger.error(
                 "Failed to save data in the database.\nLogging exception: ",
                 exc_info=excp,
             )
+            self._session.rollback()
 
     async def update_conversation(
         self, name: str, key: Tuple[int, ...], new_state: Optional[object]
