@@ -175,7 +175,7 @@ class TestPostgresPersistence:
         # Check that either SELECT or UPSERT query was executed (upsert for fresh db)
         executed_text = self.executed.text.strip()
         assert "SELECT data FROM persistence" in executed_text or (
-            "INSERT INTO persistence (data) VALUES (:jsondata)" in executed_text
+            "INSERT INTO persistence (id, data) VALUES (:id, :jsondata)" in executed_text
             and "ON CONFLICT (id) DO UPDATE SET data = :jsondata" in executed_text
         )
         assert self.commited == 555
@@ -409,7 +409,7 @@ class TestPostgresPersistence:
 
         # Check that upsert query was used for initialization
         upsert_found = any(
-            "INSERT INTO persistence (data) VALUES (:jsondata)" in query
+            "INSERT INTO persistence (id, data) VALUES (:id, :jsondata)" in query
             and "ON CONFLICT (id) DO UPDATE SET data = :jsondata" in query
             for query in executed_queries
         )
@@ -443,7 +443,7 @@ class TestPostgresPersistence:
 
         # Verify upsert query was used
         upsert_found = any(
-            "INSERT INTO persistence (data) VALUES (:jsondata)" in query
+            "INSERT INTO persistence (id, data) VALUES (:id, :jsondata)" in query
             and "ON CONFLICT (id) DO UPDATE SET data = :jsondata" in query
             for query in executed_queries
         )
@@ -452,6 +452,7 @@ class TestPostgresPersistence:
         # Verify parameters were passed
         assert len(executed_params) > 0
         assert "jsondata" in executed_params[0]
+        assert "id" in executed_params[0]
 
     def test_single_row_constraint_in_schema(self, monkeypatch):
         """Test that single_row constraint is present in schema"""
