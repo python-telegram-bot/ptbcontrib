@@ -90,9 +90,9 @@ class PostgresPersistence(DictPersistence):
             # `UPDATE` operations if column have some data already present inside it.
             if not data:
                 upsert_qry = """
-                INSERT INTO persistence (data) VALUES (:jsondata)
+                INSERT INTO persistence (id, data) VALUES (:id, :jsondata)
                 ON CONFLICT (id) DO UPDATE SET data = :jsondata"""
-                self._session.execute(text(upsert_qry), {"jsondata": "{}"})
+                self._session.execute(text(upsert_qry), {"id": 1, "jsondata": "{}"})
                 self._session.commit()
 
             super().__init__(
@@ -187,9 +187,9 @@ class PostgresPersistence(DictPersistence):
         self.logger.debug("Updating database...")
         try:
             upsert_qry = """
-            INSERT INTO persistence (data) VALUES (:jsondata)
+            INSERT INTO persistence (id, data) VALUES (:id, :jsondata)
             ON CONFLICT (id) DO UPDATE SET data = :jsondata"""
-            params = {"jsondata": self._dump_into_json()}
+            params = {"id": 1, "jsondata": self._dump_into_json()}
             self._session.execute(text(upsert_qry), params)
             self._session.commit()
         except Exception as excp:  # pylint: disable=W0703
