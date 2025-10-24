@@ -81,7 +81,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         app = (
             Application.builder()
@@ -128,7 +128,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         persistence = PostgresPersistence(session=session, on_flush=on_flush)
 
@@ -169,7 +169,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
         # Check that either SELECT or UPSERT query was executed (upsert for fresh db)
@@ -185,7 +185,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         await PostgresPersistence(session=session).flush()
         assert self.executed != ""
@@ -202,7 +202,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -260,7 +260,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -310,7 +310,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -340,7 +340,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -385,7 +385,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         persistence = PostgresPersistence(session=session)
 
@@ -403,7 +403,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -429,7 +429,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
         monkeypatch.setattr(session, "rollback", lambda: None)
 
         persistence = PostgresPersistence(session=session)
@@ -465,7 +465,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -494,7 +494,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -516,7 +516,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         app = (
             Application.builder()
@@ -564,7 +564,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute_with_error)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
         monkeypatch.setattr(session, "rollback", mock_rollback)
 
         # Should not raise exception, but handle it gracefully
@@ -590,7 +590,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
