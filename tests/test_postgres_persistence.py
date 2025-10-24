@@ -81,7 +81,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         app = (
             Application.builder()
@@ -128,7 +128,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         persistence = PostgresPersistence(session=session, on_flush=on_flush)
 
@@ -169,13 +169,13 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
         # Check that either SELECT or UPSERT query was executed (upsert for fresh db)
         executed_text = self.executed.text.strip()
         assert "SELECT data FROM persistence" in executed_text or (
-            "INSERT INTO persistence (data) VALUES (:jsondata)" in executed_text
+            "INSERT INTO persistence (id, data) VALUES (:id, :jsondata)" in executed_text
             and "ON CONFLICT (id) DO UPDATE SET data = :jsondata" in executed_text
         )
         assert self.commited == 555
@@ -185,7 +185,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         await PostgresPersistence(session=session).flush()
         assert self.executed != ""
@@ -202,7 +202,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -252,7 +252,7 @@ class TestPostgresPersistence:
                 return FakeExecResultValidPK()
 
             # Check for data validation query (id=1 exists)
-            if "WHERE id = 1" in query.text and "information_schema" not in query.text:
+            if "WHERE id = :id" in query.text and "information_schema" not in query.text:
                 return FakeExecResultValidData()
 
             return FakeExecResult()
@@ -260,14 +260,14 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
         # Verify no migration commands were run
         migration_commands = [
             "ALTER TABLE persistence ADD COLUMN id INT",
-            "UPDATE persistence SET id = 1",
+            "UPDATE persistence SET id = :id",
             "DELETE FROM persistence WHERE id IS NULL",
         ]
         for migration_cmd in migration_commands:
@@ -310,7 +310,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -340,18 +340,18 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
         # Verify migration commands were run in correct order
         expected_migration_steps = [
             "ALTER TABLE persistence ADD COLUMN id INT",
-            "UPDATE persistence SET id = 1",
+            "UPDATE persistence SET id = :id",
             "DELETE FROM persistence WHERE id IS NULL",
             "ALTER TABLE persistence ALTER COLUMN id SET NOT NULL",
             "ALTER TABLE persistence ADD PRIMARY KEY (id)",
-            "ALTER TABLE persistence ADD CONSTRAINT single_row CHECK (id = 1)",
+            "ALTER TABLE persistence ADD CONSTRAINT single_row CHECK (id = :id)",
         ]
 
         for expected_step in expected_migration_steps:
@@ -385,7 +385,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         persistence = PostgresPersistence(session=session)
 
@@ -403,13 +403,13 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
         # Check that upsert query was used for initialization
         upsert_found = any(
-            "INSERT INTO persistence (data) VALUES (:jsondata)" in query
+            "INSERT INTO persistence (id, data) VALUES (:id, :jsondata)" in query
             and "ON CONFLICT (id) DO UPDATE SET data = :jsondata" in query
             for query in executed_queries
         )
@@ -429,7 +429,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
         monkeypatch.setattr(session, "rollback", lambda: None)
 
         persistence = PostgresPersistence(session=session)
@@ -443,7 +443,7 @@ class TestPostgresPersistence:
 
         # Verify upsert query was used
         upsert_found = any(
-            "INSERT INTO persistence (data) VALUES (:jsondata)" in query
+            "INSERT INTO persistence (id, data) VALUES (:id, :jsondata)" in query
             and "ON CONFLICT (id) DO UPDATE SET data = :jsondata" in query
             for query in executed_queries
         )
@@ -452,6 +452,7 @@ class TestPostgresPersistence:
         # Verify parameters were passed
         assert len(executed_params) > 0
         assert "jsondata" in executed_params[0]
+        assert "id" in executed_params[0]
 
     def test_single_row_constraint_in_schema(self, monkeypatch):
         """Test that single_row constraint is present in schema"""
@@ -464,7 +465,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
@@ -493,13 +494,13 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 
         # Verify that migration includes step to update first row to id=1
         update_first_row = any(
-            "UPDATE persistence SET id = 1" in query and "LIMIT 1" in query
+            "UPDATE persistence SET id = :id" in query and "LIMIT 1" in query
             for query in executed_queries
         )
         assert update_first_row
@@ -515,7 +516,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", self.mocked_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         app = (
             Application.builder()
@@ -563,7 +564,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute_with_error)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
         monkeypatch.setattr(session, "rollback", mock_rollback)
 
         # Should not raise exception, but handle it gracefully
@@ -589,7 +590,7 @@ class TestPostgresPersistence:
         session = scoped_session("a")
         monkeypatch.setattr(session, "execute", mock_execute)
         monkeypatch.setattr(session, "commit", self.mock_commit)
-        monkeypatch.setattr(session, "close", self.mock_ses_close)
+        monkeypatch.setattr(session, "remove", self.mock_ses_close)
 
         PostgresPersistence(session=session)
 

@@ -47,6 +47,8 @@ class PostgresPersistence(DictPersistence):
             persistence instance.
     """
 
+    PERSISTENCE_ID = 1
+
     def __init__(
         self,
         url: str = None,
@@ -57,7 +59,7 @@ class PostgresPersistence(DictPersistence):
         if url:
             if not url.startswith("postgresql://"):
                 raise TypeError(f"{url} isn't a valid PostgreSQL database URL.")
-            engine = create_engine(url, client_encoding="utf8")
+            engine = create_engine(url, client_encoding="utf8", pool_pre_ping=True)
             self._session = scoped_session(sessionmaker(bind=engine, autoflush=False))
 
         elif session:
@@ -90,9 +92,11 @@ class PostgresPersistence(DictPersistence):
             # `UPDATE` operations if column have some data already present inside it.
             if not data:
                 upsert_qry = """
-                INSERT INTO persistence (data) VALUES (:jsondata)
+                INSERT INTO persistence (id, data) VALUES (:id, :jsondata)
                 ON CONFLICT (id) DO UPDATE SET data = :jsondata"""
-                self._session.execute(text(upsert_qry), {"jsondata": "{}"})
+                self._session.execute(
+                    text(upsert_qry), {"id": self.PERSISTENCE_ID, "jsondata": "{}"}
+                )
                 self._session.commit()
 
             super().__init__(
@@ -104,7 +108,7 @@ class PostgresPersistence(DictPersistence):
                 conversations_json=conversations_json,
             )
         finally:
-            self._session.close()
+            self._session.remove()
 
     def __init_database(self) -> None:
         """
@@ -113,11 +117,11 @@ class PostgresPersistence(DictPersistence):
         runs schema migration if necessary.
         """
         try:
-            create_table_qry = """
+            create_table_qry = f"""
                 CREATE TABLE IF NOT EXISTS persistence(
-                id INT PRIMARY KEY DEFAULT 1,
+                id INT PRIMARY KEY DEFAULT {self.PERSISTENCE_ID},
                 data json NOT NULL,
-                CONSTRAINT single_row CHECK (id = 1));"""
+                CONSTRAINT single_row CHECK (id = {self.PERSISTENCE_ID}));"""
             self._session.execute(text(create_table_qry))
 
             # Check if id column exists, is an integer type, and is a primary key
@@ -141,8 +145,9 @@ class PostgresPersistence(DictPersistence):
             data_valid = False
             if column_valid:
                 check_data_qry = """
-                    SELECT 1 FROM persistence WHERE id = 1;"""
-                data_valid = self._session.execute(text(check_data_qry)).first() is not None
+                    SELECT 1 FROM persistence WHERE id = :id;"""
+                result = self._session.execute(text(check_data_qry), {"id": self.PERSISTENCE_ID})
+                data_valid = result.first() is not None
 
             needs_migration = not (column_valid and data_valid)
 
@@ -150,17 +155,18 @@ class PostgresPersistence(DictPersistence):
                 self.logger.info("Old database schema detected. Running migration...")
                 migration_commands = [
                     "ALTER TABLE persistence ADD COLUMN id INT;",
-                    """
-                    UPDATE persistence SET id = 1 WHERE ctid = (
-                        SELECT ctid FROM persistence LIMIT 1
-                    );""",
+                    """UPDATE persistence SET id = :id WHERE ctid = ("
+                        "SELECT ctid FROM persistence LIMIT 1);""",
                     "DELETE FROM persistence WHERE id IS NULL;",
                     "ALTER TABLE persistence ALTER COLUMN id SET NOT NULL;",
                     "ALTER TABLE persistence ADD PRIMARY KEY (id);",
-                    "ALTER TABLE persistence ADD CONSTRAINT single_row CHECK (id = 1);",
+                    "ALTER TABLE persistence ADD CONSTRAINT single_row CHECK (id = :id);",
                 ]
                 for command in migration_commands:
-                    self._session.execute(text(command))
+                    if ":id" in command:
+                        self._session.execute(text(command), {"id": self.PERSISTENCE_ID})
+                    else:
+                        self._session.execute(text(command))
                 self.logger.info("Database migration successful!")
 
             self._session.commit()
@@ -187,9 +193,9 @@ class PostgresPersistence(DictPersistence):
         self.logger.debug("Updating database...")
         try:
             upsert_qry = """
-            INSERT INTO persistence (data) VALUES (:jsondata)
+            INSERT INTO persistence (id, data) VALUES (:id, :jsondata)
             ON CONFLICT (id) DO UPDATE SET data = :jsondata"""
-            params = {"jsondata": self._dump_into_json()}
+            params = {"id": self.PERSISTENCE_ID, "jsondata": self._dump_into_json()}
             self._session.execute(text(upsert_qry), params)
             self._session.commit()
         except Exception as excp:  # pylint: disable=W0703
@@ -198,6 +204,8 @@ class PostgresPersistence(DictPersistence):
                 exc_info=excp,
             )
             self._session.rollback()
+        finally:
+            self._session.remove()
 
     async def update_conversation(
         self, name: str, key: Tuple[int, ...], new_state: Optional[object]
