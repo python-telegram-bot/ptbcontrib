@@ -144,9 +144,10 @@ class PostgresPersistence(DictPersistence):
             # If column exists, check if there's a valid row with id = 1
             data_valid = False
             if column_valid:
-                check_data_qry = f"""
-                    SELECT 1 FROM persistence WHERE id = {self.PERSISTENCE_ID};"""
-                data_valid = self._session.execute(text(check_data_qry)).first() is not None
+                check_data_qry = """
+                    SELECT 1 FROM persistence WHERE id = :id;"""
+                result = self._session.execute(text(check_data_qry), {"id": self.PERSISTENCE_ID})
+                data_valid = result.first() is not None
 
             needs_migration = not (column_valid and data_valid)
 
@@ -154,18 +155,18 @@ class PostgresPersistence(DictPersistence):
                 self.logger.info("Old database schema detected. Running migration...")
                 migration_commands = [
                     "ALTER TABLE persistence ADD COLUMN id INT;",
-                    f"""UPDATE persistence SET id = {self.PERSISTENCE_ID} WHERE ctid = (
-                        SELECT ctid FROM persistence LIMIT 1);""",
+                    """UPDATE persistence SET id = :id WHERE ctid = ("
+                        "SELECT ctid FROM persistence LIMIT 1);""",
                     "DELETE FROM persistence WHERE id IS NULL;",
                     "ALTER TABLE persistence ALTER COLUMN id SET NOT NULL;",
                     "ALTER TABLE persistence ADD PRIMARY KEY (id);",
-                    (
-                        f"ALTER TABLE persistence ADD CONSTRAINT single_row "
-                        f"CHECK (id = {self.PERSISTENCE_ID});"
-                    ),
+                    "ALTER TABLE persistence ADD CONSTRAINT single_row CHECK (id = :id);",
                 ]
                 for command in migration_commands:
-                    self._session.execute(text(command))
+                    if ":id" in command:
+                        self._session.execute(text(command), {"id": self.PERSISTENCE_ID})
+                    else:
+                        self._session.execute(text(command))
                 self.logger.info("Database migration successful!")
 
             self._session.commit()
