@@ -26,6 +26,13 @@ import yarl
 from telegram.error import NetworkError, TimedOut
 from telegram.request import BaseRequest, RequestData
 
+try:
+    from aiohttp_socks import ChainProxyConnector, ProxyConnector
+
+    SOCKS_INSTALLED = True
+except ImportError:
+    SOCKS_INSTALLED = False
+
 _LOGGER = logging.getLogger("AiohttpRequest")
 
 
@@ -64,10 +71,40 @@ class AiohttpRequest(BaseRequest):
                 :paramref:`media_total_timeout` parameter, which is not passed to the client
                 constructor. No runtime warnings will be issued about parameters that are
                 overridden in this way.
+        socks_url (:obj:`str` | list[:obj:`str`], optional): This parameter allows you to pass a
+            SOCKS url or list of urls, to use with a ProxyConnector or ChainProxyConnector
+            respectively from https://github.com/romis2012/aiohttp-socks.
+
+            Note:
+                You need to install this via
+                pip install "ptbcontrib[aiohttp_request_socks] @
+                git+https://github.com/python-telegram-bot/ptbcontrib.git@main"
 
     """
 
-    __slots__ = ("_session", "_session_kwargs", "_media_total_timeout", "_connection_pool_size")
+    __slots__ = (
+        "_session",
+        "_session_kwargs",
+        "_media_total_timeout",
+        "_connection_pool_size",
+        "_socks_url",
+    )
+
+    def _build_connector(self, loop: asyncio.AbstractEventLoop) -> aiohttp.TCPConnector:
+        if self._socks_url:
+            if isinstance(self._socks_url, str):
+                conn = ProxyConnector.from_url(
+                    self._socks_url, loop=loop, limit=self._connection_pool_size
+                )
+            else:
+                conn = ChainProxyConnector.from_urls(
+                    self._socks_url, loop=loop, limit=self._connection_pool_size
+                )
+        else:
+            # I decided against supporting passing options to this one, in comparison to httpx
+            # easy to implement if there is demand
+            conn = aiohttp.TCPConnector(limit=self._connection_pool_size, loop=loop)
+        return conn
 
     def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
@@ -78,7 +115,15 @@ class AiohttpRequest(BaseRequest):
         proxy_auth: Optional[aiohttp.BasicAuth] = None,
         trust_env: Optional[bool] = None,
         aiohttp_kwargs: Optional[dict[str, Any]] = None,
+        socks_url: Optional[Union[str, list[str]]] = None,
     ):
+        if socks_url and not SOCKS_INSTALLED:
+            raise RuntimeError(
+                "To use socks, aiohttp_request must be installed via `pip install "
+                "ptbcontrib[aiohttp_request_socks] @ "
+                '"git+https://github.com/python-telegram-bot/ptbcontrib.git@main"`.'
+            )
+        self._socks_url = socks_url
         self._media_total_timeout = media_total_timeout
         # this needs to be saved in case of initialize gets a closed session
         self._connection_pool_size = connection_pool_size
@@ -97,9 +142,7 @@ class AiohttpRequest(BaseRequest):
         except RuntimeError:
             loop = asyncio.get_event_loop()
 
-        # I decided against supporting passing options to this one, in comparison to httpx
-        # easy to implement if there is demand
-        conn = aiohttp.TCPConnector(limit=connection_pool_size, loop=loop)
+        conn = self._build_connector(loop)
 
         self._session_kwargs = {
             "timeout": timeout,
@@ -133,7 +176,7 @@ class AiohttpRequest(BaseRequest):
             except RuntimeError:
                 loop = asyncio.get_event_loop()
 
-            conn = aiohttp.TCPConnector(limit=self._connection_pool_size, loop=loop)
+            conn = self._build_connector(loop)
             self._session_kwargs["connector"] = conn
             self._session = self._build_client()
 
