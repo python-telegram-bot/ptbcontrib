@@ -48,12 +48,17 @@ class TestLongBotCommand:
         assert long_desc_command.description == "desc"
         assert long_desc_command.long_description == "long desc"
 
-    def test_short_desc_change(self, short_desc_command):
-        short_desc_command.description = "new desc"
-        assert short_desc_command.long_description == "new desc"
+    def test_description_is_immutable(self, short_desc_command):
+        # BotCommand instances are immutable in python-telegram-bot v20+.
+        with pytest.raises(AttributeError):
+            short_desc_command.description = "new desc"
+        assert short_desc_command.description == "desc"
+        assert short_desc_command.long_description == "desc"
 
-    def test_long_desc_change(self, long_desc_command):
-        long_desc_command.description = "new desc"
+    def test_long_description_is_immutable(self, long_desc_command):
+        with pytest.raises(AttributeError):
+            long_desc_command.description = "new desc"
+        assert long_desc_command.description == "desc"
         assert long_desc_command.long_description == "long desc"
 
     def test_short_desc_dict(self, short_desc_command, bot_command):
