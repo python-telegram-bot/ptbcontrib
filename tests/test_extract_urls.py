@@ -18,6 +18,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import pytest
 from telegram import Message, MessageEntity
+from telegram.constants import MessageEntityType
 
 from ptbcontrib import extract_urls
 
@@ -64,6 +65,30 @@ class TestExtractURLs:
         assert len(results) == 2
         assert test_entities[0]["url"] == results[0]
         assert test_entities[2]["url"] == results[1]
+
+    def test_extract_urls_entity_type_constants(self):
+        test_entities = [
+            {
+                "length": 6,
+                "offset": 0,
+                "type": MessageEntityType.TEXT_LINK,
+                "url": "http://github.com",
+            },
+            {"length": 17, "offset": 23, "type": MessageEntityType.URL},
+        ]
+        test_message = Message(
+            message_id=1,
+            from_user=None,
+            date=None,
+            chat=None,
+            text="Github can be found at http://google.com.",
+            entities=[MessageEntity(**entity) for entity in test_entities],
+        )
+
+        assert extract_urls.extract_urls(test_message) == [
+            "http://github.com",
+            "http://google.com",
+        ]
 
     def test_extract_urls_order(self):
         test_entities = [

@@ -48,12 +48,16 @@ class TestLongBotCommand:
         assert long_desc_command.description == "desc"
         assert long_desc_command.long_description == "long desc"
 
-    def test_short_desc_change(self, short_desc_command):
-        short_desc_command.description = "new desc"
-        assert short_desc_command.long_description == "new desc"
+    def test_short_desc_immutable(self, short_desc_command):
+        with pytest.raises(AttributeError):
+            short_desc_command.description = "new desc"
 
-    def test_long_desc_change(self, long_desc_command):
-        long_desc_command.description = "new desc"
+        assert short_desc_command.long_description == "desc"
+
+    def test_long_desc_immutable(self, long_desc_command):
+        with pytest.raises(AttributeError):
+            long_desc_command.description = "new desc"
+
         assert long_desc_command.long_description == "long desc"
 
     def test_short_desc_dict(self, short_desc_command, bot_command):

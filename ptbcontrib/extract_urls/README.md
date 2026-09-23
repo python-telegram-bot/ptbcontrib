@@ -10,7 +10,7 @@ Please see the docstrings for more details.
 
 ## Requirements
 
-*   `python-telegram-bot>=12.0`
+*   `python-telegram-bot~=20.0`
 
 ## Authors
 

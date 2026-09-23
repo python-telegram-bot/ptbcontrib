@@ -17,13 +17,14 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module contains helper functions to extract URLs from messages."""
+from __future__ import annotations
+
 import re
-from typing import Dict, List
 
 from telegram import Message, MessageEntity
 
 
-def extract_urls(message: Message) -> List[str]:
+def extract_urls(message: Message) -> list[str]:
     """
     Extracts all hyperlinks that are contained in a message. This includes message entities and the
     media caption, i.e. while of course only text *or* caption is present this works for both.
@@ -50,7 +51,7 @@ def extract_urls(message: Message) -> List[str]:
             results[key] = key.url
 
     # Remove exact duplicates and keep the first appearance
-    filtered_results: Dict[str, MessageEntity] = {}
+    filtered_results: dict[str, MessageEntity] = {}
     for key, value in results.items():
         if not filtered_results.get(value):
             filtered_results[value] = key
@@ -66,7 +67,7 @@ def extract_urls(message: Message) -> List[str]:
 
 def extract_message_links(
     message: Message, private_only: bool = False, public_only: bool = False
-) -> List[str]:
+) -> list[str]:
     """
     Extracts all message links that are contained in a message. This includes message entities and
     the media caption, i.e. while of course only text *or* caption is present this works for both.
